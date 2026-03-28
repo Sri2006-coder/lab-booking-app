@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Calendar - Lab Booking</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="header">
+        <div><b>📆 Calendar</b></div>
+        <a href="dashboard.html" class="stat-card" style="padding: 5px 12px; font-size: 13px; text-decoration: none; display: inline-block;">⬅ Back</a>
+    </div>
+
+    <h2 id="calendar-title" style="text-align: center; margin-top: 20px;">Lab Booking Calendar</h2>
+
+    <div id="calendar-grid" class="calendar" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; padding: 20px; max-width: 800px; margin: auto;">
+        <!-- Days will be loaded here -->
+    </div>
+
+    <script>
+        async function loadCalendar() {
+            const res = await fetch('/api/calendar');
+            const data = await res.json();
+            
+            document.getElementById('calendar-title').innerText = `${data.month_name} ${data.year}`;
+            
+            const grid = document.getElementById('calendar-grid');
+            grid.innerHTML = '';
+
+            data.days.forEach(d => {
+                const dayDiv = document.createElement('div');
+                dayDiv.className = `day ${d.status}`;
+                dayDiv.style.cssText = `
+                    border-radius: 14px;
+                    padding: 12px;
+                    text-align: center;
+                    font-size: 13px;
+                    background: #ffffff;
+                    border: 1px solid #e5e7eb;
+                    transition: 0.25s;
+                    border-left: 4px solid ${getStatusColor(d.status)};
+                `;
+                
+                dayDiv.innerHTML = `
+                    <b style="font-size: 16px;">${d.day}</b><br>
+                    <span style="font-weight: 500;">${d.booked ? 'Booked' : 'Free'}</span><br>
+                    <a href="dashboard.html?date=${d.date}" style="
+                        display: inline-block;
+                        margin-top: 8px;
+                        font-size: 11px;
+                        text-decoration: none;
+                        padding: 4px 10px;
+                        border-radius: 8px;
+                        background: #4f46e5;
+                        color: white;
+                    ">View</a>
+                `;
+                grid.appendChild(dayDiv);
+            });
+        }
+
+        function getStatusColor(status) {
+            switch(status) {
+                case 'today': return '#4f46e5';
+                case 'booked': return '#f59e0b';
+                case 'free': return '#10b981';
+                default: return 'transparent';
+            }
+        }
+
+        loadCalendar();
+    </script>
+</body>
+</html>

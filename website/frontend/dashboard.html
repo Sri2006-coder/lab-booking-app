@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Timetable - Lab Booking</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="main-layout">
+        <div class="sidebar">
+            <div style="font-size: 10px; color: #ef4444; margin-bottom: 10px; font-weight: 800;">📩 Message</div>
+            <h2 style="margin-bottom: 25px;">Lab Booking</h2>
+            <a href="#" onclick="loadTimetable('1,2')" class="active" id="btn-1-2">Lab 1 & 2</a>
+            <a href="#" onclick="loadTimetable('5,6,7')" id="btn-5-6-7">Lab 5, 6, 7</a>
+            <a href="#" onclick="loadTimetable('3,4')" id="btn-3-4">Halls</a>
+            <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+            <a href="calendar_view.html">📅 CalendarView</a>
+            <a href="#" onclick="logout()">Logout</a>
+        </div>
+
+        <div class="main-content">
+            <div id="notice-bar" class="notice" style="display: none;"></div>
+            
+            <div style="background: #eff6ff; padding: 12px 20px; border-radius: 10px; margin-bottom: 20px;">
+                <h3 id="display-date" style="margin: 0 0 10px 0; font-size: 15px; color: #1e293b;">Wednesday (2026-03-25)</h3>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <input type="date" id="date-picker" style="width: auto; padding: 6px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                    <button onclick="dateChanged()" style="width: auto; padding: 6px 15px; margin: 0; background: #2563eb; border-radius: 6px; font-size: 12px;">View</button>
+                </div>
+            </div>
+
+            <div id="timetable-grid" class="period-grid"></div>
+        </div>
+    </div>
+
+    <!-- Booking Modal -->
+    <div id="booking-modal" class="modal">
+        <div class="modal-content">
+            <h3>Confirm Booking</h3>
+            <p id="modal-text"></p>
+            <button onclick="confirmBooking()">Confirm</button>
+            <button onclick="closeModal()" style="background: #9ca3af; margin-top: 10px;">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        let currentLabs = '1,2';
+        const urlParams = new URLSearchParams(window.location.search);
+        let currentDate = urlParams.get('date') || new Date().toISOString().split('T')[0];
+        let selectedSlot = null;
+
+        document.getElementById('date-picker').value = currentDate;
+
+        async function fetchNotice() {
+            const res = await fetch('/api/notice');
+            const data = await res.json();
+            if (data) {
+                const bar = document.getElementById('notice-bar');
+                bar.innerText = `🔔 ${data.message} (${data.minutes} mins remaining)`;
+                bar.style.display = 'block';
+            }
+        }
+
+        async function loadTimetable(labs = currentLabs, date = currentDate) {
+            currentLabs = labs;
+            currentDate = date;
+            
+            // Update UI Sidebar state
+            ['1,2', '5,6,7', '3,4'].forEach(l => {
+                document.getElementById('btn-' + l.replace(/,/g, '-')).className = (l === labs ? 'active' : '');
+            });
+
+            const res = await fetch(`/api/timetable?labs=${labs}&date=${date}`);
+            if (res.status === 401) window.location.href = 'index.html';
+            const data = await res.json();
+
+            document.getElementById('display-date').innerText = `${data.day} (${data.date})`;
+            
+            const grid = document.getElementById('timetable-grid');
+            grid.innerHTML = '';
+
+            data.timetable.forEach(period => {
+                const box = document.createElement('div');
+                box.className = 'period-box';
+                box.innerHTML = `<div class="period-header">Period ${period.period}</div>`;
+
+                period.labs.forEach(lab => {
+                    const labItem = document.createElement('div');
+                    labItem.className = 'lab-item';
+                    
+                    let statusHtml = '';
+                    if (lab.status.type === 'fixed') {
+                        statusHtml = `<button class="btn-fixed">${lab.status.subject}</button>`;
+                    } else if (lab.status.type === 'booked') {
+                        statusHtml = `
+                            <button class="btn-booked">
+                                Booked by ${lab.status.name}
+                                ${lab.status.own ? `<br><span onclick="cancelBooking(${lab.status.id})" style="color:#ef4444; font-size:10px; cursor:pointer;">[Cancel]</span>` : ''}
+                            </button>`;
+                    } else {
+                        statusHtml = `<button class="btn-book" onclick="openBookingModal(${lab.lab_id}, '${lab.lab_name}', ${period.period}, '${data.day}', '${data.date}')">Book Now</button>`;
+                    }
+
+                    labItem.innerHTML = `
+                        <div class="lab-info">
+                            <span>💻</span> ${lab.lab_name}
+                        </div>
+                        ${statusHtml}
+                    `;
+                    box.appendChild(labItem);
+                });
+                grid.appendChild(box);
+            });
+        }
+
+        function dateChanged() {
+            currentDate = document.getElementById('date-picker').value;
+            loadTimetable();
+        }
+
+        function openBookingModal(labId, labName, period, day, date) {
+            selectedSlot = { labId, period, day, date };
+            document.getElementById('modal-text').innerText = `${labName} | Period ${period}`;
+            document.getElementById('booking-modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('booking-modal').style.display = 'none';
+        }
+
+        async function confirmBooking() {
+            const res = await fetch('/api/book', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    lab: selectedSlot.labId,
+                    period: selectedSlot.period,
+                    day: selectedSlot.day,
+                    date: selectedSlot.date
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                closeModal();
+                loadTimetable();
+            } else if (data.message === 'limit') {
+                alert('❌ Max 2 bookings reached for today');
+            } else {
+                alert('Error booking slot');
+            }
+        }
+
+        async function cancelBooking(id) {
+            if (!confirm('Cancel this booking?')) return;
+            const res = await fetch(`/api/cancel_booking/${id}`, { method: 'DELETE' });
+            if (res.ok) loadTimetable();
+        }
+
+        async function logout() {
+            await fetch('/api/logout');
+            window.location.href = 'index.html';
+        }
+
+        fetchNotice();
+        loadTimetable();
+    </script>
+</body>
+</html>

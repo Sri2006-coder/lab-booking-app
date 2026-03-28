@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard - Lab Booking</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="header">⚙️ Admin Dashboard</div>
+    
+    <div class="container">
+        <!-- Notice Display -->
+        <div id="notice-container" class="notice" style="display: none;">
+            🔔 <b id="notice-text"></b><br>
+            ⏳ Ends in <span id="notice-mins"></span> minutes
+        </div>
+
+        <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #64748b;">Overview</h3>
+        <div class="stats">
+            <div class="stat-card" style="border-left-color: #4f46e5;">
+                <h3 id="stat-bookings">0</h3>
+                <p>Total Bookings</p>
+            </div>
+            <div class="stat-card" style="border-left-color: #10b981;">
+                <h3 id="stat-labs">0</h3>
+                <p>Active Labs</p>
+            </div>
+            <div class="stat-card" style="border-left-color: #f59e0b;">
+                <h3 id="stat-faculty">0</h3>
+                <p>Faculty Users</p>
+            </div>
+        </div>
+
+        <h3 style="margin: 25px 0 15px 0; font-size: 16px; color: #64748b;">Management Tools</h3>
+        <div class="actions">
+            <a href="add_lab.html" class="action-card" style="border-left-color: #4f46e5;">
+                <span style="font-size: 32px;">➕</span>
+                <div style="margin-top: 5px;">Add Lab</div>
+            </a>
+            <div class="action-card" style="border-left-color: #10b981; cursor: default; min-width: 240px;">
+                <span style="font-size: 32px;">📁</span>
+                <div style="margin: 5px 0; font-size: 14px;">Upload Timetable</div>
+                <input type="file" id="csv-file" style="font-size: 11px; width: 100%; margin-bottom: 8px;">
+                <button onclick="uploadCSV()" style="padding: 8px; font-size: 12px; background: #10b981;">Start Upload</button>
+                <div id="upload-status" style="font-size: 11px; margin-top: 5px;"></div>
+            </div>
+            <a href="admin_notice.html" class="action-card" style="border-left-color: #f59e0b;">
+                <span style="font-size: 32px;">🔔</span>
+                <div style="margin-top: 5px;">Post Notice</div>
+            </a>
+            <a href="dashboard.html" class="action-card" style="border-left-color: #6366f1;">
+                <span style="font-size: 32px;">📅</span>
+                <div style="margin-top: 5px;">View Timetable</div>
+            </a>
+            <a href="#" class="action-card" style="border-left-color: #ef4444;" onclick="logout()">
+                <span style="font-size: 32px;">🚪</span>
+                <div style="margin-top: 5px;">Logout</div>
+            </a>
+        </div>
+
+        <div class="footer">Admin Panel • Lab Management System</div>
+    </div>
+
+    <script>
+        async function fetchStats() {
+            const res = await fetch('/api/stats');
+            if (res.status === 401) window.location.href = 'index.html';
+            const data = await res.json();
+            document.getElementById('stat-bookings').innerText = data.totalBookings;
+            document.getElementById('stat-labs').innerText = data.activeLabs;
+            document.getElementById('stat-faculty').innerText = data.totalFaculty;
+        }
+
+        async function fetchNotice() {
+            const res = await fetch('/api/notice');
+            const data = await res.json();
+            if (data) {
+                document.getElementById('notice-container').style.display = 'block';
+                document.getElementById('notice-text').innerText = data.message;
+                document.getElementById('notice-mins').innerText = data.minutes;
+            }
+        }
+
+        async function uploadCSV() {
+            const fileInput = document.getElementById('csv-file');
+            const status = document.getElementById('upload-status');
+            if (!fileInput.files[0]) return alert('Select a file');
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            status.innerText = 'Uploading...';
+            try {
+                const res = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.success) {
+                    status.innerText = '✅ Uploaded successfully';
+                    fetchStats();
+                } else {
+                    status.innerText = '❌ ' + data.message;
+                }
+            } catch (err) {
+                status.innerText = '❌ Error uploading';
+            }
+        }
+
+        async function logout() {
+            await fetch('/api/logout');
+            window.location.href = 'index.html';
+        }
+
+        fetchStats();
+        fetchNotice();
+    </script>
+</body>
+</html>
