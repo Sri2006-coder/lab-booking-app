@@ -1,19 +1,34 @@
 from flask import Flask, request, jsonify, session, send_from_directory
 from database import get_db
-import os
 from datetime import datetime, timedelta
+import os
 
 app = Flask(__name__, static_folder='../frontend')
 app.secret_key = 'super_secret_key_for_lab_booking'
 app.permanent_session_lifetime = timedelta(minutes=10)
 
+
+# ---------------- PWA FILES ----------------
+@app.route('/manifest.json')
+def manifest():
+    return send_from_directory(app.static_folder, 'manifest.json')
+
+
+@app.route('/sw.js')
+def service_worker():
+    return send_from_directory(app.static_folder, 'sw.js')
+
+
+# ---------------- FRONTEND ROUTES ----------------
 @app.route('/')
 def index():
     return send_from_directory(app.static_folder, 'index.html')
 
+
 @app.route('/<path:path>')
 def static_proxy(path):
     return send_from_directory(app.static_folder, path)
+
 
 @app.route('/api/login', methods=['POST'])
 def login():
