@@ -154,7 +154,7 @@ button:hover {
     background: #ffffff;
     padding: 20px;
     border-right: 1px solid #e5e7eb;
-    height: 100vh;
+    min-height: 100vh;
     position: sticky;
     top: 0;
 }
@@ -349,4 +349,149 @@ button:hover {
 .action-card:hover::after {
     transform: translateX(5px);
     color: #4f46e5;
+}
+/* ===== MOBILE RESPONSIVE IMPROVEMENTS ===== */
+
+/* Smooth font scaling */
+html {
+    font-size: 16px;
+}
+
+/* Make layout flexible */
+.main-layout {
+    display: flex;
+    flex-direction: row;
+}
+
+/* ===== TABLET VIEW ===== */
+@media (max-width: 900px) {
+
+    .container {
+        padding: 15px;
+    }
+
+    .sidebar {
+        width: 200px;
+        padding: 15px;
+    }
+
+    .main-content {
+        padding: 15px;
+    }
+
+    .login-box {
+        width: 90%;
+    }
+}
+
+/* ===== MOBILE VIEW ===== */
+@media (max-width: 600px) {
+
+    /* Layout becomes vertical */
+    .main-layout {
+        flex-direction: column;
+    }
+
+    /* Hide sidebar (convert to top menu style) */
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        border-right: none;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        overflow-x: auto;
+        gap: 10px;
+    }
+
+    .sidebar h2 {
+        display: none; /* hide title */
+    }
+
+    .sidebar a {
+        flex: 1;
+        text-align: center;
+        font-size: 13px;
+        padding: 10px;
+        white-space: nowrap;
+    }
+
+    /* Main content */
+    .main-content {
+        padding: 12px;
+    }
+
+    /* Header */
+    .header {
+        font-size: 16px;
+        padding: 12px;
+    }
+
+    /* Stats grid */
+    .stats {
+        grid-template-columns: 1fr;
+    }
+
+    /* Action cards */
+    .actions {
+        grid-template-columns: 1fr;
+    }
+
+    .action-card {
+        padding: 20px;
+        font-size: 14px;
+    }
+
+    /* Period grid already 1 column, improve spacing */
+    .period-grid {
+        gap: 10px;
+    }
+
+    .period-box {
+        padding: 12px;
+    }
+
+    /* Buttons bigger for touch */
+    button, .btn-book, .btn-fixed, .btn-booked {
+        padding: 10px;
+        font-size: 13px;
+    }
+
+    /* Inputs */
+    input {
+        padding: 10px;
+        font-size: 13px;
+    }
+
+    /* Modal */
+    .modal-content {
+        width: 90%;
+    }
+
+    /* Login */
+    .login-box {
+        width: 95%;
+        padding: 20px;
+    }
+}
+
+/* ===== EXTRA SMALL DEVICES ===== */
+@media (max-width: 400px) {
+
+    .header {
+        font-size: 14px;
+    }
+
+    .action-card {
+        font-size: 13px;
+        padding: 15px;
+    }
+
+    .period-header {
+        font-size: 12px;
+    }
+
+    .lab-info {
+        font-size: 10px;
+    }
 }
