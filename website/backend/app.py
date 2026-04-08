@@ -1,11 +1,16 @@
 from flask import Flask, request, jsonify, session, send_from_directory
+from flask_socketio import SocketIO
 from database import get_db
 from datetime import datetime, timedelta
 import os
 
+MAX_BOOKINGS_PER_DAY = 2
+
 app = Flask(__name__, static_folder='../frontend')
 app.secret_key = 'super_secret_key_for_lab_booking'
 app.permanent_session_lifetime = timedelta(minutes=10)
+
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 
 # ---------------- PWA FILES ----------------
@@ -188,9 +193,9 @@ def book_slot():
     conn = get_db()
     cursor = conn.cursor()
     
-    # Check limit (max 2 per day)
+    # Check limit
     cursor.execute("SELECT COUNT(*) as total FROM bookings WHERE faculty_id=? AND booking_date=?", (faculty_id, date))
-    if cursor.fetchone()['total'] >= 2:
+    if cursor.fetchone()['total'] >= MAX_BOOKINGS_PER_DAY:
         conn.close()
         return jsonify({"success": False, "message": "limit"})
     
@@ -383,4 +388,4 @@ def get_calendar():
     })
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    socketio.run(app, host="0.0.0.0", port=5000)

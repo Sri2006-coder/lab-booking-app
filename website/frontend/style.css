@@ -17,7 +17,8 @@ body {
 }
 
 .login-box {
-    width: 360px;
+    width: 100%;
+    max-width: 360px;
     padding: 30px;
     border-radius: 18px;
     background: #ffffff;
@@ -150,7 +151,8 @@ button:hover {
 }
 
 .sidebar {
-    width: 240px;
+    width: 100%;
+    max-width: 240px;
     background: #ffffff;
     padding: 20px;
     border-right: 1px solid #e5e7eb;
@@ -296,7 +298,8 @@ button:hover {
     background: #ffffff;
     padding: 24px;
     border-radius: 16px;
-    width: 320px;
+    width: 100%;
+    max-width: 320px;
     text-align: center;
     border-left: 5px solid #4f46e5;
 }
@@ -355,6 +358,28 @@ button:hover {
 /* Smooth font scaling */
 html {
     font-size: 16px;
+}
+@media (max-width: 600px) {
+    html {
+        font-size: 14px;
+    }
+}
+
+/* Scrollable Tables for mobile */
+table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-collapse: collapse;
+}
+
+/* Touch-friendly buttons padding & min-height */
+button, .btn-book, .btn-fixed, .btn-booked, .action-card {
+    min-height: 48px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
 }
 
 /* Make layout flexible */
