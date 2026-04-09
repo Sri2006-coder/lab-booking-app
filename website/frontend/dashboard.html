@@ -138,7 +138,7 @@
             data.timetable.forEach(period => {
                 const box = document.createElement('div');
                 box.className = 'period-box';
-                box.innerHTML = `<div class="period-header"><span>Period ${period.period}</span></div>`;
+                box.innerHTML = `<div class="period-header">Period ${period.period}</div>`;
 
                 const body = document.createElement('div');
                 body.className = 'period-body';
@@ -148,23 +148,27 @@
                     labItem.className = 'lab-item';
                     
                     let statusHtml = '';
+                    let btnHtml = '';
+                    
                     if (lab.status.type === 'fixed') {
-                        statusHtml = `<div class="badge badge-fixed">${lab.status.subject}</div>`;
+                        statusHtml = `<span class="status-indicator"><span class="status-dot dot-red"></span> Maintenance</span>`;
+                        btnHtml = `<button class="btn-micro" style="background:#f8fafc; color:#64748b; border:1px solid var(--border); cursor:default;">${lab.status.subject}</button>`;
                     } else if (lab.status.type === 'booked') {
-                        statusHtml = `
-                            <div class="lab-status-wrap">
-                                <div class="badge badge-booked">Booked by ${lab.status.name}</div>
-                                ${lab.status.own ? `<span class="btn-cancel-link" onclick="cancelBooking(${lab.status.id})">Cancel</span>` : ''}
-                            </div>`;
+                        statusHtml = `<span class="status-indicator"><span class="status-dot dot-gray"></span> Booked by ${lab.status.name}</span>`;
+                        if (lab.status.own) {
+                            btnHtml = `<button class="btn-micro btn-micro-red" onclick="cancelBooking(${lab.status.id})">Cancel Booking</button>`;
+                        }
                     } else {
-                        statusHtml = `<button class="btn-sm" onclick="openBookingModal(${lab.lab_id}, '${lab.lab_name}', ${period.period}, '${data.day}', '${data.date}')">Book Slot</button>`;
+                        statusHtml = `<span class="status-indicator"><span class="status-dot dot-green"></span> Available</span>`;
+                        btnHtml = `<button class="btn-micro btn-micro-blue" onclick="openBookingModal(${lab.lab_id}, '${lab.lab_name}', ${period.period}, '${data.day}', '${data.date}')">Book Now</button>`;
                     }
 
                     labItem.innerHTML = `
-                        <div class="lab-name">
-                            ${lab.lab_name}
+                        <div class="lab-info-row">
+                            <span class="lab-name">${lab.lab_name}</span>
+                            ${statusHtml}
                         </div>
-                        ${statusHtml}
+                        ${btnHtml ? `<div style="margin-top:2px;">${btnHtml}</div>` : ''}
                     `;
                     body.appendChild(labItem);
                 });
