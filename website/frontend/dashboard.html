@@ -2,57 +2,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard | Lab Booking</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#ffffff">
+    <title>Timetable - Lab Booking</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="header">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 24px; height: 24px; background: var(--primary); border-radius: 4px; display: flex; justify-content: center; align-items: center;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="#ffffff"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-            </div>
-            <span>Lab Booking</span>
-        </div>
-        <div style="font-size: 13px; font-weight: 500; color: var(--text-muted);">Faculty Portal</div>
-    </div>
-
-    <!-- Mobile Top Tabs for Category Selection -->
-    <div class="mobile-tabs" id="mobile-tabs">
-        <a href="#" onclick="loadTimetable('1,2')" class="active" id="mbtn-1-2">Lab 1 & 2</a>
-        <a href="#" onclick="loadTimetable('5,6,7')" id="mbtn-5-6-7">Lab 5, 6, 7</a>
-        <a href="#" onclick="loadTimetable('3,4')" id="mbtn-3-4">Halls</a>
-    </div>
-
     <div class="main-layout">
-        <!-- Desktop Sidebar -->
         <div class="sidebar">
-            <h2>Categories</h2>
+            <div style="font-size: 10px; color: #ef4444; margin-bottom: 10px; font-weight: 800;">📩 Message</div>
+            <h2 style="margin-bottom: 25px;">Lab Booking</h2>
             <a href="#" onclick="loadTimetable('1,2')" class="active" id="btn-1-2">Lab 1 & 2</a>
             <a href="#" onclick="loadTimetable('5,6,7')" id="btn-5-6-7">Lab 5, 6, 7</a>
             <a href="#" onclick="loadTimetable('3,4')" id="btn-3-4">Halls</a>
-            <hr style="border: 0; border-top: 1px solid var(--border); margin: 16px 0;">
-            <h2>Quick Links</h2>
-            <a href="mybookings.html">My Bookings</a>
-            <a href="calendar_view.html">Calendar</a>
-            <div style="flex:1;"></div>
-            <a href="#" onclick="logout()" style="color: var(--danger); margin-top: auto;">Sign out</a>
+            <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+            <a href="calendar_view.html">📅 CalendarView</a>
+            <a href="#" onclick="logout()">Logout</a>
         </div>
 
         <div class="main-content">
-            <div id="notice-bar" class="notice-banner" style="display: none;"></div>
+            <div id="notice-bar" class="notice" style="display: none;"></div>
             
-            <div class="section-header">
-                <div>
-                    <h1 class="section-title" id="display-date">Select Date</h1>
-                    <div style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">View schedule and book available slots base on limits.</div>
-                </div>
-                <div class="date-selector-wrapper">
-                    <input type="date" id="date-picker">
-                    <button class="btn-secondary" onclick="dateChanged()">View</button>
+            <div style="background: #eff6ff; padding: 12px 20px; border-radius: 10px; margin-bottom: 20px;">
+                <h3 id="display-date" style="margin: 0 0 10px 0; font-size: 15px; color: #1e293b;">Wednesday (2026-03-25)</h3>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <input type="date" id="date-picker" style="width: auto; padding: 6px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                    <button onclick="dateChanged()" style="width: auto; padding: 6px 15px; margin: 0; background: #2563eb; border-radius: 6px; font-size: 12px;">View</button>
                 </div>
             </div>
 
@@ -61,35 +35,13 @@
     </div>
 
     <!-- Booking Modal -->
-    <div id="booking-modal" class="modal-overlay">
-        <div class="modal-panel">
-            <div class="modal-header">Confirm Booking</div>
-            <div class="modal-body" id="modal-text"></div>
-            <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeModal()">Cancel</button>
-                <button onclick="confirmBooking()">Confirm Slot</button>
-            </div>
+    <div id="booking-modal" class="modal">
+        <div class="modal-content">
+            <h3>Confirm Booking</h3>
+            <p id="modal-text"></p>
+            <button onclick="confirmBooking()">Confirm</button>
+            <button onclick="closeModal()" style="background: #9ca3af; margin-top: 10px;">Cancel</button>
         </div>
-    </div>
-
-    <!-- Bottom Navigation for Mobile -->
-    <div class="bottom-nav">
-        <a href="dashboard.html" class="active">
-            <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
-            <span>Home</span>
-        </a>
-        <a href="mybookings.html">
-            <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
-            <span>Bookings</span>
-        </a>
-        <a href="calendar_view.html">
-            <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
-            <span>Calendar</span>
-        </a>
-        <a href="#" onclick="logout()">
-            <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
-            <span>Logout</span>
-        </a>
     </div>
 
     <script>
@@ -105,8 +57,8 @@
             const data = await res.json();
             if (data) {
                 const bar = document.getElementById('notice-bar');
-                bar.innerHTML = `<div><strong>Notice:</strong> ${data.message}</div> <div>Ends in ${data.minutes}m</div>`;
-                bar.style.display = 'flex';
+                bar.innerText = `🔔 ${data.message} (${data.minutes} mins remaining)`;
+                bar.style.display = 'block';
             }
         }
 
@@ -114,23 +66,16 @@
             currentLabs = labs;
             currentDate = date;
             
-            // Update UI Desktop Sidebar
+            // Update UI Sidebar state
             ['1,2', '5,6,7', '3,4'].forEach(l => {
-                const id = 'btn-' + l.replace(/,/g, '-');
-                if(document.getElementById(id)) document.getElementById(id).className = (l === labs ? 'active' : '');
-            });
-
-            // Update UI Mobile Tabs
-            ['1,2', '5,6,7', '3,4'].forEach(l => {
-                const id = 'mbtn-' + l.replace(/,/g, '-');
-                if(document.getElementById(id)) document.getElementById(id).className = (l === labs ? 'active' : '');
+                document.getElementById('btn-' + l.replace(/,/g, '-')).className = (l === labs ? 'active' : '');
             });
 
             const res = await fetch(`/api/timetable?labs=${labs}&date=${date}`);
             if (res.status === 401) window.location.href = 'index.html';
             const data = await res.json();
 
-            document.getElementById('display-date').innerText = `${data.day}, ${data.date}`;
+            document.getElementById('display-date').innerText = `${data.day} (${data.date})`;
             
             const grid = document.getElementById('timetable-grid');
             grid.innerHTML = '';
@@ -140,39 +85,31 @@
                 box.className = 'period-box';
                 box.innerHTML = `<div class="period-header">Period ${period.period}</div>`;
 
-                const body = document.createElement('div');
-                body.className = 'period-body';
-
                 period.labs.forEach(lab => {
                     const labItem = document.createElement('div');
                     labItem.className = 'lab-item';
                     
                     let statusHtml = '';
-                    let btnHtml = '';
-                    
                     if (lab.status.type === 'fixed') {
-                        statusHtml = `<span class="status-indicator"><span class="status-dot dot-red"></span> Maintenance</span>`;
-                        btnHtml = `<button class="btn-micro" style="background:#f8fafc; color:#64748b; border:1px solid var(--border); cursor:default;">${lab.status.subject}</button>`;
+                        statusHtml = `<button class="btn-fixed">${lab.status.subject}</button>`;
                     } else if (lab.status.type === 'booked') {
-                        statusHtml = `<span class="status-indicator"><span class="status-dot dot-gray"></span> Booked by ${lab.status.name}</span>`;
-                        if (lab.status.own) {
-                            btnHtml = `<button class="btn-micro btn-micro-red" onclick="cancelBooking(${lab.status.id})">Cancel Booking</button>`;
-                        }
+                        statusHtml = `
+                            <button class="btn-booked">
+                                Booked by ${lab.status.name}
+                                ${lab.status.own ? `<br><span onclick="cancelBooking(${lab.status.id})" style="color:#ef4444; font-size:10px; cursor:pointer;">[Cancel]</span>` : ''}
+                            </button>`;
                     } else {
-                        statusHtml = `<span class="status-indicator"><span class="status-dot dot-green"></span> Available</span>`;
-                        btnHtml = `<button class="btn-micro btn-micro-blue" onclick="openBookingModal(${lab.lab_id}, '${lab.lab_name}', ${period.period}, '${data.day}', '${data.date}')">Book Now</button>`;
+                        statusHtml = `<button class="btn-book" onclick="openBookingModal(${lab.lab_id}, '${lab.lab_name}', ${period.period}, '${data.day}', '${data.date}')">Book Now</button>`;
                     }
 
                     labItem.innerHTML = `
-                        <div class="lab-info-row">
-                            <span class="lab-name">${lab.lab_name}</span>
-                            ${statusHtml}
+                        <div class="lab-info">
+                            <span>💻</span> ${lab.lab_name}
                         </div>
-                        ${btnHtml ? `<div style="margin-top:2px;">${btnHtml}</div>` : ''}
+                        ${statusHtml}
                     `;
-                    body.appendChild(labItem);
+                    box.appendChild(labItem);
                 });
-                box.appendChild(body);
                 grid.appendChild(box);
             });
         }
@@ -184,13 +121,7 @@
 
         function openBookingModal(labId, labName, period, day, date) {
             selectedSlot = { labId, period, day, date };
-            document.getElementById('modal-text').innerHTML = `
-                <table style="width:100%; border-collapse:collapse;">
-                    <tr><td style="padding:4px 0; color:var(--text-muted);">Lab</td><td style="text-align:right; font-weight:600; color:var(--text-main);">${labName}</td></tr>
-                    <tr><td style="padding:4px 0; color:var(--text-muted);">Date</td><td style="text-align:right; font-weight:600; color:var(--text-main);">${date} (${day})</td></tr>
-                    <tr><td style="padding:4px 0; color:var(--text-muted);">Period</td><td style="text-align:right; font-weight:600; color:var(--text-main);">Period ${period}</td></tr>
-                </table>
-            `;
+            document.getElementById('modal-text').innerText = `${labName} | Period ${period}`;
             document.getElementById('booking-modal').style.display = 'flex';
         }
 
@@ -214,9 +145,9 @@
                 closeModal();
                 loadTimetable();
             } else if (data.message === 'limit') {
-                alert('Booking limit reached for the week.');
+                alert('❌ Max 2 bookings reached for today');
             } else {
-                alert('Error booking slot: ' + data.message);
+                alert('Error booking slot');
             }
         }
 
@@ -233,10 +164,6 @@
 
         fetchNotice();
         loadTimetable();
-        
-        if ("serviceWorker" in navigator) {
-            navigator.serviceWorker.register("/sw.js").catch(err => console.log(err));
-        }
     </script>
 </body>
 </html>

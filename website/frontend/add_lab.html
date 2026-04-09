@@ -2,40 +2,29 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Add Lab | Lab Management Portal</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20">
+    <title>Add Lab - Lab Booking</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .form-card {
+            background: white; padding: 25px; border-radius: 16px; 
+            max-width: 400px; margin: 40px auto;
+            border-left: 5px solid #4f46e5;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+    </style>
 </head>
 <body>
-    <div class="header">
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <a href="admin.html" style="text-decoration:none; color:var(--text-muted); display:flex; align-items:center;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-            </a>
-            <span>Lab Configuration</span>
-        </div>
-    </div>
-    
-    <div class="container" style="max-width: 500px; padding-top: 32px;">
-        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 24px; box-shadow: var(--shadow-sm);">
-            
-            <h1 class="section-title" style="margin-bottom: 8px;">Register New Lab</h1>
-            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 24px; margin-top: 0;">
-                Add a new laboratory to the scheduling system.
-            </p>
-            
+    <div class="header">➕ Add New Lab</div>
+    <div class="container">
+        <div class="form-card">
+            <h3 style="margin-top: 0;">Lab Details</h3>
             <div id="status" class="msg" style="display: none;"></div>
-            
-            <div style="margin-bottom: 24px;">
-                <label for="lab-name">Laboratory Identifier</label>
-                <input type="text" id="lab-name" placeholder="e.g., Computer Lab A" style="margin-bottom: 0;">
+            <div class="input-group">
+                <input type="text" id="lab-name" placeholder="Enter Lab Name (e.g. Lab 8)">
             </div>
-            
-            <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                <button class="btn-secondary" onclick="window.location.href='admin.html'" style="width: auto;">Cancel</button>
-                <button onclick="addLab()" style="width: auto;">Register Lab</button>
-            </div>
+            <button onclick="addLab()">Add Lab</button>
+            <button onclick="window.location.href='admin.html'" style="background: #9ca3af; margin-top: 10px;">Back to Dashboard</button>
         </div>
     </div>
 
@@ -43,7 +32,7 @@
         async function addLab() {
             const name = document.getElementById('lab-name').value;
             const status = document.getElementById('status');
-            if (!name) return alert('Lab identifier is required.');
+            if (!name) return alert('Enter a name');
 
             const res = await fetch('/api/labs', {
                 method: 'POST',
@@ -52,13 +41,14 @@
             });
             const data = await res.json();
             if (data.success) {
-                status.className = "msg msg-success";
-                status.innerText = "Lab successfully registered in system.";
+                status.innerText = "✅ Lab added successfully";
                 status.style.display = 'block';
+                status.style.background = '#ecfdf5';
+                status.style.color = '#065f46';
+                status.style.borderLeftColor = '#10b981';
                 document.getElementById('lab-name').value = '';
             } else {
-                status.className = "msg msg-error";
-                status.innerText = data.message || "Failed to register lab.";
+                status.innerText = "❌ Error: " + data.message;
                 status.style.display = 'block';
             }
         }

@@ -1,39 +1,19 @@
 from flask import Flask, request, jsonify, session, send_from_directory
-from flask_socketio import SocketIO
 from database import get_db
-from datetime import datetime, timedelta
 import os
-
-MAX_BOOKINGS_PER_DAY = 2
+from datetime import datetime, timedelta
 
 app = Flask(__name__, static_folder='../frontend')
 app.secret_key = 'super_secret_key_for_lab_booking'
 app.permanent_session_lifetime = timedelta(minutes=10)
 
-socketio = SocketIO(app, cors_allowed_origins="*")
-
-
-# ---------------- PWA FILES ----------------
-@app.route('/manifest.json')
-def manifest():
-    return send_from_directory(app.static_folder, 'manifest.json')
-
-
-@app.route('/sw.js')
-def service_worker():
-    return send_from_directory(app.static_folder, 'sw.js')
-
-
-# ---------------- FRONTEND ROUTES ----------------
 @app.route('/')
 def index():
     return send_from_directory(app.static_folder, 'index.html')
 
-
 @app.route('/<path:path>')
 def static_proxy(path):
     return send_from_directory(app.static_folder, path)
-
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -193,9 +173,9 @@ def book_slot():
     conn = get_db()
     cursor = conn.cursor()
     
-    # Check limit
+    # Check limit (max 2 per day)
     cursor.execute("SELECT COUNT(*) as total FROM bookings WHERE faculty_id=? AND booking_date=?", (faculty_id, date))
-    if cursor.fetchone()['total'] >= MAX_BOOKINGS_PER_DAY:
+    if cursor.fetchone()['total'] >= 2:
         conn.close()
         return jsonify({"success": False, "message": "limit"})
     
@@ -388,4 +368,4 @@ def get_calendar():
     })
 
 if __name__ == '__main__':
-    socketio.run(app, host="0.0.0.0", port=5000)
+    app.run(debug=True, port=5000)

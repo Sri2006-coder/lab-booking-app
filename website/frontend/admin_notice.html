@@ -2,40 +2,34 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Post Notice | Lab Management Portal</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20">
+    <title>Post Notice - Lab Booking</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .form-card {
+            background: white; padding: 25px; border-radius: 16px; 
+            max-width: 500px; margin: 40px auto;
+            border-left: 5px solid #f59e0b;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        textarea {
+            width: 100%; height: 100px; padding: 12px; border-radius: 10px;
+            border: 1px solid #d1d5db; font-family: inherit; outline: none;
+        }
+    </style>
 </head>
 <body>
-    <div class="header">
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <a href="admin.html" style="text-decoration:none; color:var(--text-muted); display:flex; align-items:center;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-            </a>
-            <span>System Broadcast</span>
-        </div>
-    </div>
-    
-    <div class="container" style="max-width: 600px; padding-top: 32px;">
-        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 24px; box-shadow: var(--shadow-sm);">
-            
-            <h1 class="section-title" style="margin-bottom: 8px;">Create Notice</h1>
-            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 24px; margin-top: 0;">
-                Broadcast an alert to all active sessions. Message will auto-expire in 1 hour.
-            </p>
-            
+    <div class="header">🔔 Maintenance Notice</div>
+    <div class="container">
+        <div class="form-card">
+            <h3 style="margin-top: 0;">Create Announcement</h3>
+            <p style="font-size: 13px; color: #6b7280;">This will be displayed to all users for 1 hour.</p>
             <div id="status" class="msg" style="display: none;"></div>
-            
-            <div style="margin-bottom: 16px;">
-                <label for="notice-msg">Message Content</label>
-                <textarea id="notice-msg" placeholder="e.g., Scheduled maintenance for Lab 2 at 14:00 today." style="height: 120px;"></textarea>
+            <div class="input-group">
+                <textarea id="notice-msg" placeholder="Type your message here..."></textarea>
             </div>
-            
-            <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                <button class="btn-secondary" onclick="window.location.href='admin.html'" style="width: auto;">Cancel</button>
-                <button onclick="postNotice()" style="width: auto;">Publish Broadcast</button>
-            </div>
+            <button onclick="postNotice()" style="background: #f59e0b;">Broadcast Message</button>
+            <button onclick="window.location.href='admin.html'" style="background: #9ca3af; margin-top: 10px;">Back</button>
         </div>
     </div>
 
@@ -43,7 +37,7 @@
         async function postNotice() {
             const message = document.getElementById('notice-msg').value;
             const status = document.getElementById('status');
-            if (!message) return alert('Message content is required.');
+            if (!message) return alert('Enter a message');
 
             const res = await fetch('/api/notice', {
                 method: 'POST',
@@ -52,13 +46,14 @@
             });
             const data = await res.json();
             if (data.success) {
-                status.className = "msg msg-success";
-                status.innerText = "Notice broadcasted successfully.";
+                status.innerText = "✅ Broadcast sent successfully";
                 status.style.display = 'block';
+                status.style.background = '#fffbeb';
+                status.style.color = '#92400e';
+                status.style.borderLeftColor = '#f59e0b';
                 document.getElementById('notice-msg').value = '';
             } else {
-                status.className = "msg msg-error";
-                status.innerText = data.message || "Failed to broadcast message.";
+                status.innerText = "❌ Error: " + data.message;
                 status.style.display = 'block';
             }
         }

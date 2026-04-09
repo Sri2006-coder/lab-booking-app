@@ -2,72 +2,20 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Calendar | Lab Booking</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20">
+    <title>Calendar - Lab Booking</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="header">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 24px; height: 24px; background: var(--primary); border-radius: 4px; display: flex; justify-content: center; align-items: center;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="#ffffff"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-            </div>
-            <span>Schedule Calendar</span>
-        </div>
-    </div>
-    
-    <div class="main-layout">
-        <!-- Desktop Sidebar -->
-        <div class="sidebar">
-            <h2>Categories</h2>
-            <a href="dashboard.html?labs=1,2">Lab 1 & 2</a>
-            <a href="dashboard.html?labs=5,6,7">Lab 5, 6, 7</a>
-            <a href="dashboard.html?labs=3,4">Halls</a>
-            <hr style="border: 0; border-top: 1px solid var(--border); margin: 16px 0;">
-            <h2>Quick Links</h2>
-            <a href="mybookings.html">My Bookings</a>
-            <a href="calendar_view.html" class="active">Calendar</a>
-            <div style="flex:1;"></div>
-            <a href="#" onclick="logout()" style="color: var(--danger); margin-top: auto;">Sign out</a>
-        </div>
-
-        <div class="main-content">
-            <div class="section-header">
-                <div>
-                    <h1 class="section-title">Monthly View</h1>
-                    <div style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">Select an active date from the current roster.</div>
-                </div>
-            </div>
-
-            <div style="background: var(--card-bg); border-radius: var(--radius-card); border: 1px solid var(--border); padding: 20px; box-shadow: var(--shadow-sm); max-width: 600px;">
-                <h2 id="calendar-title" style="margin: 0 0 16px; font-weight: 600; font-size: 16px; color: var(--text-main); text-align: center;">Loading...</h2>
-
-                <div id="calendar-grid" class="calendar-grid">
-                    <!-- Days will be loaded here -->
-                </div>
-            </div>
-        </div>
+        <div><b>📆 Calendar</b></div>
+        <a href="dashboard.html" class="stat-card" style="padding: 5px 12px; font-size: 13px; text-decoration: none; display: inline-block;">⬅ Back</a>
     </div>
 
-    <!-- Bottom Navigation -->
-    <div class="bottom-nav">
-        <a href="dashboard.html">
-            <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
-            <span>Home</span>
-        </a>
-        <a href="mybookings.html">
-            <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
-            <span>Bookings</span>
-        </a>
-        <a href="calendar_view.html" class="active">
-            <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
-            <span>Calendar</span>
-        </a>
-        <a href="#" onclick="logout()">
-            <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
-            <span>Logout</span>
-        </a>
+    <h2 id="calendar-title" style="text-align: center; margin-top: 20px;">Lab Booking Calendar</h2>
+
+    <div id="calendar-grid" class="calendar" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; padding: 20px; max-width: 800px; margin: auto;">
+        <!-- Days will be loaded here -->
     </div>
 
     <script>
@@ -82,22 +30,43 @@
 
             data.days.forEach(d => {
                 const dayDiv = document.createElement('div');
-                dayDiv.className = `cal-day ${d.status}`;
+                dayDiv.className = `day ${d.status}`;
+                dayDiv.style.cssText = `
+                    border-radius: 14px;
+                    padding: 12px;
+                    text-align: center;
+                    font-size: 13px;
+                    background: #ffffff;
+                    border: 1px solid #e5e7eb;
+                    transition: 0.25s;
+                    border-left: 4px solid ${getStatusColor(d.status)};
+                `;
                 
                 dayDiv.innerHTML = `
-                    <div style="font-size: 16px;">${d.day}</div>
-                    <span class="status-indicator">${d.booked ? 'Booked' : 'Free'}</span>
+                    <b style="font-size: 16px;">${d.day}</b><br>
+                    <span style="font-weight: 500;">${d.booked ? 'Booked' : 'Free'}</span><br>
+                    <a href="dashboard.html?date=${d.date}" style="
+                        display: inline-block;
+                        margin-top: 8px;
+                        font-size: 11px;
+                        text-decoration: none;
+                        padding: 4px 10px;
+                        border-radius: 8px;
+                        background: #4f46e5;
+                        color: white;
+                    ">View</a>
                 `;
-                dayDiv.onclick = () => {
-                    window.location.href = `dashboard.html?date=${d.date}`;
-                };
                 grid.appendChild(dayDiv);
             });
         }
 
-        async function logout() {
-            await fetch('/api/logout');
-            window.location.href = 'index.html';
+        function getStatusColor(status) {
+            switch(status) {
+                case 'today': return '#4f46e5';
+                case 'booked': return '#f59e0b';
+                case 'free': return '#10b981';
+                default: return 'transparent';
+            }
         }
 
         loadCalendar();
