@@ -2,25 +2,50 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Calendar - Lab Booking</title>
+    <title>Calendar | Lab Booking</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#4F46E5">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=11">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=20">
 </head>
 <body>
     <div class="header">
-        <div>📆 Calendar</div>
-        <a href="dashboard.html" style="font-size: 14px; text-decoration: none; color: var(--primary); font-weight: 700;">Back</a>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 24px; height: 24px; background: var(--primary); border-radius: 4px; display: flex; justify-content: center; align-items: center;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="#ffffff"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            </div>
+            <span>Schedule Calendar</span>
+        </div>
     </div>
+    
+    <div class="main-layout">
+        <!-- Desktop Sidebar -->
+        <div class="sidebar">
+            <h2>Categories</h2>
+            <a href="dashboard.html?labs=1,2">Lab 1 & 2</a>
+            <a href="dashboard.html?labs=5,6,7">Lab 5, 6, 7</a>
+            <a href="dashboard.html?labs=3,4">Halls</a>
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 16px 0;">
+            <h2>Quick Links</h2>
+            <a href="mybookings.html">My Bookings</a>
+            <a href="calendar_view.html" class="active">Calendar</a>
+            <div style="flex:1;"></div>
+            <a href="#" onclick="logout()" style="color: var(--danger); margin-top: auto;">Sign out</a>
+        </div>
 
-    <div class="container" style="max-width: 800px;">
-        <div style="background: var(--card-bg); border-radius: var(--radius-card); padding: 24px; box-shadow: var(--shadow-soft); border: var(--glass-border);">
-            <h2 id="calendar-title" style="text-align: center; margin: 0 0 24px; font-weight: 800; font-size: 20px; color: var(--text-main);">Loading...</h2>
+        <div class="main-content">
+            <div class="section-header">
+                <div>
+                    <h1 class="section-title">Monthly View</h1>
+                    <div style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">Select an active date from the current roster.</div>
+                </div>
+            </div>
 
-            <div id="calendar-grid" class="calendar">
-                <!-- Days will be loaded here -->
+            <div style="background: var(--card-bg); border-radius: var(--radius-card); border: 1px solid var(--border); padding: 20px; box-shadow: var(--shadow-sm); max-width: 600px;">
+                <h2 id="calendar-title" style="margin: 0 0 16px; font-weight: 600; font-size: 16px; color: var(--text-main); text-align: center;">Loading...</h2>
+
+                <div id="calendar-grid" class="calendar-grid">
+                    <!-- Days will be loaded here -->
+                </div>
             </div>
         </div>
     </div>
@@ -57,14 +82,12 @@
 
             data.days.forEach(d => {
                 const dayDiv = document.createElement('div');
-                dayDiv.className = `day ${d.status}`;
+                dayDiv.className = `cal-day ${d.status}`;
                 
                 dayDiv.innerHTML = `
-                    <b>${d.day}</b>
-                    <span>${d.booked ? 'Booked' : 'Free'}</span>
+                    <div style="font-size: 16px;">${d.day}</div>
+                    <span class="status-indicator">${d.booked ? 'Booked' : 'Free'}</span>
                 `;
-                // Add click event to navigate to dashboard
-                dayDiv.style.cursor = 'pointer';
                 dayDiv.onclick = () => {
                     window.location.href = `dashboard.html?date=${d.date}`;
                 };

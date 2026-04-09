@@ -2,50 +2,40 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Post Notice - Lab Booking</title>
+    <title>Post Notice | Lab Management Portal</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=11">
-    <style>
-        .form-card {
-            background: var(--card-bg); padding: 32px 24px; border-radius: 24px; 
-            max-width: 500px; margin: 40px auto;
-            border: var(--glass-border);
-            box-shadow: var(--shadow-soft);
-        }
-        textarea {
-            width: 100%; height: 120px; padding: 16px; border-radius: 16px;
-            border: 1.5px solid var(--border); font-family: inherit; font-size: 15px; outline: none;
-            resize: none; transition: 0.3s;
-            background: rgba(255, 255, 255, 0.8);
-        }
-        textarea:focus {
-            border-color: #F59E0B;
-            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
-            background: #fff;
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=20">
 </head>
 <body>
     <div class="header">
-        <div>🔔 Broadcast Notice</div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <a href="admin.html" style="text-decoration:none; color:var(--text-muted); display:flex; align-items:center;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </a>
+            <span>System Broadcast</span>
+        </div>
     </div>
     
-    <div class="container">
-        <div class="form-card">
-            <div style="width: 64px; height: 64px; border-radius: 20px; background: rgba(245, 158, 11, 0.1); color: #F59E0B; display: flex; justify-content: center; align-items: center; font-size: 32px; margin: 0 auto 20px;">
-                📢
-            </div>
-            <h3 style="margin: 0 0 8px; font-weight: 800; text-align: center; font-size: 20px;">Create Announcement</h3>
-            <p style="font-size: 14px; color: var(--text-muted); text-align: center; margin-bottom: 24px; font-weight: 500;">This will be displayed to all users for 1 hour.</p>
+    <div class="container" style="max-width: 600px; padding-top: 32px;">
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 24px; box-shadow: var(--shadow-sm);">
             
-            <div id="status" class="msg" style="display: none; padding: 12px; border-radius: 12px; font-weight: 600; font-size: 13px; margin-bottom: 20px;"></div>
+            <h1 class="section-title" style="margin-bottom: 8px;">Create Notice</h1>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 24px; margin-top: 0;">
+                Broadcast an alert to all active sessions. Message will auto-expire in 1 hour.
+            </p>
             
-            <div style="margin-bottom: 20px;">
-                <textarea id="notice-msg" placeholder="Type your message here..."></textarea>
+            <div id="status" class="msg" style="display: none;"></div>
+            
+            <div style="margin-bottom: 16px;">
+                <label for="notice-msg">Message Content</label>
+                <textarea id="notice-msg" placeholder="e.g., Scheduled maintenance for Lab 2 at 14:00 today." style="height: 120px;"></textarea>
             </div>
-            <button onclick="postNotice()" style="background: linear-gradient(135deg, #F59E0B, #D97706); font-weight: 700;">Broadcast Message</button>
-            <button onclick="window.location.href='admin.html'" class="btn-secondary" style="font-weight: 700;">Back to Admin</button>
+            
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <button class="btn-secondary" onclick="window.location.href='admin.html'" style="width: auto;">Cancel</button>
+                <button onclick="postNotice()" style="width: auto;">Publish Broadcast</button>
+            </div>
         </div>
     </div>
 
@@ -53,7 +43,7 @@
         async function postNotice() {
             const message = document.getElementById('notice-msg').value;
             const status = document.getElementById('status');
-            if (!message) return alert('Enter a message');
+            if (!message) return alert('Message content is required.');
 
             const res = await fetch('/api/notice', {
                 method: 'POST',
@@ -62,16 +52,14 @@
             });
             const data = await res.json();
             if (data.success) {
-                status.innerHTML = "✅ Broadcast sent successfully";
+                status.className = "msg msg-success";
+                status.innerText = "Notice broadcasted successfully.";
                 status.style.display = 'block';
-                status.style.background = 'rgba(16, 185, 129, 0.1)';
-                status.style.color = '#059669';
                 document.getElementById('notice-msg').value = '';
             } else {
-                status.innerHTML = "❌ Error: " + data.message;
+                status.className = "msg msg-error";
+                status.innerText = data.message || "Failed to broadcast message.";
                 status.style.display = 'block';
-                status.style.background = 'rgba(244, 63, 94, 0.1)';
-                status.style.color = '#E11D48';
             }
         }
     </script>

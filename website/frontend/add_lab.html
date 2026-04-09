@@ -2,39 +2,40 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Add Lab - Lab Booking</title>
+    <title>Add Lab | Lab Management Portal</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=11">
-    <style>
-        .form-card {
-            background: var(--card-bg); padding: 32px 24px; border-radius: 24px; 
-            max-width: 400px; margin: 40px auto;
-            border: var(--glass-border);
-            box-shadow: var(--shadow-soft);
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=20">
 </head>
 <body>
     <div class="header">
-        <div>➕ Add New Lab</div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <a href="admin.html" style="text-decoration:none; color:var(--text-muted); display:flex; align-items:center;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </a>
+            <span>Lab Configuration</span>
+        </div>
     </div>
     
-    <div class="container">
-        <div class="form-card">
-            <div style="width: 64px; height: 64px; border-radius: 20px; background: rgba(79, 70, 229, 0.1); color: #4F46E5; display: flex; justify-content: center; align-items: center; font-size: 32px; margin: 0 auto 20px;">
-                💻
+    <div class="container" style="max-width: 500px; padding-top: 32px;">
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 24px; box-shadow: var(--shadow-sm);">
+            
+            <h1 class="section-title" style="margin-bottom: 8px;">Register New Lab</h1>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 24px; margin-top: 0;">
+                Add a new laboratory to the scheduling system.
+            </p>
+            
+            <div id="status" class="msg" style="display: none;"></div>
+            
+            <div style="margin-bottom: 24px;">
+                <label for="lab-name">Laboratory Identifier</label>
+                <input type="text" id="lab-name" placeholder="e.g., Computer Lab A" style="margin-bottom: 0;">
             </div>
-            <h3 style="margin: 0 0 24px; font-weight: 800; text-align: center; font-size: 20px;">Lab Details</h3>
             
-            <div id="status" class="msg" style="display: none; padding: 12px; border-radius: 12px; font-weight: 600; font-size: 13px; margin-bottom: 20px;"></div>
-            
-            <div style="margin-bottom: 20px;">
-                <input type="text" id="lab-name" placeholder="Enter Lab Name (e.g. Lab 8)" style="margin-bottom: 0;">
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <button class="btn-secondary" onclick="window.location.href='admin.html'" style="width: auto;">Cancel</button>
+                <button onclick="addLab()" style="width: auto;">Register Lab</button>
             </div>
-            
-            <button onclick="addLab()">Add Lab</button>
-            <button onclick="window.location.href='admin.html'" class="btn-secondary" style="font-weight: 700;">Back to Dashboard</button>
         </div>
     </div>
 
@@ -42,7 +43,7 @@
         async function addLab() {
             const name = document.getElementById('lab-name').value;
             const status = document.getElementById('status');
-            if (!name) return alert('Enter a name');
+            if (!name) return alert('Lab identifier is required.');
 
             const res = await fetch('/api/labs', {
                 method: 'POST',
@@ -51,16 +52,14 @@
             });
             const data = await res.json();
             if (data.success) {
-                status.innerText = "✅ Lab added successfully";
+                status.className = "msg msg-success";
+                status.innerText = "Lab successfully registered in system.";
                 status.style.display = 'block';
-                status.style.background = 'rgba(16, 185, 129, 0.1)';
-                status.style.color = '#059669';
                 document.getElementById('lab-name').value = '';
             } else {
-                status.innerText = "❌ Error: " + data.message;
+                status.className = "msg msg-error";
+                status.innerText = data.message || "Failed to register lab.";
                 status.style.display = 'block';
-                status.style.background = 'rgba(244, 63, 94, 0.1)';
-                status.style.color = '#E11D48';
             }
         }
     </script>
