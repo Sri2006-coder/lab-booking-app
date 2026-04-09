@@ -2,84 +2,110 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Dashboard - Lab Booking</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Admin - Lab Booking</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
-    <div class="header">⚙️ Admin Dashboard</div>
-    
-    <div class="container">
+<body class="bg-gray-50 flex flex-col min-h-screen">
+
+    <!-- Top Navbar -->
+    <nav class="bg-indigo-600 text-white sticky top-0 z-40 shadow-md">
+        <div class="px-4 py-3 flex justify-between items-center">
+            <h1 class="font-bold text-xl tracking-tight flex items-center">
+                <span class="mr-2 text-2xl">⚙️</span> Admin Panel
+            </h1>
+            <button onclick="logout()" class="text-sm font-semibold bg-white/20 hover:bg-white/30 active:scale-95 transition px-3 py-1.5 rounded-lg">Logout</button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-1 px-4 py-5 w-full max-w-lg mx-auto">
         <!-- Notice Display -->
-        <div id="notice-container" class="notice" style="display: none;">
-            🔔 <b id="notice-text"></b><br>
-            ⏳ Ends in <span id="notice-mins"></span> minutes
-        </div>
-
-        <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #64748b;">Overview</h3>
-        <div class="stats">
-            <div class="stat-card" style="border-left-color: #4f46e5;">
-                <h3 id="stat-bookings">0</h3>
-                <p>Total Bookings</p>
-            </div>
-            <div class="stat-card" style="border-left-color: #10b981;">
-                <h3 id="stat-labs">0</h3>
-                <p>Active Labs</p>
-            </div>
-            <div class="stat-card" style="border-left-color: #f59e0b;">
-                <h3 id="stat-faculty">0</h3>
-                <p>Faculty Users</p>
+        <div id="notice-container" class="hidden mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl shadow-sm">
+            <div class="flex items-start">
+                <span class="text-xl mr-3">🔔</span>
+                <div>
+                    <p class="font-semibold text-yellow-900" id="notice-text"></p>
+                    <p class="text-sm text-yellow-700 mt-1">⏳ Ends in <span id="notice-mins" class="font-bold"></span> mins</p>
+                </div>
             </div>
         </div>
 
-        <h3 style="margin: 25px 0 15px 0; font-size: 16px; color: #64748b;">Management Tools</h3>
-        <div class="actions">
-            <a href="add_lab.html" class="action-card" style="border-left-color: #4f46e5;">
-                <span style="font-size: 32px;">➕</span>
-                <div style="margin-top: 5px;">Add Lab</div>
-            </a>
-            <div class="action-card" style="border-left-color: #10b981; cursor: default; min-width: 240px;">
-                <span style="font-size: 32px;">📁</span>
-                <div style="margin: 5px 0; font-size: 14px;">Upload Timetable</div>
-                <input type="file" id="csv-file" style="font-size: 11px; width: 100%; margin-bottom: 8px;">
-                <button onclick="uploadCSV()" style="padding: 8px; font-size: 12px; background: #10b981;">Start Upload</button>
-                <div id="upload-status" style="font-size: 11px; margin-top: 5px;"></div>
+        <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 px-1">System Overview</h3>
+        
+        <!-- Stats Stacked Cards -->
+        <div class="space-y-3 mb-8">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-blue-500 p-4 flex justify-between items-center">
+                <span class="text-gray-600 font-medium">Total Bookings</span>
+                <span id="stat-bookings" class="text-2xl font-bold text-gray-900">0</span>
             </div>
-            <a href="admin_notice.html" class="action-card" style="border-left-color: #f59e0b;">
-                <span style="font-size: 32px;">🔔</span>
-                <div style="margin-top: 5px;">Post Notice</div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-emerald-500 p-4 flex justify-between items-center">
+                <span class="text-gray-600 font-medium">Active Labs</span>
+                <span id="stat-labs" class="text-2xl font-bold text-gray-900">0</span>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-orange-500 p-4 flex justify-between items-center">
+                <span class="text-gray-600 font-medium">Faculty Users</span>
+                <span id="stat-faculty" class="text-2xl font-bold text-gray-900">0</span>
+            </div>
+        </div>
+
+        <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 px-1">Management Tools</h3>
+        
+        <!-- Action Cards Grid -->
+        <div class="grid grid-cols-2 gap-3 mb-8">
+            <a href="add_lab.html" class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col items-center justify-center text-center active:scale-95 transition">
+                <span class="text-3xl mb-2">➕</span>
+                <span class="text-sm font-semibold text-gray-800">Add Lab</span>
             </a>
-            <a href="dashboard.html" class="action-card" style="border-left-color: #6366f1;">
-                <span style="font-size: 32px;">📅</span>
-                <div style="margin-top: 5px;">View Timetable</div>
+            
+            <a href="admin_notice.html" class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col items-center justify-center text-center active:scale-95 transition">
+                <span class="text-3xl mb-2">🔔</span>
+                <span class="text-sm font-semibold text-gray-800">Post Notice</span>
             </a>
-            <a href="#" class="action-card" style="border-left-color: #ef4444;" onclick="logout()">
-                <span style="font-size: 32px;">🚪</span>
-                <div style="margin-top: 5px;">Logout</div>
+
+            <a href="dashboard.html" class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col items-center justify-center text-center active:scale-95 transition col-span-2">
+                <span class="text-3xl mb-2">📅</span>
+                <span class="text-sm font-semibold text-gray-800">View Timetable</span>
             </a>
         </div>
 
-        <div class="footer">Admin Panel • Lab Management System</div>
-    </div>
+        <!-- Upload Widget -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-8">
+            <div class="flex items-center mb-3">
+                <span class="text-2xl mr-2">📁</span>
+                <h4 class="font-semibold text-gray-800">Upload Timetable</h4>
+            </div>
+            <input type="file" id="csv-file" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer mb-3 outline-none">
+            <button onclick="uploadCSV()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-sm active:scale-95 transition">Start Upload</button>
+            <div id="upload-status" class="mt-3 text-sm font-medium text-center"></div>
+        </div>
+
+    </main>
 
     <script>
         async function fetchStats() {
-            const res = await fetch('/api/stats');
-            if (res.status === 401) window.location.href = 'index.html';
-            const data = await res.json();
-            document.getElementById('stat-bookings').innerText = data.totalBookings;
-            document.getElementById('stat-labs').innerText = data.activeLabs;
-            document.getElementById('stat-faculty').innerText = data.totalFaculty;
+            try {
+                const res = await fetch('/api/stats');
+                if (res.status === 401) window.location.href = 'index.html';
+                const data = await res.json();
+                document.getElementById('stat-bookings').innerText = data.totalBookings;
+                document.getElementById('stat-labs').innerText = data.activeLabs;
+                document.getElementById('stat-faculty').innerText = data.totalFaculty;
+            } catch (e) {}
         }
 
         async function fetchNotice() {
-            const res = await fetch('/api/notice');
-            const data = await res.json();
-            if (data) {
-                document.getElementById('notice-container').style.display = 'block';
-                document.getElementById('notice-text').innerText = data.message;
-                document.getElementById('notice-mins').innerText = data.minutes;
-            }
+            try {
+                const res = await fetch('/api/notice');
+                const data = await res.json();
+                if (data) {
+                    document.getElementById('notice-container').classList.remove('hidden');
+                    document.getElementById('notice-text').innerText = data.message;
+                    document.getElementById('notice-mins').innerText = data.minutes;
+                }
+            } catch(e) {}
         }
 
         async function uploadCSV() {
@@ -90,21 +116,23 @@
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
 
-            status.innerText = 'Uploading...';
+            status.innerText = '⏳ Uploading...';
+            status.className = 'mt-3 text-sm font-medium text-center text-gray-600';
+            
             try {
-                const res = await fetch('/api/upload', {
-                    method: 'POST',
-                    body: formData
-                });
+                const res = await fetch('/api/upload', { method: 'POST', body: formData });
                 const data = await res.json();
                 if (data.success) {
                     status.innerText = '✅ Uploaded successfully';
+                    status.className = 'mt-3 text-sm font-medium text-center text-emerald-600';
                     fetchStats();
                 } else {
                     status.innerText = '❌ ' + data.message;
+                    status.className = 'mt-3 text-sm font-medium text-center text-red-600';
                 }
             } catch (err) {
                 status.innerText = '❌ Error uploading';
+                status.className = 'mt-3 text-sm font-medium text-center text-red-600';
             }
         }
 

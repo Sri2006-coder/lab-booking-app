@@ -2,68 +2,65 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My Bookings - Lab Booking</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
-    <style>
-        .booking-list {
-            background: white; border-radius: 16px; padding: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e5e7eb; }
-        th { color: #6b7280; font-weight: 600; font-size: 13px; }
-        .cancel-btn { color: #ef4444; cursor: pointer; font-weight: 500; text-decoration: none; }
-    </style>
 </head>
-<body>
-    <div class="header">📋 My Booking History</div>
-    <div class="container">
-        <div class="booking-list">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="margin: 0;">Recent Activity</h3>
-                <button onclick="window.history.back()" style="width: auto; padding: 8px 15px; background: #6b7280;">Back</button>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Day</th>
-                        <th>Lab</th>
-                        <th>Period</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="bookings-table">
-                    <tr><td colspan="5" style="text-align: center;">Loading...</td></tr>
-                </tbody>
-            </table>
+<body class="bg-gray-50 flex flex-col min-h-screen">
+
+    <!-- Top Navbar -->
+    <nav class="bg-blue-600 text-white sticky top-0 z-40 shadow-md flex items-center justify-between px-4 py-3">
+        <div class="flex items-center">
+            <button onclick="window.history.back()" class="mr-3 p-1 rounded-full hover:bg-white/20 active:scale-95 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            </button>
+            <h1 class="font-bold text-xl tracking-tight">📋 My Bookings</h1>
         </div>
-    </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-1 px-4 py-5 w-full max-w-lg mx-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider px-1">Recent Activity</h3>
+        </div>
+        
+        <!-- Bookings List (Replaces Table) -->
+        <div id="bookings-list" class="space-y-3 pb-8">
+             <div class="text-center py-10 text-gray-400 font-medium">Loading...</div>
+        </div>
+    </main>
 
     <script>
         async function fetchMyBookings() {
-            const res = await fetch('/api/mybookings');
-            const data = await res.json();
-            const table = document.getElementById('bookings-table');
-            table.innerHTML = '';
+            try {
+                const res = await fetch('/api/mybookings');
+                const data = await res.json();
+                const container = document.getElementById('bookings-list');
+                container.innerHTML = '';
 
-            if (data.length === 0) {
-                table.innerHTML = '<tr><td colspan="5" style="text-align: center;">No bookings found</td></tr>';
-                return;
+                if (data.length === 0) {
+                    container.innerHTML = '<div class="text-center py-10 bg-white rounded-xl shadow-sm border border-gray-100 text-gray-500">No bookings found 🤷‍♂️</div>';
+                    return;
+                }
+
+                data.forEach(b => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-white rounded-xl shadow-sm border border-gray-200 p-4 relative';
+                    card.innerHTML = `
+                        <div class="flex justify-between mb-2">
+                            <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-1 rounded">Period ${b.period}</span>
+                            <span class="text-sm text-gray-500 font-medium">${b.booking_date} (${b.day.substring(0,3)})</span>
+                        </div>
+                        <h4 class="text-lg font-bold text-gray-800 mb-4">📍 ${b.lab_name}</h4>
+                        <button onclick="cancel(${b.id})" class="w-full bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-semibold py-2.5 rounded-lg active:scale-95 transition">Cancel Booking</button>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (e) {
+                document.getElementById('bookings-list').innerHTML = '<div class="text-center py-10 text-red-500">Failed to load</div>';
             }
-
-            data.forEach(b => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${b.booking_date}</td>
-                    <td>${b.day}</td>
-                    <td>${b.lab_name}</td>
-                    <td>Period ${b.period}</td>
-                    <td><a href="#" onclick="cancel(${b.id})" class="cancel-btn">Cancel</a></td>
-                `;
-                table.appendChild(tr);
-            });
         }
 
         async function cancel(id) {
