@@ -3,67 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <title>My Bookings - Lab Booking</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="style.css?v=10">
-    <style>
-        .booking-list {
-            background: white; border-radius: 16px; padding: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e5e7eb; }
-        th { color: #6b7280; font-weight: 600; font-size: 13px; }
-        .cancel-btn { color: #ef4444; cursor: pointer; font-weight: 500; text-decoration: none; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#4F46E5">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=11">
 </head>
 <body>
-    <div class="header">📋 My Booking History</div>
+    <div class="header">
+        <div>📋 My Bookings</div>
+        <a href="dashboard.html" style="font-size: 14px; text-decoration: none; color: var(--primary); font-weight: 700;">Back</a>
+    </div>
+    
     <div class="container">
-        <div class="booking-list">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="margin: 0;">Recent Activity</h3>
-                <button onclick="window.history.back()" style="width: auto; padding: 8px 15px; background: #6b7280;">Back</button>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Day</th>
-                        <th>Lab</th>
-                        <th>Period</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="bookings-table">
-                    <tr><td colspan="5" style="text-align: center;">Loading...</td></tr>
-                </tbody>
-            </table>
+        <!-- Replaced old table with modern mobile Booking Cards from style.css -->
+        <h3 style="margin: 0 0 16px; font-size: 18px; font-weight: 800; color: var(--text-main);">Recent Activity</h3>
+        <div class="booking-list" id="bookings-container">
+            <div style="text-align: center; color: var(--text-muted); font-weight: 600; padding: 24px;">Loading...</div>
         </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <a href="dashboard.html">
+            <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+            <span>Home</span>
+        </a>
+        <a href="mybookings.html" class="active">
+            <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
+            <span>Bookings</span>
+        </a>
+        <a href="calendar_view.html">
+            <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+            <span>Calendar</span>
+        </a>
+        <a href="#" onclick="logout()">
+            <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+            <span>Logout</span>
+        </a>
     </div>
 
     <script>
         async function fetchMyBookings() {
             const res = await fetch('/api/mybookings');
             const data = await res.json();
-            const table = document.getElementById('bookings-table');
-            table.innerHTML = '';
+            const container = document.getElementById('bookings-container');
+            container.innerHTML = '';
 
             if (data.length === 0) {
-                table.innerHTML = '<tr><td colspan="5" style="text-align: center;">No bookings found</td></tr>';
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; background: var(--card-bg); border-radius: var(--radius-card); border: var(--glass-border);">
+                        <div style="font-size: 48px; margin-bottom: 12px; opacity: 0.5;">📭</div>
+                        <h4 style="margin:0 0 8px; font-size:16px; font-weight:800;">No Bookings Yet</h4>
+                        <p style="margin:0; font-size:14px; color:var(--text-muted); font-weight:600;">You haven't booked any labs.</p>
+                    </div>`;
                 return;
             }
 
             data.forEach(b => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${b.booking_date}</td>
-                    <td>${b.day}</td>
-                    <td>${b.lab_name}</td>
-                    <td>Period ${b.period}</td>
-                    <td><a href="#" onclick="cancel(${b.id})" class="cancel-btn">Cancel</a></td>
+                const card = document.createElement('div');
+                card.className = 'booking-card';
+                card.innerHTML = `
+                    <div class="header-row">
+                        <div>${b.lab_name}</div>
+                        <div style="color: var(--primary);">Period ${b.period}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div>📅 ${b.booking_date} (${b.day})</div>
+                    </div>
+                    <button class="btn-cancel" onclick="cancel(${b.id})">Cancel Booking</button>
                 `;
-                table.appendChild(tr);
+                container.appendChild(card);
             });
         }
 
@@ -71,6 +81,11 @@
             if (!confirm('Cancel this booking?')) return;
             const res = await fetch(`/api/cancel_booking/${id}`, { method: 'DELETE' });
             if (res.ok) fetchMyBookings();
+        }
+
+        async function logout() {
+            await fetch('/api/logout');
+            window.location.href = 'index.html';
         }
 
         fetchMyBookings();

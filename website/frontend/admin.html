@@ -3,67 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <title>Admin Dashboard - Lab Booking</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#2563eb">
-<link rel="apple-touch-icon" href="/icon-192.png">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=10">
+    <meta name="theme-color" content="#4F46E5">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=11">
 </head>
 <body>
-    <div class="header">⚙️ Admin Dashboard</div>
+    <div class="header">
+        <div>Admin Pro</div>
+    </div>
     
     <div class="container">
         <!-- Notice Display -->
         <div id="notice-container" class="notice" style="display: none;">
-            🔔 <b id="notice-text"></b><br>
-            ⏳ Ends in <span id="notice-mins"></span> minutes
+            <div style="font-size: 24px;">🔔</div>
+            <div>
+                <b id="notice-text"></b>
+                <div style="font-size: 11px; opacity: 0.8; margin-top: 2px;">Ends in <span id="notice-mins"></span> minutes</div>
+            </div>
         </div>
 
-        <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #64748b;">Overview</h3>
+        <h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 800;">Overview</h3>
         <div class="stats">
-            <div class="stat-card" style="border-left-color: #4f46e5;">
+            <div class="stat-card c-primary">
                 <h3 id="stat-bookings">0</h3>
                 <p>Total Bookings</p>
             </div>
-            <div class="stat-card" style="border-left-color: #10b981;">
+            <div class="stat-card c-success">
                 <h3 id="stat-labs">0</h3>
                 <p>Active Labs</p>
             </div>
-            <div class="stat-card" style="border-left-color: #f59e0b;">
+            <div class="stat-card c-warning">
                 <h3 id="stat-faculty">0</h3>
                 <p>Faculty Users</p>
             </div>
         </div>
 
-        <h3 style="margin: 25px 0 15px 0; font-size: 16px; color: #64748b;">Management Tools</h3>
+        <h3 style="margin: 32px 0 16px 0; font-size: 18px; font-weight: 800;">Management</h3>
         <div class="actions">
-            <a href="add_lab.html" class="action-card" style="border-left-color: #4f46e5;">
-                <span style="font-size: 32px;">➕</span>
-                <div style="margin-top: 5px;">Add Lab</div>
+            <a href="add_lab.html" class="action-card">
+                <div class="icon-wrap" style="color: #4F46E5; background: rgba(79, 70, 229, 0.1);">➕</div>
+                <div>Add Lab</div>
             </a>
-            <div class="action-card" style="border-left-color: #10b981; cursor: default; min-width: 240px;">
-                <span style="font-size: 32px;">📁</span>
-                <div style="margin: 5px 0; font-size: 14px;">Upload Timetable</div>
-                <input type="file" id="csv-file" style="font-size: 11px; width: 100%; margin-bottom: 8px;">
-                <button onclick="uploadCSV()" style="padding: 8px; font-size: 12px; background: #10b981;">Start Upload</button>
-                <div id="upload-status" style="font-size: 11px; margin-top: 5px;"></div>
+            <div class="action-card" style="grid-column: span 2; display: flex; flex-direction: row; text-align: left; align-items: center;">
+                <div class="icon-wrap" style="color: #10B981; background: rgba(16, 185, 129, 0.1); flex-shrink: 0;">📁</div>
+                <div style="flex: 1;">
+                    <div style="margin-bottom: 8px;">Upload Timetable</div>
+                    <input type="file" id="csv-file" style="font-size: 11px; width: 100%; border: 1px dashed #cbd5e1; padding: 8px; border-radius: 8px; margin-bottom: 8px;">
+                    <button onclick="uploadCSV()" style="padding: 8px 12px; font-size: 12px; margin: 0;">Start Upload</button>
+                    <div id="upload-status" style="font-size: 11px; margin-top: 8px; color: var(--text-muted);"></div>
+                </div>
             </div>
-            <a href="admin_notice.html" class="action-card" style="border-left-color: #f59e0b;">
-                <span style="font-size: 32px;">🔔</span>
-                <div style="margin-top: 5px;">Post Notice</div>
+            <a href="admin_notice.html" class="action-card">
+                <div class="icon-wrap" style="color: #F59E0B; background: rgba(245, 158, 11, 0.1);">🔔</div>
+                <div>Post Notice</div>
             </a>
-            <a href="dashboard.html" class="action-card" style="border-left-color: #6366f1;">
-                <span style="font-size: 32px;">📅</span>
-                <div style="margin-top: 5px;">View Timetable</div>
+            <a href="dashboard.html" class="action-card">
+                <div class="icon-wrap" style="color: #6366f1; background: rgba(99, 102, 241, 0.1);">📅</div>
+                <div>Timetable</div>
             </a>
-            <a href="#" class="action-card" style="border-left-color: #ef4444;" onclick="logout()">
-                <span style="font-size: 32px;">🚪</span>
-                <div style="margin-top: 5px;">Logout</div>
+            <a href="#" class="action-card" onclick="logout()">
+                <div class="icon-wrap" style="color: #F43F5E; background: rgba(244, 63, 94, 0.1);">🚪</div>
+                <div>Logout</div>
             </a>
         </div>
 
-        <div class="footer">Admin Panel • Lab Management System</div>
+        <div style="text-align: center; color: var(--text-muted); font-size: 13px; font-weight: 600; margin-top: 40px; margin-bottom: 20px;">
+            Admin Panel • LabApp Pro
+        </div>
+    </div>
+
+    <!-- Bottom Navigation for Admin Phone Layout -->
+    <div class="bottom-nav">
+        <a href="admin.html" class="active">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            <span>Overview</span>
+        </a>
+        <a href="dashboard.html">
+            <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+            <span>Preview</span>
+        </a>
+        <a href="#" onclick="logout()">
+            <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+            <span>Logout</span>
+        </a>
     </div>
 
     <script>
@@ -80,7 +105,7 @@
             const res = await fetch('/api/notice');
             const data = await res.json();
             if (data) {
-                document.getElementById('notice-container').style.display = 'block';
+                document.getElementById('notice-container').style.display = 'flex';
                 document.getElementById('notice-text').innerText = data.message;
                 document.getElementById('notice-mins').innerText = data.minutes;
             }
@@ -94,7 +119,7 @@
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
 
-            status.innerText = 'Uploading...';
+            status.innerText = '⏳ Uploading...';
             try {
                 const res = await fetch('/api/upload', {
                     method: 'POST',
@@ -102,13 +127,14 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    status.innerText = '✅ Uploaded successfully';
+                    status.innerHTML = '<span style="color:#10b981; font-weight:700;">✅ Uploaded successfully</span>';
                     fetchStats();
+                    fileInput.value = ''; // clear
                 } else {
-                    status.innerText = '❌ ' + data.message;
+                    status.innerHTML = '<span style="color:#ef4444; font-weight:700;">❌ ' + data.message + '</span>';
                 }
             } catch (err) {
-                status.innerText = '❌ Error uploading';
+                status.innerHTML = '<span style="color:#ef4444; font-weight:700;">❌ Error uploading</span>';
             }
         }
 
