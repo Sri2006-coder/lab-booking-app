@@ -15,9 +15,17 @@
             <h1 class="font-bold text-2xl tracking-tight text-white">Lab Booking</h1>
             <div class="text-blue-200 text-xs mt-1 font-semibold uppercase tracking-wider">Faculty Panel</div>
         </div>
+        <div class="p-4 flex-1 overflow-y-auto">
             <h2 class="text-xs uppercase text-gray-500 font-bold mb-2 tracking-wider mt-2">Navigation</h2>
             <a href="calendar_view.html" class="py-2.5 px-4 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition flex items-center"><span class="mr-3 text-lg">📅</span> Calendar View</a>
             <a href="mybookings.html" class="py-2.5 px-4 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition flex items-center"><span class="mr-3 text-lg">📋</span> My Bookings</a>
+            
+            <h2 class="text-xs uppercase text-gray-500 font-bold mb-2 tracking-wider mt-6">Lab Groups</h2>
+            <div class="space-y-1">
+                <div class="lab-filter active py-3 px-4 rounded-lg font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 transition flex items-center cursor-pointer" data-group="lab567"><span class="mr-3 text-lg">💻</span> Lab 5, 6, 7</div>
+                <div class="lab-filter py-3 px-4 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition flex items-center cursor-pointer" data-group="lab12"><span class="mr-3 text-lg">💻</span> Lab 1 & 2</div>
+                <div class="lab-filter py-3 px-4 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition flex items-center cursor-pointer" data-group="halls"><span class="mr-3 text-lg">🏛️</span> Halls</div>
+            </div>
         </div>
         <div class="p-4 border-t border-gray-200">
             <a href="#" onclick="logout()" class="py-2.5 px-4 rounded-lg font-bold text-red-600 hover:bg-red-50 flex items-center transition"><span class="mr-3 text-lg">🚪</span> Logout</a>
@@ -38,6 +46,14 @@
             <div id="mobile-menu" class="hidden bg-blue-700 px-4 py-2 shadow-inner transition-all duration-200">
                 <a href="calendar_view.html" class="block py-3 text-blue-100 font-medium border-b border-blue-600">📅 Calendar View</a>
                 <a href="mybookings.html" class="block py-3 text-blue-100 font-medium border-b border-blue-600">📋 My Bookings</a>
+                
+                <div class="py-3 border-b border-blue-600">
+                    <div class="text-blue-300 text-xs uppercase font-bold mb-2 tracking-wider">Lab Groups</div>
+                    <div class="lab-filter active block py-2 text-white font-medium cursor-pointer" data-group="lab567">💻 Lab 5, 6, 7</div>
+                    <div class="lab-filter block py-2 text-blue-100 font-medium cursor-pointer" data-group="lab12">💻 Lab 1 & 2</div>
+                    <div class="lab-filter block py-2 text-blue-100 font-medium cursor-pointer" data-group="halls">🏛️ Halls</div>
+                </div>
+
                 <a href="#" onclick="logout()" class="block py-3 text-red-200 font-medium">🚪 Logout</a>
             </div>
         </nav>
@@ -100,20 +116,20 @@
             } catch(e) {}
         }
 
+        const labGroups = {
+            "lab12": ["Lab 1", "Lab 2"],
+            "lab567": ["Lab 5", "Lab 6", "Lab 7"],
+            "halls": ["Conference Hall", "Seminar Hall"]
+        };
+
+        let currentGroup = "lab567";
+
         function renderDashboard() {
             const container = document.getElementById('timetable-grid') || document.getElementById('timetable-container');
             if (!container) return;
             container.innerHTML = '';
             
-            const labs = [
-                "Lab 1",
-                "Lab 2",
-                "Lab 5",
-                "Lab 6",
-                "Lab 7",
-                "Conference Hall",
-                "Seminar Hall"
-            ];
+            const labs = labGroups[currentGroup];
             const periods = [1, 2, 3, 4, 5, 6, 7, 8];
             
             const dateObj = new Date(currentDate);
@@ -201,6 +217,47 @@
             await fetch('/api/logout');
             window.location.href = 'index.html';
         }
+
+        document.querySelectorAll(".lab-filter").forEach(item => {
+            item.addEventListener("click", function () {
+                document.querySelectorAll(".lab-filter").forEach(el => {
+                    el.classList.remove("active");
+                    if (el.classList.contains("bg-blue-50")) {
+                        el.classList.remove("bg-blue-50", "text-blue-700");
+                        el.classList.add("text-gray-700");
+                    }
+                    if (el.classList.contains("text-white") && el.closest('#mobile-menu')) {
+                        el.classList.remove("text-white");
+                        el.classList.add("text-blue-100");
+                    }
+                });
+
+                this.classList.add("active");
+                if (this.closest('#mobile-menu')) {
+                    this.classList.remove("text-blue-100");
+                    this.classList.add("text-white");
+                } else {
+                    this.classList.remove("text-gray-700");
+                    this.classList.add("bg-blue-50", "text-blue-700");
+                }
+
+                currentGroup = this.dataset.group;
+                renderDashboard();
+                
+                document.querySelectorAll(`.lab-filter[data-group="${currentGroup}"]`).forEach(el => {
+                    if (el !== this) {
+                        el.classList.add("active");
+                        if (el.closest('#mobile-menu')) {
+                            el.classList.remove("text-blue-100");
+                            el.classList.add("text-white");
+                        } else {
+                            el.classList.remove("text-gray-700");
+                            el.classList.add("bg-blue-50", "text-blue-700");
+                        }
+                    }
+                });
+            });
+        });
 
         fetchNotice();
         renderDashboard();
