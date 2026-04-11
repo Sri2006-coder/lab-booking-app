@@ -71,6 +71,19 @@
             </a>
         </div>
 
+        <!-- Settings Widget -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-8">
+            <div class="flex flex-col mb-3">
+                <h4 class="font-semibold text-gray-800 flex items-center"><span class="text-2xl mr-2">⚙️</span> Daily Booking Limit</h4>
+                <p class="text-xs text-gray-500 mt-1 ml-9">Hint: 0 = Unlimited booking</p>
+            </div>
+            <div class="flex gap-2">
+                <input type="number" id="limit-input" min="0" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                <button onclick="updateLimit()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold py-2 px-4 rounded-lg shadow-sm active:scale-95 transition">Update Limit</button>
+            </div>
+            <div id="limit-status" class="text-sm font-medium text-center mt-3 hidden"></div>
+        </div>
+
         <!-- Upload Widget -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-8">
             <div class="flex items-center mb-3">
@@ -141,8 +154,47 @@
             window.location.href = 'index.html';
         }
 
+        async function fetchLimit() {
+            try {
+                const res = await fetch('/get_limit');
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('limit-input').value = data.limit;
+                }
+            } catch (e) {}
+        }
+
+        async function updateLimit() {
+            const limitVal = document.getElementById('limit-input').value;
+            if (limitVal === '') return;
+            const status = document.getElementById('limit-status');
+            status.className = 'text-sm font-medium text-center mt-3 text-gray-600 block';
+            status.innerText = '⏳ Updating...';
+
+            try {
+                const res = await fetch('/update_limit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ limit: parseInt(limitVal) })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    status.innerText = '✅ Limit updated successfully';
+                    status.className = 'text-sm font-medium text-center mt-3 text-emerald-600 block';
+                    setTimeout(() => { status.classList.add('hidden'); }, 3000);
+                } else {
+                    status.innerText = '❌ Failed to update limit';
+                    status.className = 'text-sm font-medium text-center mt-3 text-red-600 block';
+                }
+            } catch (e) {
+                status.innerText = '❌ Error updating';
+                status.className = 'text-sm font-medium text-center mt-3 text-red-600 block';
+            }
+        }
+
         fetchStats();
         fetchNotice();
+        fetchLimit();
     </script>
 </body>
 </html>

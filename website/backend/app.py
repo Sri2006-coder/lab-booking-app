@@ -65,6 +65,38 @@ def get_stats():
         "activeLabs": active_labs
     })
 
+@app.route('/get_limit', methods=['GET'])
+def get_limit():
+    if 'user_id' not in session or session['role'] != 'admin':
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT value FROM settings WHERE key='daily_limit'")
+    setting = cursor.fetchone()
+    conn.close()
+    
+    limit = int(setting['value']) if setting else 2
+    return jsonify({"limit": limit})
+
+@app.route('/update_limit', methods=['POST'])
+def update_limit():
+    if 'user_id' not in session or session['role'] != 'admin':
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    
+    data = request.get_json()
+    new_limit = data.get('limit')
+    if new_limit is None:
+        return jsonify({"success": False, "message": "Missing limit"}), 400
+        
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('daily_limit', ?)", (str(new_limit),))
+    conn.commit()
+    conn.close()
+    
+    return jsonify({"success": True, "limit": new_limit})
+
 @app.route('/api/notice', methods=['GET', 'POST'])
 def handle_notice():
     conn = get_db()
@@ -173,9 +205,15 @@ def book_slot():
     conn = get_db()
     cursor = conn.cursor()
     
-    # Check limit (max 2 per day)
+    # Check dynamic limit
     cursor.execute("SELECT COUNT(*) as total FROM bookings WHERE faculty_id=? AND booking_date=?", (faculty_id, date))
-    if cursor.fetchone()['total'] >= 2:
+    total_bookings = cursor.fetchone()['total']
+    
+    cursor.execute("SELECT value FROM settings WHERE key='daily_limit'")
+    setting_row = cursor.fetchone()
+    daily_limit = int(setting_row['value']) if setting_row else 2
+    
+    if daily_limit > 0 and total_bookings >= daily_limit:
         conn.close()
         return jsonify({"success": False, "message": "limit"})
     

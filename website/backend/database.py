@@ -66,6 +66,15 @@ def init_db():
     )
     ''')
     
+    # Settings Table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+    )
+    ''')
+    cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('daily_limit', '2')")
+    
     conn.commit()
     conn.close()
 
