@@ -301,51 +301,39 @@ def upload_timetable():
     import io
     
     try:
-        content = file.stream.read().decode("UTF-8", errors="replace")
+        content = file.stream.read().decode("utf-8-sig", errors="replace")
         stream = io.StringIO(content)
         
-        # Check header
-        header_line = stream.readline()
-        if not header_line:
-            return jsonify({"success": False, "message": "Empty file"})
+        reader = csv.DictReader(stream, skipinitialspace=True)
+        # Normalize header keys to lowercase exactly
+        if reader.fieldnames:
+            reader.fieldnames = [str(f).strip().lower() for f in reader.fieldnames]
             
-        header = [h.strip().lower() for h in header_line.split(',')]
-        expected_header = ['day', 'period', 'lab', 'subject']
-        if not all(h in header for h in expected_header):
-            return jsonify({"success": False, "message": "Invalid file format. Required columns: day, period, lab, subject"})
-
-        stream.seek(0)
-        csv_input = csv.DictReader(stream, skipinitialspace=True)
-        csv_input.fieldnames = [f.strip().lower() for f in csv_input.fieldnames]
-        
         conn = get_db()
         cursor = conn.cursor()
         
-        # Note: We do NOT clear the timetable here anymore as per requirements, 
-        # let the admin use the "Clear Timetable" button if needed.
-        
         count = 0
-        for row in csv_input:
-            day = row.get('day', '').strip()
-            period_str = row.get('period', '').strip()
-            lab_name = row.get('lab', '').strip()
-            subject = row.get('subject', '').strip()
-
-            if not day or not period_str or not lab_name or not subject:
+        for row in reader:
+            # Fallback checks in case of empty rows
+            if not row.get('day') or not row.get('period') or not row.get('lab') or not row.get('subject'):
                 continue
                 
-            try:
-                period = int(period_str)
-            except ValueError:
-                print(f"Skipping row due to invalid integer conversion: {row}")
-                continue
+            day = str(row['day']).strip()
+            period = int(row['period'])
+            lab = str(row['lab']).strip()
+            subject = str(row['subject']).strip()
             
-            cursor.execute("INSERT INTO fixed_schedule (lab, day, period, subject) VALUES (?, ?, ?, ?)",
-                           (lab_name, day, period, subject))
+            print("INSERTING:", day, period, lab, subject)
+            
+            cursor.execute("""
+                INSERT INTO fixed_schedule (day, period, lab, subject) 
+                VALUES (?, ?, ?, ?)
+            """, (day, period, lab, subject))
             count += 1
-        
+            
         conn.commit()
         conn.close()
+        
         print(f"Successfully uploaded {count} fixed schedule entries.")
         return jsonify({"success": True, "count": count})
     except Exception as e:
