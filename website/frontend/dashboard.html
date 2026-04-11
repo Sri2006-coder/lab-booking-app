@@ -8,29 +8,53 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-gray-50 flex flex-col min-h-screen">
-    
-    <!-- Top Navbar (Sticky) -->
-    <nav class="bg-blue-600 text-white sticky top-0 z-40 shadow-md">
-        <div class="px-4 py-3 flex justify-between items-center">
-            <h1 class="font-bold text-xl tracking-tight">Lab Booking</h1>
-            <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="p-2 focus:outline-none touch-manipulation">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
-            </button>
+<body class="bg-gray-50 flex min-h-screen">
+    <!-- Desktop Sidebar -->
+    <aside class="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 min-h-screen sticky top-0 z-30">
+        <div class="px-6 py-5 border-b border-gray-200 bg-blue-600">
+            <h1 class="font-bold text-2xl tracking-tight text-white">Lab Booking</h1>
+            <div class="text-blue-200 text-xs mt-1 font-semibold uppercase tracking-wider">Faculty Panel</div>
         </div>
-        <!-- Mobile Menu -->
-        <div id="mobile-menu" class="hidden bg-blue-700 px-4 py-2 shadow-inner transition-all duration-200">
-            <a href="#" onclick="loadTimetable('1,2'); toggleMenu()" id="btn-1-2" class="block py-3 text-blue-100 font-medium border-b border-blue-600">Lab 1 & 2</a>
-            <a href="#" onclick="loadTimetable('5,6,7'); toggleMenu()" id="btn-5-6-7" class="block py-3 text-blue-100 font-medium border-b border-blue-600">Lab 5, 6, 7</a>
-            <a href="#" onclick="loadTimetable('3,4'); toggleMenu()" id="btn-3-4" class="block py-3 text-blue-100 font-medium border-b border-blue-600">Halls</a>
-            <a href="calendar_view.html" class="block py-3 text-blue-100 font-medium border-b border-blue-600">📅 Calendar View</a>
-            <a href="mybookings.html" class="block py-3 text-blue-100 font-medium border-b border-blue-600">📋 My Bookings</a>
-            <a href="#" onclick="logout()" class="block py-3 text-red-200 font-medium">🚪 Logout</a>
+        <div class="flex flex-col p-4 space-y-2 flex-grow overflow-y-auto">
+            <h2 class="text-xs uppercase text-gray-500 font-bold mb-2 tracking-wider mt-2">Lab Selection</h2>
+            <a href="#" onclick="loadTimetable('1,2')" id="desktop-btn-1-2" class="py-2.5 px-4 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition">Lab 1 & 2</a>
+            <a href="#" onclick="loadTimetable('5,6,7')" id="desktop-btn-5-6-7" class="py-2.5 px-4 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition">Lab 5, 6, 7</a>
+            <a href="#" onclick="loadTimetable('3,4')" id="desktop-btn-3-4" class="py-2.5 px-4 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition">Halls</a>
+            
+            <div class="my-4 border-t border-gray-100"></div>
+            
+            <h2 class="text-xs uppercase text-gray-500 font-bold mb-2 tracking-wider">Navigation</h2>
+            <a href="calendar_view.html" class="py-2.5 px-4 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition flex items-center"><span class="mr-3 text-lg">📅</span> Calendar View</a>
+            <a href="mybookings.html" class="py-2.5 px-4 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition flex items-center"><span class="mr-3 text-lg">📋</span> My Bookings</a>
         </div>
-    </nav>
+        <div class="p-4 border-t border-gray-200">
+            <a href="#" onclick="logout()" class="py-2.5 px-4 rounded-lg font-bold text-red-600 hover:bg-red-50 flex items-center transition"><span class="mr-3 text-lg">🚪</span> Logout</a>
+        </div>
+    </aside>
 
-    <!-- Main Content -->
-    <main class="flex-1 px-4 py-4 w-full max-w-lg mx-auto">
+    <!-- Main Content wrapper -->
+    <div class="flex-1 flex flex-col min-w-0">
+        <!-- Top Navbar (Mobile only) -->
+        <nav class="md:hidden bg-blue-600 text-white sticky top-0 z-40 shadow-md">
+            <div class="px-4 py-3 flex justify-between items-center">
+                <h1 class="font-bold text-xl tracking-tight">Lab Booking</h1>
+                <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="p-2 focus:outline-none touch-manipulation">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+            </div>
+            <!-- Mobile Menu -->
+            <div id="mobile-menu" class="hidden bg-blue-700 px-4 py-2 shadow-inner transition-all duration-200">
+                <a href="#" onclick="loadTimetable('1,2'); toggleMenu()" id="btn-1-2" class="block py-3 text-blue-100 font-medium border-b border-blue-600">Lab 1 & 2</a>
+                <a href="#" onclick="loadTimetable('5,6,7'); toggleMenu()" id="btn-5-6-7" class="block py-3 text-blue-100 font-medium border-b border-blue-600">Lab 5, 6, 7</a>
+                <a href="#" onclick="loadTimetable('3,4'); toggleMenu()" id="btn-3-4" class="block py-3 text-blue-100 font-medium border-b border-blue-600">Halls</a>
+                <a href="calendar_view.html" class="block py-3 text-blue-100 font-medium border-b border-blue-600">📅 Calendar View</a>
+                <a href="mybookings.html" class="block py-3 text-blue-100 font-medium border-b border-blue-600">📋 My Bookings</a>
+                <a href="#" onclick="logout()" class="block py-3 text-red-200 font-medium">🚪 Logout</a>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="flex-1 px-4 md:px-6 lg:px-8 py-4 md:py-6 w-full max-w-7xl mx-auto">
         <!-- Notice Bar -->
         <div id="notice-bar" class="hidden mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800 font-medium shadow-sm flex items-center">
             <span class="mr-2">🔔</span> <span id="notice-text-content"></span>
@@ -45,8 +69,8 @@
             </div>
         </div>
 
-        <!-- Vertical Cards Timetable -->
-        <div id="timetable-grid" class="space-y-4 pb-10"></div>
+        <!-- Timetable Grid -->
+        <div id="timetable-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 pb-10"></div>
     </main>
 
     <!-- Booking Modal -->
@@ -92,7 +116,10 @@
             currentDate = date;
             
             ['1,2', '5,6,7', '3,4'].forEach(l => {
-                const btn = document.getElementById('btn-' + l.replace(/,/g, '-'));
+                const btnIdSuffix = l.replace(/,/g, '-');
+                const btn = document.getElementById('btn-' + btnIdSuffix);
+                const desktopBtn = document.getElementById('desktop-btn-' + btnIdSuffix);
+                
                 if(btn) {
                     if (l === labs) {
                         btn.classList.add('text-white', 'bg-blue-800');
@@ -100,6 +127,16 @@
                     } else {
                         btn.classList.remove('text-white', 'bg-blue-800');
                         btn.classList.add('text-blue-100');
+                    }
+                }
+                
+                if(desktopBtn) {
+                    if (l === labs) {
+                        desktopBtn.classList.add('bg-blue-50', 'text-blue-700', 'font-bold');
+                        desktopBtn.classList.remove('hover:bg-gray-100', 'text-gray-700');
+                    } else {
+                        desktopBtn.classList.remove('bg-blue-50', 'text-blue-700', 'font-bold');
+                        desktopBtn.classList.add('hover:bg-gray-100', 'text-gray-700');
                     }
                 }
             });
@@ -132,10 +169,10 @@
                         statusHtml = `<button class="w-full bg-gray-50 text-gray-500 font-semibold py-3 px-4 rounded-xl border border-gray-200 cursor-not-allowed">Locked: ${lab.status.subject}</button>`;
                     } else if (lab.status.type === 'booked') {
                         statusHtml = `
-                            <button class="w-full ${lab.status.own ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-red-50 text-red-700 border-red-200'} border font-semibold py-3 px-4 rounded-xl flex flex-col items-center">
-                                <span>Booked by ${lab.status.name}</span>
-                                ${lab.status.own ? `<span onclick="event.stopPropagation(); cancelBooking(${lab.status.id})" class="text-red-500 text-xs mt-1 underline mt-2 p-1">Cancel Booking</span>` : ''}
-                            </button>`;
+                            <div class="w-full ${lab.status.own ? 'bg-orange-50 border-orange-200' : 'bg-red-50 border-red-200'} border py-3 px-4 rounded-xl flex flex-col items-center justify-center">
+                                <span class="${lab.status.own ? 'text-orange-700' : 'text-red-700'} font-semibold text-center mb-1">Booked by ${lab.status.name}</span>
+                                ${lab.status.own ? `<button type="button" onclick="cancelBooking(${lab.status.id})" class="cancel-booking-btn mt-2 bg-red-100 hover:bg-red-200 active:bg-red-300 text-red-700 font-bold py-2.5 px-4 rounded-lg w-full max-w-[200px] shadow-sm transition touch-manipulation border border-red-200">Cancel Booking</button>` : ''}
+                            </div>`;
                     } else {
                         statusHtml = `<button class="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-3 px-4 rounded-xl shadow-sm transition active:scale-[0.98]" onclick="openBookingModal(${lab.lab_id}, '${lab.lab_name}', ${period.period}, '${data.day}', '${data.date}')">Book Now</button>`;
                     }
@@ -206,5 +243,6 @@
         fetchNotice();
         loadTimetable();
     </script>
+    </div> <!-- End Main Content Wrapper -->
 </body>
 </html>
