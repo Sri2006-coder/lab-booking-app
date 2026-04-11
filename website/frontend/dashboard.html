@@ -100,83 +100,36 @@
             } catch(e) {}
         }
 
-        async function loadTimetable(labs = currentLabs, date = currentDate) {
-            currentLabs = labs;
-            currentDate = date;
+        function renderDashboard() {
+            const container = document.getElementById('timetable-grid') || document.getElementById('timetable-container');
+            if (!container) return;
+            container.innerHTML = '';
             
-            ['1,2', '5,6,7', '3,4'].forEach(l => {
-                const btnIdSuffix = l.replace(/,/g, '-');
-                const btn = document.getElementById('btn-' + btnIdSuffix);
-                const desktopBtn = document.getElementById('desktop-btn-' + btnIdSuffix);
-                
-                if(btn) {
-                    if (l === labs) {
-                        btn.classList.add('text-white', 'bg-blue-800');
-                        btn.classList.remove('text-blue-100');
-                    } else {
-                        btn.classList.remove('text-white', 'bg-blue-800');
-                        btn.classList.add('text-blue-100');
-                    }
-                }
-                
-                if(btn) btn.classList.add('text-blue-100');
-                if(desktopBtn) desktopBtn.classList.add('text-gray-700');
-            });
-
-            const res = await fetch(`/api/timetable?date=${date}`);
-            if (res.status === 401) window.location.href = 'index.html';
-            const data = await res.json();
-
-            document.getElementById('display-date').innerText = `${data.day} (${data.date})`;
+            const labs = ["Lab 1", "Lab 2", "Lab 5", "Lab 6", "Lab 7"];
+            const periods = [1, 2, 3, 4, 5, 6, 7, 8];
             
-            const grid = document.getElementById('timetable-grid');
-            grid.innerHTML = '';
+            const dateObj = new Date(currentDate);
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const dayName = days[dateObj.getDay()];
+            const shortDay = dayName ? dayName.substring(0, 3) : '';
             
-            console.log("Fixed Schedule Data:", data.fixed);
-            console.log("Full Timetable Data:", data);
+            document.getElementById('display-date').innerText = `${dayName || 'Date'} (${currentDate})`;
 
-            (data.periods || []).forEach(period => {
+            periods.forEach(period => {
                 const box = document.createElement('div');
                 box.className = 'bg-white rounded-2xl shadow-sm border border-gray-200 p-5 overflow-hidden';
                 box.innerHTML = `<div class="font-bold text-gray-900 border-b border-gray-100 pb-3 mb-4 flex items-center justify-between">
                     <span>Period ${period}</span>
-                    <span class="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-md font-semibold">${data.day.substring(0,3)}</span>
+                    <span class="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-md font-semibold">${shortDay}</span>
                 </div>`;
 
                 const labList = document.createElement('div');
                 labList.className = 'space-y-4';
 
-                (data.labs || []).forEach(labName => {
+                labs.forEach(labName => {
                     const labItem = document.createElement('div');
                     
-                    const day = data.day;
-                    const lab = labName;
-                    
-                    const fixedSlot = data.fixed.find(f =>
-                        f.day === day &&
-                        f.period == period &&
-                        f.lab === lab
-                    );
-                    
-                    const normalizedLabName = (labName || '').toString().toLowerCase().replace(/\s/g, '');
-                    const isBooked = data.bookings.find(b => {
-                        const bLab = (b.lab || '').toString().toLowerCase().replace(/\s/g, '');
-                        return String(b.period) === String(period) && bLab === normalizedLabName;
-                    });
-                    
-                    let statusHtml = '';
-                    if (fixedSlot) {
-                        console.log(data.fixed);
-                        statusHtml = `<div class="lab-slot blocked w-full bg-red-50 text-red-700 font-bold py-3 px-4 rounded-xl border border-red-200 cursor-not-allowed shadow-sm text-center">🔴 ${lab} - ${fixedSlot.subject}</div>`;
-                    } else if (isBooked) {
-                        statusHtml = `
-                            <div class="w-full ${isBooked.own ? 'bg-orange-50 border-orange-200' : 'bg-gray-50 border-gray-200'} border py-3 px-4 rounded-xl flex flex-col items-center justify-center shadow-sm">
-                                <span class="${isBooked.own ? 'text-orange-700' : 'text-gray-600'} font-semibold text-center mb-1">Booked by ${isBooked.faculty_name}</span>
-                                ${isBooked.own ? `<button type="button" onclick="cancelBooking(${isBooked.id})" class="cancel-booking-btn mt-2 bg-red-100 hover:bg-red-200 active:bg-red-300 text-red-700 font-bold py-2.5 px-4 rounded-lg w-full max-w-[200px] shadow-sm transition touch-manipulation border border-red-200">Cancel Booking</button>` : ''}
-                            </div>`;
-                    } else {
-                        statusHtml = `<button class="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-3 px-4 rounded-xl shadow-sm transition active:scale-[0.98]" onclick="openBookingModal('${labName}', ${period}, '${data.day}', '${data.date}')">🔵 Book Now</button>`;
-                    }
+                    const statusHtml = `<button class="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-3 px-4 rounded-xl shadow-sm transition active:scale-[0.98] book-btn" onclick="openBookingModal('${labName}', ${period}, '${dayName || ''}', '${currentDate}')">🔵 Book Now</button>`;
 
                     labItem.innerHTML = `
                         <div class="mb-2 pl-1 font-semibold text-gray-800 flex items-center">
@@ -187,13 +140,13 @@
                     labList.appendChild(labItem);
                 });
                 box.appendChild(labList);
-                grid.appendChild(box);
+                container.appendChild(box);
             });
         }
 
         function dateChanged() {
             currentDate = document.getElementById('date-picker').value;
-            loadTimetable();
+            renderDashboard();
         }
 
         function openBookingModal(labName, period, day, date) {
@@ -221,7 +174,7 @@
             const data = await res.json();
             if (data.success) {
                 closeModal();
-                loadTimetable();
+                renderDashboard();
             } else if (data.message === 'limit') {
                 alert('❌ Max bookings reached for today');
                 closeModal();
@@ -233,7 +186,7 @@
         async function cancelBooking(id) {
             if (!confirm('Cancel this booking?')) return;
             const res = await fetch(`/api/cancel_booking/${id}`, { method: 'DELETE' });
-            if (res.ok) loadTimetable();
+            if (res.ok) renderDashboard();
         }
 
         async function logout() {
@@ -242,7 +195,7 @@
         }
 
         fetchNotice();
-        loadTimetable();
+        renderDashboard();
     </script>
     </div> <!-- End Main Content Wrapper -->
 </body>
