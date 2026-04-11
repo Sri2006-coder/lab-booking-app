@@ -97,6 +97,31 @@ def update_limit():
     
     return jsonify({"success": True, "limit": new_limit})
 
+@app.route('/download_sample', methods=['GET'])
+def download_sample():
+    if 'user_id' not in session or session['role'] != 'admin':
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    
+    from flask import Response
+    csv_content = "day,period,lab,subject\nMonday,1,Lab1,Math\nMonday,2,Lab2,Physics\nTuesday,1,Lab1,Chemistry\n"
+    return Response(
+        csv_content,
+        mimetype="text/csv",
+        headers={"Content-disposition": "attachment; filename=sample_timetable.csv"}
+    )
+
+@app.route('/clear_timetable', methods=['POST'])
+def clear_timetable():
+    if 'user_id' not in session or session['role'] != 'admin':
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM fixed_schedule")
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True})
+
 @app.route('/api/notice', methods=['GET', 'POST'])
 def handle_notice():
     conn = get_db()
@@ -274,29 +299,60 @@ def upload_timetable():
     try:
         content = file.stream.read().decode("UTF-8", errors="replace")
         stream = io.StringIO(content)
-        csv_input = csv.reader(stream)
+        
+        # Check header
+        header_line = stream.readline()
+        if not header_line:
+            return jsonify({"success": False, "message": "Empty file"})
+            
+        header = [h.strip().lower() for h in header_line.split(',')]
+        expected_header = ['day', 'period', 'lab', 'subject']
+        if not all(h in header for h in expected_header):
+            return jsonify({"success": False, "message": "Invalid file format. Required columns: day, period, lab, subject"})
+
+        stream.seek(0)
+        csv_input = csv.DictReader(stream, skipinitialspace=True)
+        csv_input.fieldnames = [f.strip().lower() for f in csv_input.fieldnames]
         
         conn = get_db()
         cursor = conn.cursor()
         
-        # Clear old schedule
-        cursor.execute("DELETE FROM fixed_schedule")
+        # Note: We do NOT clear the timetable here anymore as per requirements, 
+        # let the admin use the "Clear Timetable" button if needed.
+        
+        # Cache existing labs
+        cursor.execute("SELECT id, lab_name FROM labs")
+        labs_cache = {row['lab_name'].lower(): row['id'] for row in cursor.fetchall()}
         
         count = 0
         for row in csv_input:
-            if len(row) >= 4:
-                try:
-                    # Validate lab_id and period are integers
-                    lab_id = int(row[0].strip())
-                    day = row[1].strip()
-                    period = int(row[2].strip())
-                    subject = row[3].strip()
-                    cursor.execute("INSERT INTO fixed_schedule (lab_id, day, period, subject) VALUES (?, ?, ?, ?)",
-                                   (lab_id, day, period, subject))
-                    count += 1
-                except ValueError:
-                    print(f"Skipping row due to invalid integer conversion: {row}")
-                    continue # Skip header or invalid rows
+            day = row.get('day', '').strip()
+            period_str = row.get('period', '').strip()
+            lab_name = row.get('lab', '').strip()
+            subject = row.get('subject', '').strip()
+
+            if not day or not period_str or not lab_name or not subject:
+                continue
+                
+            try:
+                period = int(period_str)
+            except ValueError:
+                print(f"Skipping row due to invalid integer conversion: {row}")
+                continue
+                
+            lab_name_lower = lab_name.lower()
+            if lab_name_lower not in labs_cache:
+                cursor.execute("INSERT INTO labs (lab_name) VALUES (?)", (lab_name,))
+                conn.commit()
+                cursor.execute("SELECT id FROM labs WHERE lab_name=?", (lab_name,))
+                new_id = cursor.fetchone()['id']
+                labs_cache[lab_name_lower] = new_id
+                
+            lab_id = labs_cache[lab_name_lower]
+            
+            cursor.execute("INSERT INTO fixed_schedule (lab_id, day, period, subject) VALUES (?, ?, ?, ?)",
+                           (lab_id, day, period, subject))
+            count += 1
         
         conn.commit()
         conn.close()
