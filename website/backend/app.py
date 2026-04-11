@@ -176,44 +176,49 @@ def get_timetable():
     conn = get_db()
     cursor = conn.cursor()
     
-    timetable = []
-    for period in range(1, 9):
-        period_data = {"period": period, "labs": []}
-        for lab_id in lab_ids:
-            # Check fixed schedule
-            cursor.execute("SELECT subject FROM fixed_schedule WHERE lab_id=? AND day=? AND period=?", (lab_id, day, period))
-            fixed = cursor.fetchone()
-            
-            if fixed:
-                status = {"type": "fixed", "subject": fixed['subject']}
-            else:
-                # Check bookings
-                cursor.execute("""
-                    SELECT b.*, f.name FROM bookings b 
-                    JOIN faculty f ON b.faculty_id = f.id 
-                    WHERE b.lab_id=? AND b.day=? AND b.period=? AND b.booking_date=?
-                """, (lab_id, day, period, date))
-                booking = cursor.fetchone()
-                
-                if booking:
-                    status = {
-                        "type": "booked", 
-                        "name": booking['name'], 
-                        "id": booking['id'], 
-                        "own": booking['faculty_id'] == session['user_id'] or session['role'] == 'admin'
-                    }
-                else:
-                    status = {"type": "available"}
-            
-            # Get lab name
-            cursor.execute("SELECT lab_name FROM labs WHERE id=?", (lab_id,))
-            lab_name = cursor.fetchone()['lab_name']
-            
-            period_data['labs'].append({"lab_id": lab_id, "lab_name": lab_name, "status": status})
-        timetable.append(period_data)
+    # Get basic lab info
+    if not lab_ids:
+        return jsonify({"date": date, "day": day, "labs": [], "fixed": [], "bookings": []})
+        
+    placeholders = ','.join('?' for _ in lab_ids)
+    cursor.execute(f"SELECT id, lab_name FROM labs WHERE id IN ({placeholders})", lab_ids)
+    labs_info = [dict(row) for row in cursor.fetchall()]
+    
+    lab_names = [row['lab_name'] for row in labs_info]
+    
+    # Get fixed schedule data directly using lab TEXT matching
+    if lab_names:
+        placeholders_names = ','.join('?' for _ in lab_names)
+        cursor.execute(f"SELECT * FROM fixed_schedule WHERE day=? AND lab IN ({placeholders_names})", [day] + lab_names)
+        fixed_data = [dict(row) for row in cursor.fetchall()]
+    else:
+        fixed_data = []
+        
+    # Get booking data
+    cursor.execute(f"""
+        SELECT b.*, f.name as faculty_name 
+        FROM bookings b 
+        JOIN faculty f ON b.faculty_id = f.id 
+        WHERE b.booking_date=? AND b.lab_id IN ({placeholders})
+    """, [date] + lab_ids)
+    
+    bookings_data = []
+    user_id = session.get('user_id')
+    role = session.get('role')
+    for row in cursor.fetchall():
+        b_dict = dict(row)
+        b_dict['own'] = (b_dict['faculty_id'] == user_id or role == 'admin')
+        bookings_data.append(b_dict)
     
     conn.close()
-    return jsonify({"date": date, "day": day, "timetable": timetable})
+    
+    return jsonify({
+        "day": day,
+        "date": date,
+        "labs": labs_info,
+        "fixed": fixed_data,
+        "bookings": bookings_data
+    })
 
 @app.route('/api/book', methods=['POST'])
 def book_slot():
@@ -243,7 +248,14 @@ def book_slot():
         return jsonify({"success": False, "message": "limit"})
     
     # Check if slot is already in fixed schedule
-    cursor.execute("SELECT id FROM fixed_schedule WHERE lab_id=? AND day=? AND period=?", (lab_id, day, period))
+    cursor.execute("SELECT lab_name FROM labs WHERE id=?", (lab_id,))
+    lab_row = cursor.fetchone()
+    if not lab_row:
+        conn.close()
+        return jsonify({"success": False, "message": "invalid_lab"})
+    
+    lab_name = lab_row['lab_name']
+    cursor.execute("SELECT id FROM fixed_schedule WHERE lab=? AND day=? AND period=?", (lab_name, day, period))
     if cursor.fetchone():
         conn.close()
         return jsonify({"success": False, "message": "fixed"})
@@ -320,10 +332,6 @@ def upload_timetable():
         # Note: We do NOT clear the timetable here anymore as per requirements, 
         # let the admin use the "Clear Timetable" button if needed.
         
-        # Cache existing labs
-        cursor.execute("SELECT id, lab_name FROM labs")
-        labs_cache = {row['lab_name'].lower(): row['id'] for row in cursor.fetchall()}
-        
         count = 0
         for row in csv_input:
             day = row.get('day', '').strip()
@@ -339,19 +347,9 @@ def upload_timetable():
             except ValueError:
                 print(f"Skipping row due to invalid integer conversion: {row}")
                 continue
-                
-            lab_name_lower = lab_name.lower()
-            if lab_name_lower not in labs_cache:
-                cursor.execute("INSERT INTO labs (lab_name) VALUES (?)", (lab_name,))
-                conn.commit()
-                cursor.execute("SELECT id FROM labs WHERE lab_name=?", (lab_name,))
-                new_id = cursor.fetchone()['id']
-                labs_cache[lab_name_lower] = new_id
-                
-            lab_id = labs_cache[lab_name_lower]
             
-            cursor.execute("INSERT INTO fixed_schedule (lab_id, day, period, subject) VALUES (?, ?, ?, ?)",
-                           (lab_id, day, period, subject))
+            cursor.execute("INSERT INTO fixed_schedule (lab, day, period, subject) VALUES (?, ?, ?, ?)",
+                           (lab_name, day, period, subject))
             count += 1
         
         conn.commit()
