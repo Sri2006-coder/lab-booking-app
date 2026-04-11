@@ -153,10 +153,13 @@
                 labs.forEach(labName => {
                     const labItem = document.createElement('div');
                     
+                    const blocked = isBlocked(labName, period, currentDate);
                     const booked = isBooked(labName, period, currentDate);
                     let statusHtml = '';
                     
-                    if (booked) {
+                    if (blocked) {
+                        statusHtml = `<button class="w-full bg-red-50 text-red-700 font-bold py-3 px-4 rounded-xl border border-red-200 cursor-not-allowed shadow-sm blocked" disabled>🔴 Unavailable</button>`;
+                    } else if (booked) {
                         statusHtml = `
                             <div class="w-full bg-orange-50 border-orange-200 border py-3 px-4 rounded-xl flex flex-col items-center justify-center shadow-sm">
                                 <span class="text-orange-700 font-semibold text-center mb-1">Booked</span>
@@ -195,6 +198,26 @@
                 b.lab === lab &&
                 b.period === period &&
                 b.date === date
+            );
+        }
+
+        function getTimetable() {
+            return JSON.parse(localStorage.getItem("timetable")) || [];
+        }
+
+        function getSelectedDay(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString("en-US", { weekday: "long" });
+        }
+
+        function isBlocked(lab, period, date) {
+            const timetable = getTimetable();
+            const day = getSelectedDay(date);
+
+            return timetable.some(t =>
+                t.lab === lab &&
+                String(t.period) === String(period) &&
+                t.day === day
             );
         }
 
