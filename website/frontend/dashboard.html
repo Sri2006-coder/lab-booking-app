@@ -15,15 +15,7 @@
             <h1 class="font-bold text-2xl tracking-tight text-white">Lab Booking</h1>
             <div class="text-blue-200 text-xs mt-1 font-semibold uppercase tracking-wider">Faculty Panel</div>
         </div>
-        <div class="flex flex-col p-4 space-y-2 flex-grow overflow-y-auto">
-            <h2 class="text-xs uppercase text-gray-500 font-bold mb-2 tracking-wider mt-2">Lab Selection</h2>
-            <a href="#" onclick="loadTimetable('1,2')" id="desktop-btn-1-2" class="py-2.5 px-4 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition">Lab 1 & 2</a>
-            <a href="#" onclick="loadTimetable('5,6,7')" id="desktop-btn-5-6-7" class="py-2.5 px-4 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition">Lab 5, 6, 7</a>
-            <a href="#" onclick="loadTimetable('3,4')" id="desktop-btn-3-4" class="py-2.5 px-4 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition">Halls</a>
-            
-            <div class="my-4 border-t border-gray-100"></div>
-            
-            <h2 class="text-xs uppercase text-gray-500 font-bold mb-2 tracking-wider">Navigation</h2>
+            <h2 class="text-xs uppercase text-gray-500 font-bold mb-2 tracking-wider mt-2">Navigation</h2>
             <a href="calendar_view.html" class="py-2.5 px-4 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition flex items-center"><span class="mr-3 text-lg">📅</span> Calendar View</a>
             <a href="mybookings.html" class="py-2.5 px-4 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition flex items-center"><span class="mr-3 text-lg">📋</span> My Bookings</a>
         </div>
@@ -44,9 +36,6 @@
             </div>
             <!-- Mobile Menu -->
             <div id="mobile-menu" class="hidden bg-blue-700 px-4 py-2 shadow-inner transition-all duration-200">
-                <a href="#" onclick="loadTimetable('1,2'); toggleMenu()" id="btn-1-2" class="block py-3 text-blue-100 font-medium border-b border-blue-600">Lab 1 & 2</a>
-                <a href="#" onclick="loadTimetable('5,6,7'); toggleMenu()" id="btn-5-6-7" class="block py-3 text-blue-100 font-medium border-b border-blue-600">Lab 5, 6, 7</a>
-                <a href="#" onclick="loadTimetable('3,4'); toggleMenu()" id="btn-3-4" class="block py-3 text-blue-100 font-medium border-b border-blue-600">Halls</a>
                 <a href="calendar_view.html" class="block py-3 text-blue-100 font-medium border-b border-blue-600">📅 Calendar View</a>
                 <a href="mybookings.html" class="block py-3 text-blue-100 font-medium border-b border-blue-600">📋 My Bookings</a>
                 <a href="#" onclick="logout()" class="block py-3 text-red-200 font-medium">🚪 Logout</a>
@@ -130,18 +119,11 @@
                     }
                 }
                 
-                if(desktopBtn) {
-                    if (l === labs) {
-                        desktopBtn.classList.add('bg-blue-50', 'text-blue-700', 'font-bold');
-                        desktopBtn.classList.remove('hover:bg-gray-100', 'text-gray-700');
-                    } else {
-                        desktopBtn.classList.remove('bg-blue-50', 'text-blue-700', 'font-bold');
-                        desktopBtn.classList.add('hover:bg-gray-100', 'text-gray-700');
-                    }
-                }
+                if(btn) btn.classList.add('text-blue-100');
+                if(desktopBtn) desktopBtn.classList.add('text-gray-700');
             });
 
-            const res = await fetch(`/api/timetable?labs=${labs}&date=${date}`);
+            const res = await fetch(`/api/timetable?date=${date}`);
             if (res.status === 401) window.location.href = 'index.html';
             const data = await res.json();
 
@@ -151,8 +133,9 @@
             grid.innerHTML = '';
             
             console.log("Fixed Schedule Data:", data.fixed);
+            console.log("Full Timetable Data:", data);
 
-            for (let period = 1; period <= 8; period++) {
+            (data.periods || []).forEach(period => {
                 const box = document.createElement('div');
                 box.className = 'bg-white rounded-2xl shadow-sm border border-gray-200 p-5 overflow-hidden';
                 box.innerHTML = `<div class="font-bold text-gray-900 border-b border-gray-100 pb-3 mb-4 flex items-center justify-between">
@@ -163,18 +146,18 @@
                 const labList = document.createElement('div');
                 labList.className = 'space-y-4';
 
-                (data.labs || []).forEach(labInfo => {
+                (data.labs || []).forEach(labName => {
                     const labItem = document.createElement('div');
                     
                     const isFixed = data.fixed.find(f => 
                         f.day.toLowerCase() === data.day.toLowerCase() && 
                         f.period === period && 
-                        f.lab.toLowerCase() === labInfo.lab_name.toLowerCase()
+                        f.lab.toLowerCase().replace(/\s/g, '') === labName.toLowerCase().replace(/\s/g, '')
                     );
                     
                     const isBooked = data.bookings.find(b =>
                         b.period === period &&
-                        b.lab_id === labInfo.id
+                        b.lab.toLowerCase().replace(/\s/g, '') === labName.toLowerCase().replace(/\s/g, '')
                     );
                     
                     let statusHtml = '';
@@ -187,12 +170,12 @@
                                 ${isBooked.own ? `<button type="button" onclick="cancelBooking(${isBooked.id})" class="cancel-booking-btn mt-2 bg-red-100 hover:bg-red-200 active:bg-red-300 text-red-700 font-bold py-2.5 px-4 rounded-lg w-full max-w-[200px] shadow-sm transition touch-manipulation border border-red-200">Cancel Booking</button>` : ''}
                             </div>`;
                     } else {
-                        statusHtml = `<button class="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-3 px-4 rounded-xl shadow-sm transition active:scale-[0.98]" onclick="openBookingModal(${labInfo.id}, '${labInfo.lab_name}', ${period}, '${data.day}', '${data.date}')">🔵 Book Now</button>`;
+                        statusHtml = `<button class="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-3 px-4 rounded-xl shadow-sm transition active:scale-[0.98]" onclick="openBookingModal('${labName}', ${period}, '${data.day}', '${data.date}')">🔵 Book Now</button>`;
                     }
 
                     labItem.innerHTML = `
                         <div class="mb-2 pl-1 font-semibold text-gray-800 flex items-center">
-                            <span class="mr-2 text-lg">📍</span> ${labInfo.lab_name}
+                            <span class="mr-2 text-lg">📍</span> ${labName}
                         </div>
                         ${statusHtml}
                     `;
@@ -200,7 +183,7 @@
                 });
                 box.appendChild(labList);
                 grid.appendChild(box);
-            }
+            });
         }
 
         function dateChanged() {
@@ -208,8 +191,8 @@
             loadTimetable();
         }
 
-        function openBookingModal(labId, labName, period, day, date) {
-            selectedSlot = { labId, period, day, date };
+        function openBookingModal(labName, period, day, date) {
+            selectedSlot = { labId: labName, period, day, date }; // LabName is passed to backend via labId key because it checks data.get('lab')
             document.getElementById('modal-text').innerHTML = `📍 <b>${labName}</b><br>⏰ Period ${period}`;
             const modal = document.getElementById('booking-modal');
             modal.classList.remove('hidden');

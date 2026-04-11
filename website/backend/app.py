@@ -169,44 +169,35 @@ def get_timetable():
         return jsonify({"success": False, "message": "Unauthorized"}), 401
     
     date = request.args.get('date', datetime.now().strftime("%Y-%m-%d"))
-    labs_param = request.args.get('labs', '1,2')
-    lab_ids = [int(x) for x in labs_param.split(',')]
     day = datetime.strptime(date, "%Y-%m-%d").strftime("%A")
     
     conn = get_db()
     cursor = conn.cursor()
     
-    # Get basic lab info
-    if not lab_ids:
-        return jsonify({"date": date, "day": day, "labs": [], "fixed": [], "bookings": []})
-        
-    placeholders = ','.join('?' for _ in lab_ids)
-    cursor.execute(f"SELECT id, lab_name FROM labs WHERE id IN ({placeholders})", lab_ids)
-    labs_info = [dict(row) for row in cursor.fetchall()]
+    cursor.execute("SELECT lab_name FROM labs ORDER BY id")
+    labs = [row['lab_name'].strip() for row in cursor.fetchall()]
     
-    lab_names = [row['lab_name'] for row in labs_info]
-    
-    # Get fixed schedule data directly using lab TEXT matching
-    if lab_names:
-        placeholders_names = ','.join('?' for _ in lab_names)
-        cursor.execute(f"SELECT * FROM fixed_schedule WHERE day=? AND lab IN ({placeholders_names})", [day] + lab_names)
-        fixed_data = [dict(row) for row in cursor.fetchall()]
-    else:
-        fixed_data = []
+    cursor.execute("SELECT day, period, lab, subject FROM fixed_schedule WHERE day COLLATE NOCASE = ?", (day,))
+    fixed_data = []
+    for row in cursor.fetchall():
+        d = dict(row)
+        d['lab'] = d['lab'].strip()
+        fixed_data.append(d)
         
-    # Get booking data
-    cursor.execute(f"""
-        SELECT b.*, f.name as faculty_name 
+    cursor.execute("""
+        SELECT b.day, b.period, l.lab_name as lab, f.name as faculty_name, b.id, b.faculty_id
         FROM bookings b 
         JOIN faculty f ON b.faculty_id = f.id 
-        WHERE b.booking_date=? AND b.lab_id IN ({placeholders})
-    """, [date] + lab_ids)
+        JOIN labs l ON b.lab_id = l.id
+        WHERE b.booking_date=?
+    """, (date,))
     
     bookings_data = []
     user_id = session.get('user_id')
     role = session.get('role')
     for row in cursor.fetchall():
         b_dict = dict(row)
+        b_dict['lab'] = b_dict['lab'].strip()
         b_dict['own'] = (b_dict['faculty_id'] == user_id or role == 'admin')
         bookings_data.append(b_dict)
     
@@ -215,7 +206,8 @@ def get_timetable():
     return jsonify({
         "day": day,
         "date": date,
-        "labs": labs_info,
+        "periods": [1, 2, 3, 4, 5, 6, 7, 8],
+        "labs": labs,
         "fixed": fixed_data,
         "bookings": bookings_data
     })
@@ -226,7 +218,7 @@ def book_slot():
         return jsonify({"success": False, "message": "Unauthorized"}), 401
     
     data = request.get_json()
-    lab_id = data.get('lab')
+    lab_name = data.get('lab')
     period = data.get('period')
     day = data.get('day')
     date = data.get('date')
@@ -234,6 +226,13 @@ def book_slot():
     
     conn = get_db()
     cursor = conn.cursor()
+    
+    cursor.execute("SELECT id FROM labs WHERE lab_name=?", (lab_name,))
+    row = cursor.fetchone()
+    if not row:
+        conn.close()
+        return jsonify({"success": False, "message": "invalid_lab"})
+    lab_id = row['id']
     
     # Check dynamic limit
     cursor.execute("SELECT COUNT(*) as total FROM bookings WHERE faculty_id=? AND booking_date=?", (faculty_id, date))
@@ -248,14 +247,7 @@ def book_slot():
         return jsonify({"success": False, "message": "limit"})
     
     # Check if slot is already in fixed schedule
-    cursor.execute("SELECT lab_name FROM labs WHERE id=?", (lab_id,))
-    lab_row = cursor.fetchone()
-    if not lab_row:
-        conn.close()
-        return jsonify({"success": False, "message": "invalid_lab"})
-    
-    lab_name = lab_row['lab_name']
-    cursor.execute("SELECT id FROM fixed_schedule WHERE lab=? AND day=? AND period=?", (lab_name, day, period))
+    cursor.execute("SELECT id FROM fixed_schedule WHERE lab=? AND day COLLATE NOCASE = ? AND period=?", (lab_name, day, period))
     if cursor.fetchone():
         conn.close()
         return jsonify({"success": False, "message": "fixed"})
