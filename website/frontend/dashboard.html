@@ -149,16 +149,19 @@
                 (data.labs || []).forEach(labName => {
                     const labItem = document.createElement('div');
                     
-                    const isFixed = data.fixed.find(f => 
-                        f.day.toLowerCase() === data.day.toLowerCase() && 
-                        f.period === period && 
-                        f.lab.toLowerCase().replace(/\s/g, '') === labName.toLowerCase().replace(/\s/g, '')
-                    );
+                    const normalizedLabName = (labName || '').toString().toLowerCase().replace(/\s/g, '');
+                    const currentDay = (data.day || '').toString().toLowerCase().trim();
                     
-                    const isBooked = data.bookings.find(b =>
-                        b.period === period &&
-                        b.lab.toLowerCase().replace(/\s/g, '') === labName.toLowerCase().replace(/\s/g, '')
-                    );
+                    const isFixed = data.fixed.find(f => {
+                        const fDay = (f.day || '').toString().toLowerCase().trim();
+                        const fLab = (f.lab || '').toString().toLowerCase().replace(/\s/g, '');
+                        return fDay === currentDay && String(f.period) === String(period) && fLab === normalizedLabName;
+                    });
+                    
+                    const isBooked = data.bookings.find(b => {
+                        const bLab = (b.lab || '').toString().toLowerCase().replace(/\s/g, '');
+                        return String(b.period) === String(period) && bLab === normalizedLabName;
+                    });
                     
                     let statusHtml = '';
                     if (isFixed) {
