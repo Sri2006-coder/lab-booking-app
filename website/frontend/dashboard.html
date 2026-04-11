@@ -149,23 +149,25 @@
                 (data.labs || []).forEach(labName => {
                     const labItem = document.createElement('div');
                     
+                    const day = data.day;
+                    const lab = labName;
+                    
+                    const fixedSlot = data.fixed.find(f =>
+                        f.day === day &&
+                        f.period == period &&
+                        f.lab === lab
+                    );
+                    
                     const normalizedLabName = (labName || '').toString().toLowerCase().replace(/\s/g, '');
-                    const currentDay = (data.day || '').toString().toLowerCase().trim();
-                    
-                    const isFixed = data.fixed.find(f => {
-                        const fDay = (f.day || '').toString().toLowerCase().trim();
-                        const fLab = (f.lab || '').toString().toLowerCase().replace(/\s/g, '');
-                        return fDay === currentDay && String(f.period) === String(period) && fLab === normalizedLabName;
-                    });
-                    
                     const isBooked = data.bookings.find(b => {
                         const bLab = (b.lab || '').toString().toLowerCase().replace(/\s/g, '');
                         return String(b.period) === String(period) && bLab === normalizedLabName;
                     });
                     
                     let statusHtml = '';
-                    if (isFixed) {
-                        statusHtml = `<button class="w-full bg-red-50 text-red-700 font-bold py-3 px-4 rounded-xl border border-red-200 cursor-not-allowed shadow-sm">🔴 ${isFixed.subject}</button>`;
+                    if (fixedSlot) {
+                        console.log(data.fixed);
+                        statusHtml = `<div class="lab-slot blocked w-full bg-red-50 text-red-700 font-bold py-3 px-4 rounded-xl border border-red-200 cursor-not-allowed shadow-sm text-center">🔴 ${lab} - ${fixedSlot.subject}</div>`;
                     } else if (isBooked) {
                         statusHtml = `
                             <div class="w-full ${isBooked.own ? 'bg-orange-50 border-orange-200' : 'bg-gray-50 border-gray-200'} border py-3 px-4 rounded-xl flex flex-col items-center justify-center shadow-sm">
