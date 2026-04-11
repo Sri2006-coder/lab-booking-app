@@ -153,7 +153,19 @@
                 labs.forEach(labName => {
                     const labItem = document.createElement('div');
                     
-                    const statusHtml = `<button class="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-3 px-4 rounded-xl shadow-sm transition active:scale-[0.98] book-btn" onclick="openBookingModal('${labName}', ${period}, '${dayName || ''}', '${currentDate}')">🔵 Book Now</button>`;
+                    const booked = isBooked(labName, period, currentDate);
+                    let statusHtml = '';
+                    
+                    if (booked) {
+                        statusHtml = `
+                            <div class="w-full bg-orange-50 border-orange-200 border py-3 px-4 rounded-xl flex flex-col items-center justify-center shadow-sm">
+                                <span class="text-orange-700 font-semibold text-center mb-1">Booked</span>
+                                <button type="button" onclick="cancelBooking('${labName}', ${period})" class="cancel-booking-btn mt-2 bg-red-100 hover:bg-red-200 active:bg-red-300 text-red-700 font-bold py-2.5 px-4 rounded-lg w-full max-w-[200px] shadow-sm transition touch-manipulation border border-red-200">Cancel Booking</button>
+                            </div>
+                        `;
+                    } else {
+                        statusHtml = `<button class="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-3 px-4 rounded-xl shadow-sm transition active:scale-[0.98] book-btn" onclick="bookLab('${labName}', ${period})">🔵 Book Now</button>`;
+                    }
 
                     labItem.innerHTML = `
                         <div class="mb-2 pl-1 font-semibold text-gray-800 flex items-center">
@@ -173,44 +185,36 @@
             renderDashboard();
         }
 
-        function openBookingModal(labName, period, day, date) {
-            selectedSlot = { labId: labName, period, day, date }; // LabName is passed to backend via labId key because it checks data.get('lab')
-            document.getElementById('modal-text').innerHTML = `📍 <b>${labName}</b><br>⏰ Period ${period}`;
-            const modal = document.getElementById('booking-modal');
-            modal.classList.remove('hidden');
+        function getBookings() {
+            return JSON.parse(localStorage.getItem("bookings")) || [];
         }
 
-        function closeModal() {
-            document.getElementById('booking-modal').classList.add('hidden');
+        function isBooked(lab, period, date) {
+            const bookings = getBookings();
+            return bookings.some(b =>
+                b.lab === lab &&
+                b.period === period &&
+                b.date === date
+            );
         }
 
-        async function confirmBooking() {
-            const res = await fetch('/api/book', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    lab: selectedSlot.labId,
-                    period: selectedSlot.period,
-                    day: selectedSlot.day,
-                    date: selectedSlot.date
-                })
-            });
-            const data = await res.json();
-            if (data.success) {
-                closeModal();
-                renderDashboard();
-            } else if (data.message === 'limit') {
-                alert('❌ Max bookings reached for today');
-                closeModal();
-            } else {
-                alert('Error booking slot');
-            }
+        function bookLab(lab, period) {
+            const date = currentDate;
+            let bookings = getBookings();
+            bookings.push({ lab, period, date });
+            localStorage.setItem("bookings", JSON.stringify(bookings));
+            renderDashboard(); // refresh UI
         }
 
-        async function cancelBooking(id) {
+        function cancelBooking(lab, period) {
             if (!confirm('Cancel this booking?')) return;
-            const res = await fetch(`/api/cancel_booking/${id}`, { method: 'DELETE' });
-            if (res.ok) renderDashboard();
+            const date = currentDate;
+            let bookings = getBookings();
+            bookings = bookings.filter(b =>
+                !(b.lab === lab && b.period === period && b.date === date)
+            );
+            localStorage.setItem("bookings", JSON.stringify(bookings));
+            renderDashboard(); // refresh UI
         }
 
         async function logout() {
