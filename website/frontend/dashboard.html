@@ -96,8 +96,6 @@
         const urlParams = new URLSearchParams(window.location.search);
         let currentDate = urlParams.get('date') || new Date().toISOString().split('T')[0];
         let selectedSlot = null;
-        let fixedData = [];
-        let bookingsData = [];
 
         document.getElementById('date-picker').value = currentDate;
 
@@ -155,21 +153,18 @@
                 labs.forEach(labName => {
                     const labItem = document.createElement('div');
                     
-                    const blocked = isBlocked(labName, period, currentDate);
+                    const selectedDay = getSelectedDay(currentDate);
+                    const blocked = getBlockedInfo(labName, period, selectedDay);
                     const booked = isBooked(labName, period, currentDate);
                     let statusHtml = '';
                     
                     if (blocked) {
-                        statusHtml = `<button class="w-full bg-red-50 text-red-700 font-bold py-3 px-4 rounded-xl border border-red-200 cursor-not-allowed shadow-sm blocked" disabled>🔴 Unavailable</button>`;
+                        statusHtml = `<button class="w-full bg-red-50 text-red-700 font-bold py-3 px-4 rounded-xl border border-red-200 cursor-not-allowed shadow-sm blocked" disabled>🔴 ${blocked.subject}</button>`;
                     } else if (booked) {
-                        let cancelBtn = '';
-                        if (booked.own) {
-                            cancelBtn = `<button type="button" onclick="cancelBooking('${labName}', ${period})" class="cancel-booking-btn mt-2 bg-red-100 hover:bg-red-200 active:bg-red-300 text-red-700 font-bold py-2.5 px-4 rounded-lg w-full max-w-[200px] shadow-sm transition touch-manipulation border border-red-200">Cancel Booking</button>`;
-                        }
                         statusHtml = `
                             <div class="w-full bg-orange-50 border-orange-200 border py-3 px-4 rounded-xl flex flex-col items-center justify-center shadow-sm">
-                                <span class="text-orange-700 font-semibold text-center mb-1">Booked by ${booked.faculty_name || 'Faculty'}</span>
-                                ${cancelBtn}
+                                <span class="text-orange-700 font-semibold text-center mb-1">Booked</span>
+                                <button type="button" onclick="cancelBooking('${labName}', ${period})" class="cancel-booking-btn mt-2 bg-red-100 hover:bg-red-200 active:bg-red-300 text-red-700 font-bold py-2.5 px-4 rounded-lg w-full max-w-[200px] shadow-sm transition touch-manipulation border border-red-200">Cancel Booking</button>
                             </div>
                         `;
                     } else {
@@ -191,85 +186,56 @@
 
         function dateChanged() {
             currentDate = document.getElementById('date-picker').value;
-            fetchTimetableData();
+            renderDashboard();
         }
 
-        async function fetchTimetableData() {
-            try {
-                const res = await fetch(`/api/timetable?date=${currentDate}`, { credentials: "include" });
-                const data = await res.json();
-                fixedData = data.fixed || [];
-                bookingsData = data.bookings || [];
-                renderDashboard();
-            } catch (error) {
-                console.error("Error fetching timetable:", error);
-            }
+        function getTimetable() {
+            return JSON.parse(localStorage.getItem("timetable")) || [];
+        }
+        
+        function getBookings() {
+            return JSON.parse(localStorage.getItem("bookings")) || [];
         }
 
         function getSelectedDay(dateStr) {
-            const date = new Date(dateStr);
-            return date.toLocaleDateString("en-US", { weekday: "long" });
+            return new Date(dateStr).toLocaleDateString("en-US", { weekday: "long" });
         }
 
-        function isBlocked(lab, period, date) {
-            const selectedDay = getSelectedDay(date);
-            return fixedData.find(f =>
-                f.day.toLowerCase() === selectedDay.toLowerCase() &&
-                parseInt(f.period) === period &&
-                f.lab.replace(/\s+/g,'').toLowerCase() === lab.replace(/\s+/g,'').toLowerCase()
+        function getBlockedInfo(lab, period, day) {
+            const timetable = getTimetable();
+            return timetable.find(t =>
+                t.day === day &&
+                String(t.period) === String(period) &&
+                t.lab === lab
             );
         }
 
         function isBooked(lab, period, date) {
-            return bookingsData.find(b =>
-                b.lab.replace(/\s+/g,'').toLowerCase() === lab.replace(/\s+/g,'').toLowerCase() &&
-                parseInt(b.period) === period
+            const bookings = getBookings();
+            return bookings.some(b =>
+                b.lab === lab &&
+                String(b.period) === String(period) &&
+                b.date === date
             );
         }
 
-        async function bookLab(lab, period) {
+        function bookLab(lab, period) {
             const date = currentDate;
-            const day = getSelectedDay(date);
-            try {
-                const res = await fetch('/api/book', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ lab: lab, period: period, day: day, date: date })
-                });
-                const result = await res.json();
-                if (result.success) {
-                    fetchTimetableData(); // refresh UI
-                } else if (result.message === 'limit') {
-                    alert('You have reached your daily booking limit.');
-                } else if (result.message === 'booked') {
-                    alert('This slot is already booked.');
-                } else {
-                    alert('Booking failed: ' + result.message);
-                }
-            } catch (e) {
-                console.error(e);
-            }
+            let bookings = getBookings();
+            bookings.push({ lab, period, date });
+            localStorage.setItem("bookings", JSON.stringify(bookings));
+            renderDashboard(); // refresh UI
         }
 
-        async function cancelBooking(lab, period) {
+        function cancelBooking(lab, period) {
             if (!confirm('Cancel this booking?')) return;
-            const booking = isBooked(lab, period, currentDate);
-            
-            if (booking && booking.id) {
-                try {
-                    const res = await fetch(`/api/cancel_booking/${booking.id}`, { method: 'DELETE' });
-                    const result = await res.json();
-                    if (result.success) {
-                        fetchTimetableData(); // refresh UI
-                    } else {
-                        alert('Cancellation failed: ' + result.message);
-                    }
-                } catch(e) {
-                    console.error(e);
-                }
-            } else {
-                 alert('Booking ID not found or already cancelled.');
-            }
+            const date = currentDate;
+            let bookings = getBookings();
+            bookings = bookings.filter(b =>
+                !(b.lab === lab && String(b.period) === String(period) && b.date === date)
+            );
+            localStorage.setItem("bookings", JSON.stringify(bookings));
+            renderDashboard(); // refresh UI
         }
 
         async function logout() {
@@ -319,7 +285,7 @@
         });
 
         fetchNotice();
-        fetchTimetableData();
+        renderDashboard();
     </script>
     </div> <!-- End Main Content Wrapper -->
 </body>
