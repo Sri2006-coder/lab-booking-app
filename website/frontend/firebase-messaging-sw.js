@@ -2,12 +2,12 @@ importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
 
 firebase.initializeApp({
-  apiKey: "AIzaSyXXXX",
-  authDomain: "lab-booking-system-xxxx.firebaseapp.com",
-  projectId: "lab-booking-system-xxxx",
-  storageBucket: "lab-booking-system-xxxx.appspot.com",
+ apiKey: "AIzaSyAyp...",
+  authDomain: "lab-booking-system-e77ad.firebaseapp.com",
+  projectId: "lab-booking-system-e77ad",
+  storageBucket: "lab-booking-system-e77ad.firebasestorage.app",
   messagingSenderId: "492426985882",
-  appId: "1:492426985882:web:abcd1234"
+  appId: "1:492426985882:web:c48566f44e48acdb497a23"
 });
 
 const messaging = firebase.messaging();

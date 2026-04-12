@@ -416,8 +416,10 @@
     </div> <!-- End Main Content Wrapper -->
     <!-- FIREBASE NOTIFICATION START -->
 <script type="module">
+    
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+console.log("Firebase script loaded");
 
 const firebaseConfig = {
   apiKey: "AIzaSyAyp...",
@@ -436,7 +438,8 @@ Notification.requestPermission().then((permission) => {
     console.log("Notification permission granted.");
 
     getToken(messaging, {
-      vapidKey: "BPffVCwY5C4FPtAZ99CNYXiNCE4WJkHaHh8R7Gb_zdkigHa2xs96ZGAJqKkdWGWahZQWSa9SNHrZn7S3-5VKTqc"
+      vapidKey: "BPffVCwY5C4FPtAZ99CNYXiNCE4WJkHaHh8R7Gb_zdkigHa2xs96ZGAJqKkdWGWahZQWSa9SNHrZn7S3-5VKTqc",
+      serviceWorkerRegistration: registration
     })
     .then((currentToken) => {
       if (currentToken) {
