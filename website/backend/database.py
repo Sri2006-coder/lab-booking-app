@@ -74,6 +74,16 @@ def init_db():
     ''')
     cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('daily_limit', '2')")
     
+    # FCM Tokens Table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS fcm_tokens (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        faculty_id INTEGER,
+        token TEXT UNIQUE NOT NULL,
+        FOREIGN KEY (faculty_id) REFERENCES faculty(id)
+    )
+    ''')
+    
     conn.commit()
     conn.close()
 
