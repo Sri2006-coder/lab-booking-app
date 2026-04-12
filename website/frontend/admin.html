@@ -39,15 +39,15 @@
         <div class="space-y-3 mb-8">
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-blue-500 p-4 flex justify-between items-center">
                 <span class="text-gray-600 font-medium">Total Bookings</span>
-                <span id="stat-bookings" class="text-2xl font-bold text-gray-900">0</span>
+                <span id="total-bookings" class="text-2xl font-bold text-gray-900">0</span>
             </div>
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-emerald-500 p-4 flex justify-between items-center">
                 <span class="text-gray-600 font-medium">Active Labs</span>
-                <span id="stat-labs" class="text-2xl font-bold text-gray-900">0</span>
+                <span id="active-labs" class="text-2xl font-bold text-gray-900">0</span>
             </div>
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-orange-500 p-4 flex justify-between items-center">
                 <span class="text-gray-600 font-medium">Faculty Users</span>
-                <span id="stat-faculty" class="text-2xl font-bold text-gray-900">0</span>
+                <span id="faculty-users" class="text-2xl font-bold text-gray-900">0</span>
             </div>
         </div>
 
@@ -78,7 +78,7 @@
                 <p class="text-xs text-gray-500 mt-1 ml-9">Hint: 0 = Unlimited booking</p>
             </div>
             <div class="flex gap-2">
-                <input type="number" id="limit-input" min="0" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                <input type="number" id="limitInput" style="width: 100%; padding: 10px;" min="0" class="border border-gray-300 rounded-lg text-sm text-gray-700 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
                 <button onclick="updateLimit()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold py-2 px-4 rounded-lg shadow-sm active:scale-95 transition">Update Limit</button>
             </div>
             <div id="limit-status" class="text-sm font-medium text-center mt-3 hidden"></div>
@@ -93,13 +93,12 @@
                     <span class="text-2xl mr-2">📁</span>
                     <h4 class="font-semibold text-gray-800">Upload Timetable</h4>
                 </div>
-                <a href="/download_sample" class="text-xs sm:text-sm font-bold text-blue-600 hover:text-blue-800 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 active:scale-95 transition">Download Sample CSV</a>
             </div>
             
             <div class="mb-4 bg-gray-50 rounded-lg p-3 border border-gray-200 text-sm text-gray-600">
                 <p class="font-bold text-gray-700 mb-1 flex items-center flex-wrap">Format: <span class="font-normal font-mono text-xs bg-gray-200 px-1.5 py-0.5 ml-2 rounded border border-gray-300">day, period, lab, subject</span></p>
-                <p class="flex items-center mt-1 flex-wrap">Example: <span class="font-mono text-xs bg-gray-200 px-1.5 py-0.5 ml-1 rounded border border-gray-300">Monday,1,Lab1,Math</span></p>
-                <p class="mt-2 text-xs text-gray-500 italic">Download the sample file, fill your timetable, and upload here.</p>
+                <p class="flex items-center mt-1 flex-wrap">Example: <span class="font-mono text-xs bg-gray-200 px-1.5 py-0.5 ml-1 rounded border border-gray-300">Monday, 1, Lab 1, WT Lab</span></p>
+                <p class="mt-2 text-xs text-gray-500 italic">(Note: spaces are allowed)</p>
             </div>
 
             <input type="file" id="csv-file" accept=".csv" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer mb-3 outline-none border border-gray-200 rounded-lg p-1">
@@ -138,12 +137,12 @@
     <script>
         async function fetchStats() {
             try {
-                const res = await fetch('/api/stats');
+                const res = await fetch('/admin/stats', { cache: "no-store" });
                 if (res.status === 401) window.location.href = 'index.html';
                 const data = await res.json();
-                document.getElementById('stat-bookings').innerText = data.totalBookings;
-                document.getElementById('stat-labs').innerText = data.activeLabs;
-                document.getElementById('stat-faculty').innerText = data.totalFaculty;
+                document.getElementById('total-bookings').innerText = data.total_bookings;
+                document.getElementById('active-labs').innerText = data.active_labs;
+                document.getElementById('faculty-users').innerText = data.faculty_users;
             } catch (e) {}
         }
 
@@ -245,37 +244,22 @@
                 const res = await fetch('/get_limit');
                 if (res.ok) {
                     const data = await res.json();
-                    document.getElementById('limit-input').value = data.limit;
+                    document.getElementById('limitInput').value = data.limit;
                 }
             } catch (e) {}
         }
 
         async function updateLimit() {
-            const limitVal = document.getElementById('limit-input').value;
-            if (limitVal === '') return;
-            const status = document.getElementById('limit-status');
-            status.className = 'text-sm font-medium text-center mt-3 text-gray-600 block';
-            status.innerText = '⏳ Updating...';
+            const limit = document.getElementById("limitInput").value;
 
-            try {
-                const res = await fetch('/update_limit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ limit: parseInt(limitVal) })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    status.innerText = '✅ Limit updated successfully';
-                    status.className = 'text-sm font-medium text-center mt-3 text-emerald-600 block';
-                    setTimeout(() => { status.classList.add('hidden'); }, 3000);
-                } else {
-                    status.innerText = '❌ Failed to update limit';
-                    status.className = 'text-sm font-medium text-center mt-3 text-red-600 block';
-                }
-            } catch (e) {
-                status.innerText = '❌ Error updating';
-                status.className = 'text-sm font-medium text-center mt-3 text-red-600 block';
-            }
+            await fetch("/set_limit", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ limit: parseInt(limit) })
+            });
+
+            alert("Limit updated");
+            fetchLimit();
         }
 
         fetchStats();

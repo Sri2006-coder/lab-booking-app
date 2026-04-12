@@ -7,6 +7,13 @@ app = Flask(__name__, static_folder='../frontend')
 app.secret_key = 'super_secret_key_for_lab_booking'
 app.permanent_session_lifetime = timedelta(minutes=10)
 
+@app.after_request
+def add_header(response):
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
 @app.route('/')
 def index():
     return send_from_directory(app.static_folder, 'index.html')
@@ -40,6 +47,28 @@ def login():
 def logout():
     session.clear()
     return jsonify({"success": True})
+
+@app.route('/admin/stats')
+def admin_stats():
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM bookings")
+    total = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(DISTINCT lab_id) FROM bookings")
+    labs = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM faculty WHERE role='faculty'")
+    users = cursor.fetchone()[0]
+
+    conn.close()
+
+    return jsonify({
+        "total_bookings": total,
+        "active_labs": labs,
+        "faculty_users": users
+    })
 
 @app.route('/api/stats')
 def get_stats():
@@ -304,10 +333,8 @@ def upload_timetable():
         content = file.stream.read().decode("utf-8-sig", errors="replace")
         stream = io.StringIO(content)
         
-        reader = csv.DictReader(stream, skipinitialspace=True)
-        # Normalize header keys to lowercase exactly
-        if reader.fieldnames:
-            reader.fieldnames = [str(f).strip().lower() for f in reader.fieldnames]
+        reader = csv.reader(stream)
+        next(reader, None) # skip header
             
         conn = get_db()
         cursor = conn.cursor()
@@ -316,14 +343,13 @@ def upload_timetable():
         
         count = 0
         for row in reader:
-            # Fallback checks in case of empty rows
-            if not row.get('day') or not row.get('period') or not row.get('lab') or not row.get('subject'):
+            if len(row) < 4:
                 continue
-                
-            day = str(row['day']).strip()
-            period = int(row['period'])
-            lab = str(row['lab']).strip()
-            subject = str(row['subject']).strip()
+            
+            day = row[0].strip()
+            period = int(row[1].strip())
+            lab = row[2].strip()
+            subject = row[3].strip()
             
             print("INSERTING:", day, period, lab, subject)
             

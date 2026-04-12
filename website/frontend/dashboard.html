@@ -214,7 +214,7 @@
 
         async function loadTimetable() {
             try {
-                const res = await fetch(`/api/timetable?date=${currentDate}`, { credentials: "include" });
+                const res = await fetch(`/api/timetable?date=${currentDate}`, { credentials: "include", cache: "no-store" });
                 const data = await res.json();
                 timetable = data.fixed || [];
             } catch (error) {
@@ -229,16 +229,16 @@
 
         function isBlocked(lab, period, day) {
             return timetable.find(t =>
-                t.day.toLowerCase() === day.toLowerCase() &&
+                t.day === day &&
                 t.period == period &&
-                t.lab.replace(/\s+/g,'').toLowerCase() === lab.replace(/\s+/g,'').toLowerCase()
+                t.lab === lab
             );
         }
 
         let bookings = [];
         
         async function loadBookings() {
-            const res = await fetch("/bookings");
+            const res = await fetch("/bookings", { cache: "no-store" });
             bookings = await res.json();
         }
 
@@ -329,6 +329,12 @@
             await loadTimetable();
             await loadBookings();
             renderDashboard();
+
+            setInterval(async () => {
+                await loadTimetable();
+                await loadBookings();
+                renderDashboard();
+            }, 5000);
         };
     </script>
     </div> <!-- End Main Content Wrapper -->
