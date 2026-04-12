@@ -137,51 +137,74 @@
             } catch(e) {}
         }
 
-        async function uploadCSV() {
+        function uploadCSV() {
             const fileInput = document.getElementById('csv-file');
             const status = document.getElementById('upload-status');
-            if (!fileInput.files[0]) return alert('Select a file');
+            const file = fileInput.files[0];
 
-            const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
+            if (!file) {
+                alert("Please select a CSV file");
+                return;
+            }
 
             status.innerText = '⏳ Uploading...';
             status.className = 'mt-3 text-sm font-medium text-center text-gray-600';
             
-            try {
-                const res = await fetch('/api/upload', { method: 'POST', body: formData });
-                const data = await res.json();
-                if (data.success) {
-                    status.innerText = '✅ Uploaded successfully';
-                    status.className = 'mt-3 text-sm font-medium text-center text-emerald-600';
-                    fetchStats();
-                } else {
-                    status.innerText = '❌ ' + data.message;
-                    status.className = 'mt-3 text-sm font-medium text-center text-red-600';
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split("\n");
+
+                const timetable = [];
+
+                for (let i = 1; i < lines.length; i++) {
+                    const cols = lines[i].split(",");
+
+                    if (cols.length < 4) continue;
+
+                    const day = cols[0].trim();
+                    const period = parseInt(cols[1].trim());
+                    const lab = cols[2].trim();
+                    const subject = cols[3].trim();
+
+                    if (day && period && lab && subject) {
+                        timetable.push({
+                            day: day,
+                            period: period,
+                            lab: lab,
+                            subject: subject
+                        });
+                    }
                 }
-            } catch (err) {
+
+                // STORE DATA (CRITICAL FIX)
+                localStorage.setItem("timetable", JSON.stringify(timetable));
+
+                console.log("Timetable stored:", timetable);
+
+                status.innerText = '✅ Uploaded successfully into localStorage';
+                status.className = 'mt-3 text-sm font-medium text-center text-emerald-600';
+                
+                alert("Timetable uploaded successfully!");
+            };
+
+            reader.onerror = function() {
                 status.innerText = '❌ Error uploading';
                 status.className = 'mt-3 text-sm font-medium text-center text-red-600';
             }
+
+            reader.readAsText(file);
         }
 
-        async function clearTimetable() {
+        function clearTimetable() {
             if (!confirm("Are you sure? This will delete all timetable data!")) return;
             
-            try {
-                const res = await fetch('/clear_timetable', { method: 'POST' });
-                const data = await res.json();
-                if (data.success) {
-                    alert("Delete All Schedule successfully performed.");
-                    fetchStats();
-                    document.getElementById('upload-status').innerText = '✅ Timetable cleared';
-                    document.getElementById('upload-status').className = 'mt-3 text-sm font-medium text-center text-emerald-600';
-                } else {
-                    alert("Failed to delete schedule: " + data.message);
-                }
-            } catch (err) {
-                alert("Error deleting schedule");
-            }
+            localStorage.removeItem("timetable");
+            
+            alert("Delete All Schedule successfully performed.");
+            document.getElementById('upload-status').innerText = '✅ Timetable cleared';
+            document.getElementById('upload-status').className = 'mt-3 text-sm font-medium text-center text-emerald-600';
         }
 
         async function logout() {
