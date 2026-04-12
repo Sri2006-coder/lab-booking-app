@@ -37,7 +37,8 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         day TEXT,
         period INTEGER,
-        lab TEXT
+        lab TEXT,
+        subject TEXT
     )
     ''')
     

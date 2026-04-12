@@ -186,11 +186,19 @@
 
         function dateChanged() {
             currentDate = document.getElementById('date-picker').value;
-            renderDashboard();
+            loadTimetable();
         }
 
-        function getTimetable() {
-            return JSON.parse(localStorage.getItem("timetable")) || [];
+        async function loadTimetable() {
+            try {
+                const res = await fetch(`/api/timetable?date=${currentDate}`, { credentials: "include" });
+                const data = await res.json();
+                window.fixedData = data.fixed || [];
+                window.bookings = data.bookings || [];
+                renderDashboard();
+            } catch (error) {
+                console.error("Error fetching timetable:", error);
+            }
         }
         
         function getBookings() {
@@ -202,11 +210,10 @@
         }
 
         function getBlockedInfo(lab, period, day) {
-            const timetable = getTimetable();
-            return timetable.find(t =>
-                t.day === day &&
-                String(t.period) === String(period) &&
-                t.lab === lab
+            return (window.fixedData || []).find(f =>
+                f.day.toLowerCase() === day.toLowerCase() &&
+                parseInt(f.period) === period &&
+                f.lab.replace(/\s+/g,'').toLowerCase() === lab.replace(/\s+/g,'').toLowerCase()
             );
         }
 
@@ -285,7 +292,7 @@
         });
 
         fetchNotice();
-        renderDashboard();
+        loadTimetable();
     </script>
     </div> <!-- End Main Content Wrapper -->
 </body>

@@ -177,7 +177,7 @@ def get_timetable():
     cursor.execute("SELECT lab_name FROM labs ORDER BY id")
     labs = [row['lab_name'].strip() for row in cursor.fetchall()]
     
-    cursor.execute("SELECT day, period, lab FROM fixed_schedule WHERE day COLLATE NOCASE = ?", (day,))
+    cursor.execute("SELECT day, period, lab, subject FROM fixed_schedule WHERE day COLLATE NOCASE = ?", (day,))
     fixed_data = []
     for row in cursor.fetchall():
         d = dict(row)
@@ -317,19 +317,20 @@ def upload_timetable():
         count = 0
         for row in reader:
             # Fallback checks in case of empty rows
-            if not row.get('day') or not row.get('period') or not row.get('lab'):
+            if not row.get('day') or not row.get('period') or not row.get('lab') or not row.get('subject'):
                 continue
                 
             day = str(row['day']).strip()
             period = int(row['period'])
             lab = str(row['lab']).strip()
+            subject = str(row['subject']).strip()
             
-            print("INSERTING:", day, period, lab)
+            print("INSERTING:", day, period, lab, subject)
             
             cursor.execute("""
-                INSERT INTO fixed_schedule (day, period, lab) 
-                VALUES (?, ?, ?)
-            """, (day, period, lab))
+                INSERT INTO fixed_schedule (day, period, lab, subject) 
+                VALUES (?, ?, ?, ?)
+            """, (day, period, lab, subject))
             count += 1
             
         conn.commit()
