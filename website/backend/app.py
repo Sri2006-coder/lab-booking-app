@@ -3,7 +3,7 @@ from database import get_db
 import os
 from datetime import datetime, timedelta
 
-app = Flask(__name__, static_folder='../frontend')
+app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), '../frontend'))
 app.secret_key = 'super_secret_key_for_lab_booking'
 app.permanent_session_lifetime = timedelta(minutes=10)
 
