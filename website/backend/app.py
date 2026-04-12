@@ -506,6 +506,78 @@ def cancel_booking_custom():
     conn.close()
     return jsonify({"success": True})
 
+@app.route('/login', methods=['POST'])
+def custom_login():
+    data = request.json
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name, email, password, role FROM faculty WHERE email=? AND password=?",
+                   (data['email'], data['password']))
+    user = cursor.fetchone()
+    conn.close()
+
+    if user:
+        session['user_id'] = user['id']
+        session['role'] = user['role']
+        return jsonify({"success": True, "role": user['role']})
+    return jsonify({"success": False, "message": "Invalid credentials"})
+
+
+@app.route('/register', methods=['POST'])
+def register():
+    data = request.json
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM faculty WHERE email=?", (data['email'],))
+    if cursor.fetchone():
+        conn.close()
+        return jsonify({"success": False, "message": "User already exists"})
+
+    cursor.execute("""
+    INSERT INTO faculty (name, email, password, role)
+    VALUES (?, ?, ?, 'faculty')
+    """, (data['name'], data['email'], data['password']))
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True})
+
+
+@app.route('/upload_faculty', methods=['POST'])
+def bulk_upload_faculty():
+    if session.get('role') != 'admin':
+        return jsonify({"error": "Unauthorized"}), 403
+        
+    import csv
+    import io
+    file = request.files['file']
+    content = file.stream.read().decode("UTF8", errors="replace")
+    stream = io.StringIO(content)
+    reader = csv.DictReader(stream, skipinitialspace=True)
+    
+    # Normalize headers
+    if reader.fieldnames:
+        reader.fieldnames = [str(f).strip().lower() for f in reader.fieldnames]
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    count = 0
+    for row in reader:
+        # Fallbacks for empty rows
+        if not row.get('name') or not row.get('email') or not row.get('password'):
+            continue
+            
+        cursor.execute("""
+        INSERT OR IGNORE INTO faculty (name, email, password, role)
+        VALUES (?, ?, ?, 'faculty')
+        """, (row['name'].strip(), row['email'].strip(), row['password'].strip()))
+        count += 1
+
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True, "count": count})
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
