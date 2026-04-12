@@ -194,17 +194,13 @@
                 const res = await fetch(`/api/timetable?date=${currentDate}`, { credentials: "include" });
                 const data = await res.json();
                 window.fixedData = data.fixed || [];
-                window.bookings = data.bookings || [];
+                await loadBookings();
                 renderDashboard();
             } catch (error) {
                 console.error("Error fetching timetable:", error);
             }
         }
         
-        function getBookings() {
-            return JSON.parse(localStorage.getItem("bookings")) || [];
-        }
-
         function getSelectedDay(dateStr) {
             return new Date(dateStr).toLocaleDateString("en-US", { weekday: "long" });
         }
@@ -217,32 +213,46 @@
             );
         }
 
+        let bookings = [];
+        
+        async function loadBookings() {
+            const res = await fetch("/bookings");
+            bookings = await res.json();
+        }
+
         function isBooked(lab, period, date) {
-            const bookings = getBookings();
             return bookings.some(b =>
                 b.lab === lab &&
-                String(b.period) === String(period) &&
+                b.period === period &&
                 b.date === date
             );
         }
 
-        function bookLab(lab, period) {
+        async function bookLab(lab, period) {
             const date = currentDate;
-            let bookings = getBookings();
-            bookings.push({ lab, period, date });
-            localStorage.setItem("bookings", JSON.stringify(bookings));
-            renderDashboard(); // refresh UI
+
+            const res = await fetch("/book", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ lab, period, date })
+            });
+
+            await loadBookings();
+            renderDashboard();
         }
 
-        function cancelBooking(lab, period) {
+        async function cancelBooking(lab, period) {
             if (!confirm('Cancel this booking?')) return;
             const date = currentDate;
-            let bookings = getBookings();
-            bookings = bookings.filter(b =>
-                !(b.lab === lab && String(b.period) === String(period) && b.date === date)
-            );
-            localStorage.setItem("bookings", JSON.stringify(bookings));
-            renderDashboard(); // refresh UI
+
+            await fetch("/cancel", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ lab, period, date })
+            });
+
+            await loadBookings();
+            renderDashboard();
         }
 
         async function logout() {

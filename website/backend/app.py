@@ -441,6 +441,71 @@ def get_calendar():
         "days": days
     })
 
+
+@app.route('/book', methods=['POST'])
+def book_lab():
+    from flask import request
+    data = request.json
+    lab = data['lab']
+    period = data['period']
+    date = data['date']
+    day = datetime.strptime(date, "%Y-%m-%d").strftime("%A")
+    faculty_id = session.get('user_id', 1)
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT id FROM labs WHERE lab_name=?", (lab,))
+    lab_row = cursor.fetchone()
+    if not lab_row:
+        conn.close()
+        return jsonify({"success": False, "message": "Invalid lab"})
+    lab_id = lab_row['id']
+    
+    cursor.execute("SELECT * FROM bookings WHERE lab_id=? AND period=? AND booking_date=?", (lab_id, period, date))
+    if cursor.fetchone():
+        conn.close()
+        return jsonify({"success": False, "message": "Already booked"})
+        
+    cursor.execute("INSERT INTO bookings (lab_id, faculty_id, day, period, booking_date) VALUES (?, ?, ?, ?, ?)",
+                   (lab_id, faculty_id, day, period, date))
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True})
+
+@app.route('/bookings', methods=['GET'])
+def get_bookings():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT l.lab_name as lab, b.period, b.booking_date as date 
+        FROM bookings b JOIN labs l ON b.lab_id = l.id
+    """)
+    rows = cursor.fetchall()
+    conn.close()
+    
+    bookings = [{"lab": str(r['lab']).strip(), "period": int(r['period']), "date": str(r['date']).strip()} for r in rows]
+    return jsonify(bookings)
+
+@app.route('/cancel', methods=['POST'])
+def cancel_booking_custom():
+    from flask import request
+    data = request.json
+    lab = data['lab']
+    period = data['period']
+    date = data['date']
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT id FROM labs WHERE lab_name=?", (lab,))
+    lab_row = cursor.fetchone()
+    if lab_row:
+        cursor.execute("DELETE FROM bookings WHERE lab_id=? AND period=? AND booking_date=?", (lab_row['id'], period, date))
+        conn.commit()
+    conn.close()
+    return jsonify({"success": True})
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
