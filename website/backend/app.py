@@ -2,6 +2,15 @@ from flask import Flask, request, jsonify, session, send_from_directory
 from database import get_db
 import os
 from datetime import datetime, timedelta
+import firebase_admin
+from firebase_admin import credentials, messaging
+
+try:
+    cred = credentials.Certificate(os.path.join(os.path.dirname(__file__), "firebase_key.json"))
+    firebase_admin.initialize_app(cred)
+    print("Firebase Admin SDK initialized successfully.")
+except Exception as e:
+    print(f"Warning: Firebase Admin SDK failed to initialize: {e}")
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), '../frontend'))
 app.secret_key = 'super_secret_key_for_lab_booking'
@@ -733,6 +742,53 @@ def save_token():
     
     return jsonify({"success": False, "message": "No token provided"}), 400
 
+def send_notification(tokens, title, body):
+    if not tokens:
+        print("No tokens provided for push notification.")
+        return False
+        
+    try:
+        if isinstance(tokens, str):
+            tokens = [tokens]
+            
+        msg = messaging.MulticastMessage(
+            notification=messaging.Notification(
+                title=title,
+                body=body
+            ),
+            tokens=tokens,
+        )
+        response = messaging.send_multicast(msg)
+        print(f"Successfully sent {response.success_count} messages. Failed: {response.failure_count}")
+        return response.success_count > 0
+    except Exception as e:
+        print(f"Error sending FCM message: {e}")
+        return False
+
+@app.route('/send-test-notification', methods=['GET'])
+def send_test_notification():
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT token FROM fcm_tokens")
+        rows = cursor.fetchall()
+        conn.close()
+        
+        tokens = [row['token'] for row in rows]
+        
+        if not tokens:
+            return jsonify({"success": False, "message": "No tokens found in database."}), 404
+            
+        success = send_notification(tokens, "Test Notification", "This is a test push message")
+        
+        if success:
+            return jsonify({"success": True, "message": f"Test notification sent to {len(tokens)} devices."})
+        else:
+            return jsonify({"success": False, "message": "Failed to send test notification. Check server logs."}), 500
+            
+    except Exception as e:
+        print(f"Test notification error: {e}")
+        return jsonify({"success": False, "message": "Server error."}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
