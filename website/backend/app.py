@@ -707,6 +707,32 @@ def bulk_upload_faculty():
     conn.close()
     return jsonify({"success": True, "count": count})
 
+@app.route('/save-token', methods=['POST'])
+def save_token():
+    data = request.get_json()
+    if not data:
+        return jsonify({"success": False, "message": "Invalid JSON"}), 400
+        
+    token = data.get('token')
+    if token:
+        print(f"FCM Token received: {token}")
+        
+        # Save to database if user is logged in
+        if 'user_id' in session:
+            try:
+                conn = get_db()
+                cursor = conn.cursor()
+                cursor.execute("INSERT OR IGNORE INTO fcm_tokens (faculty_id, token) VALUES (?, ?)", (session['user_id'], token))
+                conn.commit()
+            except Exception as e:
+                print(f"Error saving token to DB: {e}")
+            finally:
+                conn.close()
+                
+        return jsonify({"message": "Token saved successfully"})
+    
+    return jsonify({"success": False, "message": "No token provided"}), 400
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
