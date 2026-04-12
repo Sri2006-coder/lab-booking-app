@@ -373,7 +373,7 @@ def upload_timetable():
 def get_labs_dynamic():
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM labs")
+    cursor.execute("SELECT * FROM labs ORDER BY lab_name ASC")
     all_labs = [dict(row) for row in cursor.fetchall()]
     conn.close()
     return jsonify(all_labs)
@@ -388,8 +388,10 @@ def add_lab_dynamic():
     conn = get_db()
     cursor = conn.cursor()
     try:
-        cursor.execute("INSERT INTO labs (lab_name) VALUES (?)", (name,))
-        conn.commit()
+        cursor.execute("SELECT id FROM labs WHERE lab_name=?", (name,))
+        if cursor.fetchone() is None:
+            cursor.execute("INSERT INTO labs (lab_name) VALUES (?)", (name,))
+            conn.commit()
         success = True
     except:
         success = False
@@ -423,12 +425,14 @@ def handle_labs():
             return jsonify({"success": False, "message": "Unauthorized"}), 401
         data = request.get_json()
         lab_name = data.get('name')
-        cursor.execute("INSERT INTO labs (lab_name) VALUES (?)", (lab_name,))
-        conn.commit()
+        cursor.execute("SELECT id FROM labs WHERE lab_name=?", (lab_name,))
+        if cursor.fetchone() is None:
+            cursor.execute("INSERT INTO labs (lab_name) VALUES (?)", (lab_name,))
+            conn.commit()
         conn.close()
         return jsonify({"success": True})
     else:
-        cursor.execute("SELECT * FROM labs")
+        cursor.execute("SELECT * FROM labs ORDER BY lab_name ASC")
         labs = [dict(row) for row in cursor.fetchall()]
         conn.close()
         return jsonify(labs)

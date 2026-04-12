@@ -140,6 +140,20 @@
         }
 
         let labs = [];
+        let currentGroup = "lab567";
+
+        function getFilteredLabs() {
+            if (currentGroup === "lab12") {
+                return labs.filter(l => l.lab_name === "Lab 1" || l.lab_name === "Lab 2");
+            }
+            if (currentGroup === "lab567") {
+                return labs.filter(l => ["Lab 5", "Lab 6", "Lab 7"].includes(l.lab_name));
+            }
+            if (currentGroup === "halls") {
+                return labs.filter(l => l.lab_name && l.lab_name.includes("Hall"));
+            }
+            return labs;
+        }
 
         async function loadLabs() {
             try {
@@ -207,7 +221,7 @@
                 const labList = document.createElement('div');
                 labList.className = 'space-y-4';
 
-                labs.forEach(labObj => {
+                getFilteredLabs().forEach(labObj => {
                     const labName = labObj.lab_name;
                     const labId = labObj.id;
                     const labItem = document.createElement('div');
