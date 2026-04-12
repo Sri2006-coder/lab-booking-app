@@ -402,5 +402,56 @@
         };
     </script>
     </div> <!-- End Main Content Wrapper -->
+    <!-- FIREBASE NOTIFICATION START -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyXXXXXXX",
+    authDomain: "lab-booking-system-e77ad.firebaseapp.com",
+    projectId: "lab-booking-system-e77ad",
+    storageBucket: "lab-booking-system-e77ad.appspot.com",
+    messagingSenderId: "492426985882",
+    appId: "1:492426985882:web:xxxxxxxxxxxxx"
+};
+
+const app = initializeApp(firebaseConfig);
+const messaging = getMessaging(app);
+
+// Register service worker
+navigator.serviceWorker.register("/firebase-messaging-sw.js")
+.then(() => {
+    console.log("Service Worker Registered");
+});
+
+// Request permission
+Notification.requestPermission().then((permission) => {
+    if (permission === "granted") {
+        getToken(messaging, {
+            vapidKey: "BPfVCwY5C4FPTaZ99CNYXINCE4WJkHaHh87Gb_zdkjgHa2xs96ZGAJqKkdWGWahZQWSa9SNHrZn7S3-5VKTqc"
+        }).then((token) => {
+            console.log("TOKEN:", token);
+
+            fetch("/save-token", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ token })
+            });
+        });
+    } else {
+        console.log("Permission denied");
+    }
+});
+
+// Foreground message
+onMessage(messaging, (payload) => {
+    console.log("Message:", payload);
+    new Notification(payload.notification.title, {
+        body: payload.notification.body
+    });
+});
+</script>
+<!-- FIREBASE NOTIFICATION END -->
 </body>
 </html>
