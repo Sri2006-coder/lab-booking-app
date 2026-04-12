@@ -35,10 +35,9 @@ def init_db():
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS fixed_schedule (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        lab TEXT,
         day TEXT,
         period INTEGER,
-        subject TEXT
+        lab TEXT
     )
     ''')
     

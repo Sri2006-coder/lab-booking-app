@@ -103,7 +103,7 @@ def download_sample():
         return jsonify({"success": False, "message": "Unauthorized"}), 401
     
     from flask import Response
-    csv_content = "day,period,lab,subject\nMonday,1,Lab1,Math\nMonday,2,Lab2,Physics\nTuesday,1,Lab1,Chemistry\n"
+    csv_content = "day,period,lab\nMonday,1,Lab1\nMonday,2,Lab2\nTuesday,1,Lab1\n"
     return Response(
         csv_content,
         mimetype="text/csv",
@@ -177,7 +177,7 @@ def get_timetable():
     cursor.execute("SELECT lab_name FROM labs ORDER BY id")
     labs = [row['lab_name'].strip() for row in cursor.fetchall()]
     
-    cursor.execute("SELECT day, period, lab, subject FROM fixed_schedule WHERE day COLLATE NOCASE = ?", (day,))
+    cursor.execute("SELECT day, period, lab FROM fixed_schedule WHERE day COLLATE NOCASE = ?", (day,))
     fixed_data = []
     for row in cursor.fetchall():
         d = dict(row)
@@ -312,23 +312,24 @@ def upload_timetable():
         conn = get_db()
         cursor = conn.cursor()
         
+        cursor.execute("DELETE FROM fixed_schedule")
+        
         count = 0
         for row in reader:
             # Fallback checks in case of empty rows
-            if not row.get('day') or not row.get('period') or not row.get('lab') or not row.get('subject'):
+            if not row.get('day') or not row.get('period') or not row.get('lab'):
                 continue
                 
             day = str(row['day']).strip()
             period = int(row['period'])
             lab = str(row['lab']).strip()
-            subject = str(row['subject']).strip()
             
-            print("INSERTING:", day, period, lab, subject)
+            print("INSERTING:", day, period, lab)
             
             cursor.execute("""
-                INSERT INTO fixed_schedule (day, period, lab, subject) 
-                VALUES (?, ?, ?, ?)
-            """, (day, period, lab, subject))
+                INSERT INTO fixed_schedule (day, period, lab) 
+                VALUES (?, ?, ?)
+            """, (day, period, lab))
             count += 1
             
         conn.commit()
