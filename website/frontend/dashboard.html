@@ -416,57 +416,73 @@
     </div> <!-- End Main Content Wrapper -->
     <!-- FIREBASE NOTIFICATION START -->
 <script type="module">
-    
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+
 console.log("Firebase script loaded");
 
+// ✅ Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyAYpXGDlYTg03U-WWRpEvIAqnqUyJFc6QU",
   authDomain: "lab-booking-system-e77ad.firebaseapp.com",
   projectId: "lab-booking-system-e77ad",
   storageBucket: "lab-booking-system-e77ad.firebasestorage.app",
   messagingSenderId: "492426985882",
-  appId: "1:492426985882:web:648566f44e48acdb497a23",
-  measurementId: "G-Z8H51WZZYP"
+  appId: "1:492426985882:web:648566f44e48acdb497a23"
 };
 
+// ✅ Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 
-Notification.requestPermission().then((permission) => {
-  if (permission === "granted") {
-    console.log("Notification permission granted.");
+// ✅ REGISTER SERVICE WORKER FIRST
+navigator.serviceWorker.register("/firebase-messaging-sw.js")
+.then((registration) => {
+  console.log("Service Worker Registered");
 
-    getToken(messaging, {
-      vapidKey: "BPffVCwY5C4FPtAZ99CNYXiNCE4WJkHaHh8R7Gb_zdkigHa2xs96ZGAJqKkdWGWahZQWSa9SNHrZn7S3-5VKTqc",
-      serviceWorkerRegistration: registration
-    })
-    .then((currentToken) => {
-      if (currentToken) {
-        console.log("FCM Token:", currentToken);
+  // ✅ REQUEST PERMISSION
+  Notification.requestPermission().then((permission) => {
+    if (permission === "granted") {
+      console.log("Notification permission granted.");
 
-        fetch("/save-token", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ token: currentToken })
-        });
+      // ✅ GET TOKEN
+      getToken(messaging, {
+        vapidKey: "BPffVCwY5C4FPtAZ99CNYXiNCE4WJkHaHh8R7Gb_zdkigHa2xs96ZGAJqKkdWGWahZQWSa9SNHrZn7S3-5VKTqc",
+        serviceWorkerRegistration: registration
+      })
+      .then((currentToken) => {
+        if (currentToken) {
+          console.log("FCM Token:", currentToken);
 
-      } else {
-        console.log("No registration token available.");
-      }
-    })
-    .catch((err) => {
-      console.error("Error getting token:", err);
-    });
+          // ✅ SEND TOKEN TO BACKEND
+          fetch("/save-token", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ token: currentToken })
+          });
 
-  } else {
-    console.log("Notification permission denied.");
-  }
+        } else {
+          console.log("No registration token available.");
+        }
+      })
+      .catch((err) => {
+        console.error("Error getting token:", err);
+      });
+
+    } else {
+      console.log("Notification permission denied.");
+    }
+  });
+
+})
+.catch((err) => {
+  console.error("Service Worker registration failed:", err);
 });
 
+
+// ✅ FOREGROUND NOTIFICATION
 onMessage(messaging, (payload) => {
   console.log("Message received:", payload);
 
