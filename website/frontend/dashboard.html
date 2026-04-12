@@ -68,9 +68,15 @@
         <!-- Date Header Card -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-5 flex flex-col space-y-3">
             <h3 id="display-date" class="font-bold text-gray-800 text-lg">Loading...</h3>
-            <div class="flex space-x-2">
-                <input type="date" id="date-picker" class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none">
-                <button onclick="dateChanged()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm px-5 py-2.5 shadow-sm active:scale-95 transition">View</button>
+            <div class="flex flex-col space-y-2">
+                <div class="flex space-x-2">
+                    <input type="date" id="date-picker" class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none">
+                    <button onclick="dateChanged()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm px-5 py-2.5 shadow-sm active:scale-95 transition">View</button>
+                </div>
+                <div id="admin-lab-ui" style="display: none;" class="flex space-x-2 w-full mt-2 border-t border-gray-100 pt-3">
+                    <input type="text" id="new-lab-name" placeholder="E.g. Server Room" class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none">
+                    <button onclick="addLab()" class="bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg text-sm px-5 py-2.5 shadow-sm active:scale-95 transition">Add Lab</button>
+                </div>
             </div>
         </div>
 
@@ -93,7 +99,8 @@
 
     <script>
         let currentUserId = null;
-        let currentLabs = '1,2';
+        let isAdmin = false;
+
         const urlParams = new URLSearchParams(window.location.search);
         let currentDate = urlParams.get('date') || new Date().toISOString().split('T')[0];
         let selectedSlot = null;
@@ -110,7 +117,6 @@
                 const data = await res.json();
                 if (data) {
                     const bar = document.getElementById('notice-bar');
-                    // We need to set innerHTML to notice-bar to match old logic but style it
                     bar.innerHTML = `<span>🔔 ${data.message} (${data.minutes} mins remaining)</span>`;
                     bar.classList.remove('hidden');
                 }
@@ -122,25 +128,65 @@
                 const res = await fetch("/current_user");
                 const user = await res.json();
                 currentUserId = user.id;
+                isAdmin = (user.role === 'admin');
+                
+                if (isAdmin) {
+                    const adminLabUI = document.getElementById('admin-lab-ui');
+                    if (adminLabUI) adminLabUI.style.display = 'flex';
+                }
             } catch(e) {
                 console.error(e);
             }
         }
 
-        const labGroups = {
-            "lab12": ["Lab 1", "Lab 2"],
-            "lab567": ["Lab 5", "Lab 6", "Lab 7"],
-            "halls": ["Conference Hall", "Seminar Hall"]
-        };
+        let labs = [];
 
-        let currentGroup = "lab567";
+        async function loadLabs() {
+            try {
+                const res = await fetch("/labs", { cache: "no-store" });
+                labs = await res.json();
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
+        async function addLab() {
+            const name = document.getElementById('new-lab-name').value;
+            if (!name) return alert('Enter lab name');
+            const res = await fetch("/add_lab", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ name })
+            });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('new-lab-name').value = '';
+                await initializeDashboard();
+            } else {
+                alert(data.message || 'Error adding lab');
+            }
+        }
+
+        async function deleteLab(id) {
+            if (!confirm('Are you sure you want to delete this lab?')) return;
+            const res = await fetch("/delete_lab", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ id })
+            });
+            const data = await res.json();
+            if (data.success) {
+                await initializeDashboard();
+            } else {
+                alert(data.message || 'Error deleting lab');
+            }
+        }
 
         function renderDashboard() {
             const container = document.getElementById('timetable-grid') || document.getElementById('timetable-container');
             if (!container) return;
             container.innerHTML = '';
             
-            const labs = labGroups[currentGroup];
             const periods = [1, 2, 3, 4, 5, 6, 7, 8];
             
             const dateObj = new Date(currentDate);
@@ -161,7 +207,9 @@
                 const labList = document.createElement('div');
                 labList.className = 'space-y-4';
 
-                labs.forEach(labName => {
+                labs.forEach(labObj => {
+                    const labName = labObj.lab_name;
+                    const labId = labObj.id;
                     const labItem = document.createElement('div');
                     
                     const selectedDay = getSelectedDay(currentDate);
@@ -190,9 +238,12 @@
                         statusHtml = `<button class="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-3 px-4 rounded-xl shadow-sm transition active:scale-[0.98] book-btn" onclick="bookLab('${labName}', ${period})">🔵 Book Now</button>`;
                     }
 
+                    const delBtn = isAdmin ? `<button onclick="deleteLab(${labId})" class="text-red-500 hover:text-red-700 transition" title="Delete Lab">🗑️</button>` : '';
+
                     labItem.innerHTML = `
-                        <div class="mb-2 pl-1 font-semibold text-gray-800 flex items-center">
-                            <span class="mr-2 text-lg">📍</span> ${labName}
+                        <div class="mb-2 pl-1 font-semibold text-gray-800 flex items-center justify-between">
+                            <span><span class="mr-2 text-lg">📍</span> ${labName}</span>
+                            ${delBtn}
                         </div>
                         ${statusHtml}
                     `;
@@ -203,11 +254,16 @@
             });
         }
 
-        async function dateChanged() {
-            currentDate = document.getElementById('date-picker').value;
+        async function initializeDashboard() {
+            await loadLabs();
             await loadTimetable();
             await loadBookings();
             renderDashboard();
+        }
+
+        async function dateChanged() {
+            currentDate = document.getElementById('date-picker').value;
+            await initializeDashboard();
         }
 
         let timetable = [];
@@ -326,15 +382,9 @@
         window.onload = async function() {
             await loadUser();
             fetchNotice();
-            await loadTimetable();
-            await loadBookings();
-            renderDashboard();
+            await initializeDashboard();
 
-            setInterval(async () => {
-                await loadTimetable();
-                await loadBookings();
-                renderDashboard();
-            }, 5000);
+            setInterval(initializeDashboard, 5000);
         };
     </script>
     </div> <!-- End Main Content Wrapper -->

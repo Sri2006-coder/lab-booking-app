@@ -369,6 +369,47 @@ def upload_timetable():
         return jsonify({"success": False, "message": str(e)})
 
 
+@app.route('/labs', methods=['GET'])
+def get_labs_dynamic():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM labs")
+    all_labs = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return jsonify(all_labs)
+
+@app.route('/add_lab', methods=['POST'])
+def add_lab_dynamic():
+    if 'user_id' not in session or session['role'] != 'admin':
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    name = request.json.get('name')
+    if not name:
+         return jsonify({"success": False, "message": "Name is required"})
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("INSERT INTO labs (lab_name) VALUES (?)", (name,))
+        conn.commit()
+        success = True
+    except:
+        success = False
+    finally:
+        conn.close()
+    return jsonify({"success": success})
+
+@app.route('/delete_lab', methods=['POST'])
+def delete_lab_dynamic():
+    if 'user_id' not in session or session['role'] != 'admin':
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    lab_id = request.json.get('id')
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM bookings WHERE lab_id=?", (lab_id,))
+    cursor.execute("DELETE FROM labs WHERE id=?", (lab_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True})
+
 @app.route('/api/labs', methods=['GET', 'POST'])
 def handle_labs():
     if 'user_id' not in session:
