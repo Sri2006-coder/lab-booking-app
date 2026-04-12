@@ -154,12 +154,12 @@
                     const labItem = document.createElement('div');
                     
                     const selectedDay = getSelectedDay(currentDate);
-                    const blocked = getBlockedInfo(labName, period, selectedDay);
+                    const block = isBlocked(labName, period, selectedDay);
                     const booked = isBooked(labName, period, currentDate);
                     let statusHtml = '';
                     
-                    if (blocked) {
-                        statusHtml = `<button class="w-full bg-red-50 text-red-700 font-bold py-3 px-4 rounded-xl border border-red-200 cursor-not-allowed shadow-sm blocked" disabled>🔴 ${blocked.subject}</button>`;
+                    if (block) {
+                        statusHtml = `<button class="w-full bg-red-50 text-red-700 font-bold py-3 px-4 rounded-xl border border-red-200 cursor-not-allowed shadow-sm blocked-btn" disabled>🔴 ${block.subject}</button>`;
                     } else if (booked) {
                         statusHtml = `
                             <div class="w-full bg-orange-50 border-orange-200 border py-3 px-4 rounded-xl flex flex-col items-center justify-center shadow-sm">
@@ -184,20 +184,23 @@
             });
         }
 
-        function dateChanged() {
+        async function dateChanged() {
             currentDate = document.getElementById('date-picker').value;
-            loadTimetable();
+            await loadTimetable();
+            await loadBookings();
+            renderDashboard();
         }
+
+        let timetable = [];
 
         async function loadTimetable() {
             try {
                 const res = await fetch(`/api/timetable?date=${currentDate}`, { credentials: "include" });
                 const data = await res.json();
-                window.fixedData = data.fixed || [];
-                await loadBookings();
-                renderDashboard();
+                timetable = data.fixed || [];
             } catch (error) {
                 console.error("Error fetching timetable:", error);
+                timetable = [];
             }
         }
         
@@ -205,11 +208,11 @@
             return new Date(dateStr).toLocaleDateString("en-US", { weekday: "long" });
         }
 
-        function getBlockedInfo(lab, period, day) {
-            return (window.fixedData || []).find(f =>
-                f.day.toLowerCase() === day.toLowerCase() &&
-                parseInt(f.period) === period &&
-                f.lab.replace(/\s+/g,'').toLowerCase() === lab.replace(/\s+/g,'').toLowerCase()
+        function isBlocked(lab, period, day) {
+            return timetable.find(t =>
+                t.day.toLowerCase() === day.toLowerCase() &&
+                t.period == period &&
+                t.lab.replace(/\s+/g,'').toLowerCase() === lab.replace(/\s+/g,'').toLowerCase()
             );
         }
 
@@ -301,8 +304,12 @@
             });
         });
 
-        fetchNotice();
-        loadTimetable();
+        window.onload = async function() {
+            fetchNotice();
+            await loadTimetable();
+            await loadBookings();
+            renderDashboard();
+        };
     </script>
     </div> <!-- End Main Content Wrapper -->
 </body>
