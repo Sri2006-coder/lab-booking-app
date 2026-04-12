@@ -33,13 +33,35 @@
     </main>
 
     <script>
-        function getBookings() {
-            return JSON.parse(localStorage.getItem("bookings")) || [];
+        let currentUserId = null;
+        let bookings = [];
+
+        async function loadUser() {
+            try {
+                const res = await fetch("/current_user");
+                const user = await res.json();
+                currentUserId = user.id;
+            } catch(e) {
+                console.error(e);
+            }
         }
 
-        function fetchMyBookings() {
+        async function loadBookings() {
             try {
-                const data = getBookings();
+                const res = await fetch("/bookings");
+                bookings = await res.json();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function getMyBookings() {
+            return bookings.filter(b => b.faculty_id === currentUserId);
+        }
+
+        async function renderMyBookings() {
+            try {
+                const data = getMyBookings();
                 const container = document.getElementById('bookings-list');
                 container.innerHTML = '';
 
@@ -48,7 +70,7 @@
                     return;
                 }
 
-                data.forEach((b, index) => {
+                data.forEach((b) => {
                     const card = document.createElement('div');
                     card.className = 'bg-white rounded-xl shadow-sm border border-gray-200 p-4 relative';
                     
@@ -72,15 +94,24 @@
             }
         }
 
-        function cancelBooking(lab, period, date) {
+        async function cancelBooking(lab, period, date) {
             if (!confirm('Cancel this booking?')) return;
-            let bookings = getBookings();
-            bookings = bookings.filter(b => !(b.lab === lab && b.period === period && b.date === date));
-            localStorage.setItem("bookings", JSON.stringify(bookings));
-            fetchMyBookings();
+            await fetch("/cancel", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ lab, period, date })
+            });
+            await init();
         }
 
-        fetchMyBookings();
+        async function init() {
+            document.getElementById('bookings-list').innerHTML = '<div class="text-center py-10 text-gray-400 font-medium">Loading...</div>';
+            await loadUser();
+            await loadBookings();
+            renderMyBookings();
+        }
+
+        init();
     </script>
 </body>
 </html>

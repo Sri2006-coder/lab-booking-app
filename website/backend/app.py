@@ -450,7 +450,10 @@ def book_lab():
     period = data['period']
     date = data['date']
     day = datetime.strptime(date, "%Y-%m-%d").strftime("%A")
-    faculty_id = session.get('user_id', 1)
+    faculty_id = session.get('user_id')
+    
+    if not faculty_id:
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
     
     conn = get_db()
     cursor = conn.cursor()
@@ -462,15 +465,58 @@ def book_lab():
         return jsonify({"success": False, "message": "Invalid lab"})
     lab_id = lab_row['id']
     
-    cursor.execute("SELECT * FROM bookings WHERE lab_id=? AND period=? AND booking_date=?", (lab_id, period, date))
+    # Check if slot already booked
+    cursor.execute("""
+        SELECT * FROM bookings
+        WHERE lab_id=? AND period=? AND booking_date=?
+    """, (lab_id, period, date))
+    
     if cursor.fetchone():
         conn.close()
-        return jsonify({"success": False, "message": "Already booked"})
-        
-    cursor.execute("INSERT INTO bookings (lab_id, faculty_id, day, period, booking_date) VALUES (?, ?, ?, ?, ?)",
-                   (lab_id, faculty_id, day, period, date))
+        return jsonify({"success": False, "message": "Slot already booked"})
+
+    # Get daily limit
+    cursor.execute("SELECT value FROM settings WHERE key='daily_limit'")
+    row = cursor.fetchone()
+    limit = int(row['value']) if row else 0
+
+    if limit > 0:
+        cursor.execute("""
+            SELECT COUNT(*) as cnt FROM bookings
+            WHERE faculty_id=? AND booking_date=?
+        """, (faculty_id, date))
+        count = cursor.fetchone()['cnt']
+
+        if count >= limit:
+            conn.close()
+            return jsonify({"success": False, "message": "Daily booking limit reached"})
+            
+    # Insert booking
+    cursor.execute("""
+        INSERT INTO bookings (lab_id, faculty_id, day, period, booking_date)
+        VALUES (?, ?, ?, ?, ?)
+    """, (lab_id, faculty_id, day, period, date))
+    
     conn.commit()
     conn.close()
+    return jsonify({"success": True})
+
+@app.route('/set_limit', methods=['POST'])
+def set_limit():
+    from flask import request
+    limit = request.json.get("limit", 0)
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT OR REPLACE INTO settings (key, value)
+        VALUES ('daily_limit', ?)
+    """, (str(limit),))
+
+    conn.commit()
+    conn.close()
+
     return jsonify({"success": True})
 
 @app.route('/current_user')
