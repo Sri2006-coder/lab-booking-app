@@ -92,6 +92,7 @@
     </div>
 
     <script>
+        let currentUserId = null;
         let currentLabs = '1,2';
         const urlParams = new URLSearchParams(window.location.search);
         let currentDate = urlParams.get('date') || new Date().toISOString().split('T')[0];
@@ -114,6 +115,16 @@
                     bar.classList.remove('hidden');
                 }
             } catch(e) {}
+        }
+
+        async function loadUser() {
+            try {
+                const res = await fetch("/current_user");
+                const user = await res.json();
+                currentUserId = user.id;
+            } catch(e) {
+                console.error(e);
+            }
         }
 
         const labGroups = {
@@ -155,18 +166,26 @@
                     
                     const selectedDay = getSelectedDay(currentDate);
                     const block = isBlocked(labName, period, selectedDay);
-                    const booked = isBooked(labName, period, currentDate);
+                    const booking = getBooking(labName, period, currentDate);
                     let statusHtml = '';
                     
                     if (block) {
                         statusHtml = `<button class="w-full bg-red-50 text-red-700 font-bold py-3 px-4 rounded-xl border border-red-200 cursor-not-allowed shadow-sm blocked-btn" disabled>🔴 ${block.subject}</button>`;
-                    } else if (booked) {
-                        statusHtml = `
-                            <div class="w-full bg-orange-50 border-orange-200 border py-3 px-4 rounded-xl flex flex-col items-center justify-center shadow-sm">
-                                <span class="text-orange-700 font-semibold text-center mb-1">Booked</span>
-                                <button type="button" onclick="cancelBooking('${labName}', ${period})" class="cancel-booking-btn mt-2 bg-red-100 hover:bg-red-200 active:bg-red-300 text-red-700 font-bold py-2.5 px-4 rounded-lg w-full max-w-[200px] shadow-sm transition touch-manipulation border border-red-200">Cancel Booking</button>
-                            </div>
-                        `;
+                    } else if (booking) {
+                        if (booking.faculty_id === currentUserId) {
+                            statusHtml = `
+                                <div class="w-full bg-orange-50 border-orange-200 border py-3 px-4 rounded-xl flex flex-col items-center justify-center shadow-sm">
+                                    <span class="text-orange-700 font-semibold text-center mb-1">Booked</span>
+                                    <button type="button" onclick="cancelBooking('${labName}', ${period})" class="cancel-booking-btn mt-2 bg-red-100 hover:bg-red-200 active:bg-red-300 text-red-700 font-bold py-2.5 px-4 rounded-lg w-full max-w-[200px] shadow-sm transition touch-manipulation border border-red-200">Cancel Booking</button>
+                                </div>
+                            `;
+                        } else {
+                            statusHtml = `
+                                <div class="w-full bg-orange-50 border-orange-200 border py-3 px-4 rounded-xl flex flex-col items-center justify-center shadow-sm">
+                                    <span class="text-orange-700 font-semibold text-center mb-1">Booked by ${booking.faculty_name}</span>
+                                </div>
+                            `;
+                        }
                     } else {
                         statusHtml = `<button class="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-3 px-4 rounded-xl shadow-sm transition active:scale-[0.98] book-btn" onclick="bookLab('${labName}', ${period})">🔵 Book Now</button>`;
                     }
@@ -223,8 +242,8 @@
             bookings = await res.json();
         }
 
-        function isBooked(lab, period, date) {
-            return bookings.some(b =>
+        function getBooking(lab, period, date) {
+            return bookings.find(b =>
                 b.lab === lab &&
                 b.period === period &&
                 b.date === date
@@ -305,6 +324,7 @@
         });
 
         window.onload = async function() {
+            await loadUser();
             fetchNotice();
             await loadTimetable();
             await loadBookings();

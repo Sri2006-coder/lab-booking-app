@@ -473,18 +473,27 @@ def book_lab():
     conn.close()
     return jsonify({"success": True})
 
+@app.route('/current_user')
+def current_user():
+    return jsonify({
+        "id": session.get("user_id"),
+        "role": session.get("role")
+    })
+
 @app.route('/bookings', methods=['GET'])
 def get_bookings():
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT l.lab_name as lab, b.period, b.booking_date as date 
-        FROM bookings b JOIN labs l ON b.lab_id = l.id
+        SELECT l.lab_name as lab, b.period, b.booking_date as date, f.name as faculty_name, b.faculty_id
+        FROM bookings b 
+        JOIN labs l ON b.lab_id = l.id
+        JOIN faculty f ON b.faculty_id = f.id
     """)
     rows = cursor.fetchall()
     conn.close()
     
-    bookings = [{"lab": str(r['lab']).strip(), "period": int(r['period']), "date": str(r['date']).strip()} for r in rows]
+    bookings = [{"lab": str(r['lab']).strip(), "period": int(r['period']), "date": str(r['date']).strip(), "faculty_name": str(r['faculty_name']).strip(), "faculty_id": r['faculty_id']} for r in rows]
     return jsonify(bookings)
 
 @app.route('/cancel', methods=['POST'])
@@ -501,7 +510,8 @@ def cancel_booking_custom():
     cursor.execute("SELECT id FROM labs WHERE lab_name=?", (lab,))
     lab_row = cursor.fetchone()
     if lab_row:
-        cursor.execute("DELETE FROM bookings WHERE lab_id=? AND period=? AND booking_date=?", (lab_row['id'], period, date))
+        user_id = session.get('user_id')
+        cursor.execute("DELETE FROM bookings WHERE lab_id=? AND period=? AND booking_date=? AND faculty_id=?", (lab_row['id'], period, date, user_id))
         conn.commit()
     conn.close()
     return jsonify({"success": True})
