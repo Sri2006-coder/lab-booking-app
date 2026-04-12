@@ -17,6 +17,9 @@ def add_header(response):
 @app.route('/')
 def index():
     return send_from_directory(app.static_folder, 'index.html')
+@app.route('/firebase-messaging-sw.js')
+def serve_firebase_sw():
+    return send_from_directory(app.static_folder, 'firebase-messaging-sw.js')
 
 @app.route('/<path:path>')
 def static_proxy(path):
