@@ -11,19 +11,22 @@ app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), '../
 app.secret_key = 'super_secret_key_for_lab_booking'
 app.permanent_session_lifetime = timedelta(minutes=10)
 CORS(app, supports_credentials=True)
-try:
-    key_path = os.path.join(os.path.dirname(__file__), "firebase_key.json")
+import json
 
-    if os.path.exists(key_path):
-        if not firebase_admin._apps:   # ✅ VERY IMPORTANT FIX
-            cred = credentials.Certificate(key_path)
-            firebase_admin.initialize_app(cred)
-            print("✅ Firebase initialized successfully")
+try:
+    firebase_json = os.environ.get("FIREBASE_KEY")
+
+    if firebase_json and not firebase_admin._apps:
+        cred_dict = json.loads(firebase_json)
+        cred = credentials.Certificate(cred_dict)
+        firebase_admin.initialize_app(cred)
+        print("✅ Firebase initialized from ENV")
     else:
-        print(f"⚠ firebase_key.json NOT FOUND at {key_path}")
+        print("⚠ Firebase ENV not found")
 
 except Exception as e:
     print("🔥 Firebase init error:", e)
+
 
 @app.after_request
 def add_header(response):
