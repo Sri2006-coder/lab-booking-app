@@ -1,0 +1,68 @@
+LAB BOOKING SYSTEM - FINAL MIGRATION REPORT (TEXT FORMAT)
+==========================================================
+
+1. PROJECT STATUS
+-----------------
+Platform: Python 3.x (Flask Backend)
+Frontend: Static HTML5 / Vanilla CSS / JavaScript
+Database: SQLite 3 (data/lab_booking.db)
+
+2. CORE FEATURES MIGRATED (ALL PHP PARITY)
+------------------------------------------
+- Authentication (Faculty & Admin Login)
+- Session Management (10-minute auto-timeout)
+- Interactive Timetable (4-column grid layout per screenshot)
+- Real-time Booking & Cancellation Logic
+- Fixed Schedule Protection (Cannot book university hours)
+- Admin Dashboard (Live Stats, Lab Management)
+- Global Maintenance Notices (Announcement bar)
+- CSV Timetable Bulk Upload
+- Monthly Calendar View
+- Personal Booking History (My Bookings)
+
+3. DATABASE SCHEMA (SQLite)
+---------------------------
+- faculty (id, name, email, password, role)
+- labs (id, name)
+- bookings (id, lab_id, faculty_id, day, period, booking_date)
+- fixed_schedule (id, lab_id, day, period, subject)
+- announcements (id, message, expires_at)
+
+4. API ENDPOINTS REFERENCE
+--------------------------
+- POST /api/login        : Authenticate user
+- GET  /api/logout       : End session
+- GET  /api/timetable    : Fetch grid data for a specific date
+- POST /api/book         : Create a new booking
+- POST /api/cancel       : Remove a booking
+- GET  /api/stats        : Fetch admin dashboard statistics
+- GET  /api/notice       : Global announcement visibility
+- POST /api/upload       : Import CSV fixed schedules
+- GET  /api/calendar     : Fetch monthly availability map
+
+5. DEFAULT ACCESS
+-----------------
+Admin:   admin@lab.com    / admin123
+Faculty: john@lab.com     / password123
+
+6. TECHNICAL NOTES
+------------------
+- CSS is centralized in 'frontend/style.css' for 100% design preservation.
+- Backend logic resides in 'backend/app.py'.
+- Database initialization logic in 'backend/database.py'.
+- The system is now fully decoupled, secure, and ready for use.
+
+7. HOW TO RUN THIS PROJECT
+--------------------------
+Step 1: Install Python (v3.10+ recommended).
+Step 2: Install dependencies:
+        pip install flask flask-cors
+Step 3: Initialize the database (one-time setup):
+        python backend/seed_db.py
+Step 4: Open terminal in project root and run:
+        python backend/app.py
+Step 5: Access the Frontend:
+        Once the backend is running, the frontend is served automatically. 
+        Simply open your browser and go to: http://127.0.0.1:5000
+==========================================================
+END OF REPORT
