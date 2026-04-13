@@ -27,7 +27,27 @@ try:
 except Exception as e:
     print("🔥 Firebase init error:", e)
 
+@app.route("/send-notification", methods=["POST"])
+def send_notification():
+    data = request.json
+    token = data.get("token")
 
+    if not token:
+        return jsonify({"error": "Token missing"}), 400
+
+    message = messaging.Message(
+        notification=messaging.Notification(
+            title="Lab Booking",
+            body="New booking created!"
+        ),
+        token=token
+    )
+
+    try:
+        response = messaging.send(message)
+        return jsonify({"success": True, "response": response})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
 @app.after_request
 def add_header(response):
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
