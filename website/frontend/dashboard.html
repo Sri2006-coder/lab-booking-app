@@ -122,8 +122,26 @@
 
         document.getElementById('date-picker').value = currentDate;
 
-        const API_BASE = window.location.origin;
+        const API_BASE = "https://lab-booking-app.onrender.com";
         const socket = io(API_BASE);
+
+        async function safeFetch(path, options = {}) {
+            try {
+                const url = path.startsWith('http') ? path : API_BASE + path;
+                const res = await safeFetch(url, options);
+                const text = await res.text();
+                try {
+                    return text ? JSON.parse(text) : null;
+                } catch(e) {
+                    console.error("Invalid JSON response for", path, ":", text);
+                    return null;
+                }
+            } catch (err) {
+                console.error("Network error fetching", path, ":", err);
+                return null;
+            }
+        }
+
 
         socket.on('connect', () => {
             console.log('✅ Connected to Real-time Server');
@@ -144,8 +162,7 @@
 
         async function fetchNotice() {
             try {
-                const res = await fetch('/api/notice');
-                const data = await res.json();
+                const data = await safeFetch('/api/notice');
                 if (data) {
                     const bar = document.getElementById('notice-bar');
                     bar.innerHTML = `<span>🔔 ${data.message} (${data.minutes} mins remaining)</span>`;
@@ -156,8 +173,7 @@
 
         async function loadUser() {
             try {
-                const res = await fetch("/current_user");
-                const user = await res.json();
+                const user = await safeFetch("/current_user");
                 currentUserId = user.id;
                 isAdmin = (user.role === 'admin');
                 
@@ -189,8 +205,7 @@
 
         async function loadLabs() {
             try {
-                const res = await fetch("/labs", { cache: "no-store" });
-                labs = await res.json();
+                labs = await safeFetch("/labs", { cache: "no-store" });
                 if (!Array.isArray(labs)) labs = [];
             } catch(e) {
                 console.error(e);
@@ -321,8 +336,7 @@
 
         async function loadTimetable() {
             try {
-                const res = await fetch(`/api/timetable?date=${currentDate}`, { credentials: "include", cache: "no-store" });
-                const data = await res.json();
+                const data = await safeFetch(`/api/timetable?date=${currentDate}`, { credentials: "include", cache: "no-store" });
                 timetable = data.fixed || [];
             } catch (error) {
                 console.error("Error fetching timetable:", error);
@@ -346,8 +360,7 @@
         
         async function loadBookings() {
             try {
-                const res = await fetch("/bookings", { cache: "no-store" });
-                bookings = await res.json();
+                bookings = await safeFetch("/bookings", { cache: "no-store" });
                 if (!Array.isArray(bookings)) bookings = [];
             } catch (error) {
                 console.error("Error fetching bookings:", error);
@@ -399,7 +412,7 @@
         }
 
         async function logout() {
-            await fetch('/api/logout');
+            await safeFetch('/api/logout');
             window.location.href = 'index.html';
         }
 
@@ -474,7 +487,7 @@
             const data = event.data;
             if (data.type === 'expo-token') {
                 console.log("📱 Mobile Token Received:", data.token);
-                fetch('/save-token', {
+                safeFetch('/save-token', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ token: data.token })
