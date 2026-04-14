@@ -208,24 +208,73 @@ def handle_notice():
         
         data = request.get_json()
         message = data.get('message')
-        # Expires in 1 hour if not specified
+
+        if not message:
+            return jsonify({"success": False, "message": "Message required"}), 400
+
+        # Expires in 1 hour
         expires_at = (datetime.now() + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
         
-        cursor.execute("INSERT INTO announcements (message, expires_at) VALUES (?, ?)", (message, expires_at))
+        # ✅ SAVE NOTICE
+        cursor.execute(
+            "INSERT INTO announcements (message, expires_at) VALUES (?, ?)", 
+            (message, expires_at)
+        )
         conn.commit()
+
+        # 🔔 SEND PUSH NOTIFICATION
+        try:
+            notif_conn = get_db()
+            notif_cursor = notif_conn.cursor()
+
+            notif_cursor.execute("SELECT token FROM fcm_tokens")
+            tokens = [row[0] for row in notif_cursor.fetchall()]
+
+            print(f"📢 Sending notice to {len(tokens)} users")
+
+            if tokens:
+                multicast_message = messaging.MulticastMessage(
+                    notification=messaging.Notification(
+                        title="📢 New Notice",
+                        body=message
+                    ),
+                    tokens=tokens,
+                )
+
+                response = messaging.send_multicast(multicast_message)
+
+                print(f"✅ Success: {response.success_count}, Failed: {response.failure_count}")
+            else:
+                print("⚠ No tokens found")
+
+            notif_conn.close()
+
+        except Exception as e:
+            print("❌ Notification error:", e)
+
         conn.close()
         return jsonify({"success": True})
     
     else:
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        cursor.execute("SELECT * FROM announcements WHERE expires_at > ? ORDER BY id DESC LIMIT 1", (now,))
+        cursor.execute(
+            "SELECT * FROM announcements WHERE expires_at > ? ORDER BY id DESC LIMIT 1", 
+            (now,)
+        )
         notice = cursor.fetchone()
         conn.close()
         
         if notice:
-            remaining = datetime.strptime(notice['expires_at'], "%Y-%m-%d %H:%M:%S") - datetime.now()
+            remaining = datetime.strptime(
+                notice['expires_at'], "%Y-%m-%d %H:%M:%S"
+            ) - datetime.now()
+
             minutes = max(0, int(remaining.total_seconds() // 60))
-            return jsonify({"message": notice['message'], "minutes": minutes})
+
+            return jsonify({
+                "message": notice['message'],
+                "minutes": minutes
+            })
         else:
             return jsonify(None)
 

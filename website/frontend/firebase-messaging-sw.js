@@ -2,11 +2,11 @@ importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js'
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
 firebase.initializeApp({
-  apiKey: "YOUR_KEY",
-  authDomain: "YOUR_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyAYpXGDlYTg03U-WWRpEvIAqnqUyJFc6QU",
+  authDomain: "lab-booking-system-e77ad.firebaseapp.com",
+  projectId: "lab-booking-system-e77ad",
+  messagingSenderId: "492426985882",
+  appId: "1:492426985882:web:648566f44e48acdb497a23"
 });
 
 const messaging = firebase.messaging();
