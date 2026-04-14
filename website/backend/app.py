@@ -296,14 +296,16 @@ def get_bookings():
         bookings = []
 
         for r in rows:
-  
-            bookings.append({
-                "lab": str(r[0]).strip(),
-                "period": int(r[1]),
-                "date": str(r[2]).strip(),
-                "faculty_name": str(r[3]).strip(),
-                "faculty_id": r[4]
-            })
+            try:
+                bookings.append({
+                    "lab": str(r[0]).strip() if r[0] else "",
+                    "period": int(r[1]) if r[1] else 0,
+                    "date": str(r[2]).strip() if r[2] else "",
+                    "faculty_name": str(r[3]).strip() if r[3] else "",
+                    "faculty_id": r[4] if r[4] else None
+                })
+            except Exception as inner_error:
+                print("⚠ Row skipped:", r, inner_error)
 
         return jsonify(bookings)
 
