@@ -331,21 +331,27 @@
                 b.date === date
             );
         }
-
-        async function bookLab(lab, period) {
+        async function bookLab(labName, period) {
             const date = currentDate;
             const day = new Date(date).toLocaleDateString("en-US", { weekday: "long" });
-            console.log("🔥 BOOK CLICKED", { lab, period, date, day });
+            const labObj = labs.find(l => l.lab_name === labName);
+            const lab_id = labObj ? labObj.id : null;
+            console.log("🔥 BOOK CLICKED", { labName, lab_id, period, date, day });
             const res = await fetch("/api/book", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ lab, period, date, day })
+                 method: "POST",
+                 headers: { "Content-Type": "application/json" },
+                 body: JSON.stringify({
+                    lab: labName,
+                    lab_id: lab_id,   
+                    date,
+                    day
+                })
             });
             const data = await res.json();
             console.log("✅ RESPONSE:", data);
-             await loadBookings();
-              renderDashboard();
-            }
+            await loadBookings();
+            renderDashboard();
+        }
 
         async function cancelBooking(lab, period) {
             if (!confirm('Cancel this booking?')) return;
