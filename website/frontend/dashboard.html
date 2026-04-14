@@ -319,7 +319,6 @@
                 container.appendChild(box);
             });
         }
-
         async function initializeDashboard() {
             await loadLabs();
             await loadTimetable();
@@ -381,16 +380,18 @@
             const labObj = labs.find(l => l.lab_name === labName);
             const lab_id = labObj ? labObj.id : null;
             console.log("🔥 BOOK CLICKED", { labName, lab_id, period, date, day });
-            const res = await fetch("/api/book", {
+            const res = await fetch('https://lab-booking-app.onrender.com/api/book', {
                  method: "POST",
-                 headers: { "Content-Type": "application/json" },
+                 headers: {
+                    "Content-Type": "application/json"
+                 },
                  body: JSON.stringify({
-                    lab: labName,
-                    lab_id: lab_id,   
-                    date,
-                    day
-                })
-            });
+                     lab: labName,
+                     lab_id: lab_id,
+                     date: date,
+                     day: day
+                    })
+                });
             const data = await res.json();
             console.log("✅ RESPONSE:", data);
             await loadBookings();
