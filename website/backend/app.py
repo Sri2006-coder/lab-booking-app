@@ -216,6 +216,30 @@ def handle_notice():
         
         cursor.execute("INSERT INTO announcements (message, expires_at) VALUES (?, ?)", (message, expires_at))
         conn.commit()
+        
+        try:
+            socketio.emit('notice_update', {}, namespace='/')
+            
+            cursor.execute("SELECT token FROM fcm_tokens")
+            tokens = [r[0] for r in cursor.fetchall()]
+
+            for token in tokens:
+                if not token:
+                    continue
+                try:
+                    msg = messaging.Message(
+                        notification=messaging.Notification(
+                            title="Admin Notice",
+                            body=message
+                        ),
+                        token=token
+                    )
+                    messaging.send(msg)
+                except Exception:
+                    pass
+        except Exception as e:
+            print("Notice notification error:", e)
+            
         conn.close()
         return jsonify({"success": True})
     
