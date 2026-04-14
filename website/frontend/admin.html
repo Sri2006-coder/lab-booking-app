@@ -132,6 +132,19 @@
             <div id="upload-faculty-status" class="mt-3 text-sm font-medium text-center"></div>
         </div>
 
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center">
+                    <span class="text-2xl mr-2">📋</span>
+                    <h4 class="font-semibold text-gray-800">Registered Faculty</h4>
+                </div>
+                <button onclick="fetchFacultyList()" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800">Refresh</button>
+            </div>
+            <div id="faculty-list-container" class="overflow-y-auto max-h-64 border border-gray-100 rounded-lg">
+                <p class="text-xs text-gray-400 text-center py-4">Loading faculty list...</p>
+            </div>
+        </div>
+
     </main>
 
     <script>
@@ -262,9 +275,44 @@
             fetchLimit();
         }
 
+        async function fetchFacultyList() {
+            const container = document.getElementById('faculty-list-container');
+            if(!container) return;
+            container.innerHTML = '<p class="text-xs text-gray-400 text-center py-4">Loading...</p>';
+            try {
+                const res = await fetch('/api/faculty');
+                const data = await res.json();
+                if (data.success) {
+                    if (data.faculty.length === 0) {
+                        container.innerHTML = '<p class="text-xs text-gray-400 text-center py-4">No faculty found.</p>';
+                        return;
+                    }
+                    let html = '<ul class="divide-y divide-gray-100">';
+                    data.faculty.forEach(f => {
+                        let badge = f.role === 'admin' ? '<span class="bg-indigo-100 text-indigo-800 text-[10px] uppercase font-bold px-2 py-0.5 rounded ml-2">Admin</span>' : '';
+                        html += `
+                        <li class="p-3 hover:bg-gray-50 flex justify-between items-center transition">
+                            <div>
+                                <p class="text-sm font-bold text-gray-800">${f.name} ${badge}</p>
+                                <p class="text-xs text-gray-500">${f.email}</p>
+                            </div>
+                        </li>
+                        `;
+                    });
+                    html += '</ul>';
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<p class="text-xs text-red-500 text-center py-4">Failed to load</p>';
+                }
+            } catch (err) {
+                container.innerHTML = '<p class="text-xs text-red-500 text-center py-4">Error loading data</p>';
+            }
+        }
+
         fetchStats();
         fetchNotice();
         fetchLimit();
+        fetchFacultyList();
     </script>
 </body>
 </html>

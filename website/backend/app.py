@@ -747,6 +747,22 @@ def register():
     conn.close()
     return jsonify({"success": True})
 
+@app.route('/api/faculty', methods=['GET'])
+def get_faculty_list():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+        
+    conn = get_db()
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name, email, role FROM faculty ORDER BY name ASC")
+    rows = cursor.fetchall()
+    conn.close()
+    
+    faculty_list = [dict(row) for row in rows]
+    return jsonify({"success": True, "faculty": faculty_list})
+
+
 
 @app.route('/upload_faculty', methods=['POST'])
 def bulk_upload_faculty():
