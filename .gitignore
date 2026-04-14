@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 node_modules/
 .expo/
 dist/
@@ -20,3 +21,6 @@ ios/
 .DS_Store
 *.pyc
 __pycache__/
+=======
+node_modules
+>>>>>>> 6624dc54 (Initial commit)
