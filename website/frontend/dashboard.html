@@ -125,22 +125,26 @@
         const API_BASE = "https://lab-booking-app.onrender.com";
         const socket = io(API_BASE);
 
-        async function safeFetch(path, options = {}) {
-            try {
-                const url = path.startsWith('http') ? path : API_BASE + path;
-                const res = await safeFetch(url, options);
-                const text = await res.text();
-                try {
-                    return text ? JSON.parse(text) : null;
-                } catch(e) {
-                    console.error("Invalid JSON response for", path, ":", text);
-                    return null;
-                }
-            } catch (err) {
-                console.error("Network error fetching", path, ":", err);
+       async function safeFetch(path, options = {}) {
+        try {
+            const url = path.startsWith('http') ? path : API_BASE + path;
+            const res = await fetch(url, options);
+            if (!res.ok) {
+                console.error("HTTP Error:", res.status);
                 return null;
             }
+            const text = await res.text();
+            try {
+                return text ? JSON.parse(text) : null;
+            } catch (e) {
+                console.error("Invalid JSON:", text);
+                return null;
+            }
+        } catch (err) {
+            console.error("Network error:", err);
+            return null;
         }
+    }
 
 
         socket.on('connect', () => {
@@ -402,7 +406,7 @@
             if (!confirm('Cancel this booking?')) return;
             const date = currentDate;
 
-            await fetch("/cancel", {
+            await fetch("https://lab-booking-app.onrender.com/cancel", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({ lab, period, date })
