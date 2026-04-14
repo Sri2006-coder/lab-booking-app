@@ -23,9 +23,8 @@ export default function App() {
     if (tokenObj && webViewRef.current) {
         const js = `
           window.dispatchEvent(new MessageEvent('message', {
-            data: { type: 'expo-token', token: '${tokenObj}' }
+            data: { type: 'expo-token', token: ${JSON.stringify(tokenObj)} }
           }));
-          true;
         `;
         webViewRef.current.injectJavaScript(js);
         console.log("Token injected into WebView:", tokenObj);
@@ -37,9 +36,8 @@ export default function App() {
     if (webViewRef.current) {
         const js = `
           window.dispatchEvent(new MessageEvent('message', {
-            data: { type: '${eventType}', payload: ${JSON.stringify(payload)} }
+            data: { type: ${JSON.stringify(eventType)}, payload: ${JSON.stringify(payload)} }
           }));
-          true;
         `;
         webViewRef.current.injectJavaScript(js);
     }
