@@ -277,7 +277,40 @@ def handle_notice():
             })
         else:
             return jsonify(None)
+@app.route('/bookings', methods=['GET'])
+def get_bookings():
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
 
+        cursor.execute("""
+            SELECT l.lab_name, b.period, b.booking_date, f.name, b.faculty_id
+            FROM bookings b 
+            JOIN labs l ON b.lab_id = l.id
+            JOIN faculty f ON b.faculty_id = f.id
+        """)
+
+        rows = cursor.fetchall()
+        conn.close()
+
+        bookings = []
+
+        for r in rows:
+  
+            bookings.append({
+                "lab": str(r[0]).strip(),
+                "period": int(r[1]),
+                "date": str(r[2]).strip(),
+                "faculty_name": str(r[3]).strip(),
+                "faculty_id": r[4]
+            })
+
+        return jsonify(bookings)
+
+    except Exception as e:
+        print("❌ BOOKINGS ERROR:", e)
+        return jsonify({"error": str(e)}), 500
+    
 @app.route('/api/notices', methods=['GET'])
 def get_all_notices():
     conn = get_db()
@@ -662,21 +695,7 @@ def current_user():
         "role": session.get("role")
     })
 
-@app.route('/bookings', methods=['GET'])
-def get_bookings():
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT l.lab_name as lab, b.period, b.booking_date as date, f.name as faculty_name, b.faculty_id
-        FROM bookings b 
-        JOIN labs l ON b.lab_id = l.id
-        JOIN faculty f ON b.faculty_id = f.id
-    """)
-    rows = cursor.fetchall()
-    conn.close()
-    
-    bookings = [{"lab": str(r['lab']).strip(), "period": int(r['period']), "date": str(r['date']).strip(), "faculty_name": str(r['faculty_name']).strip(), "faculty_id": r['faculty_id']} for r in rows]
-    return jsonify(bookings)
+
 
 @app.route('/cancel', methods=['POST'])
 def cancel_booking_custom():
