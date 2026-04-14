@@ -289,90 +289,66 @@ def get_timetable():
 
 @app.route('/api/book', methods=['POST'])
 def book_slot():
+
     if 'user_id' not in session:
         return jsonify({"success": False, "message": "Unauthorized"}), 401
-    
+
     data = request.get_json()
     lab_name = data.get('lab')
     period = data.get('period')
     day = data.get('day')
     date = data.get('date')
     faculty_id = session['user_id']
-    
+
     conn = get_db()
     cursor = conn.cursor()
-    
-    cursor.execute("SELECT id FROM labs WHERE lab_name=?", (lab_name,))
-    row = cursor.fetchone()
-    if not row:
-        conn.close()
-        return jsonify({"success": False, "message": "invalid_lab"})
-    lab_id = row['id']
-    
-    # Check dynamic limit
-    cursor.execute("SELECT COUNT(*) as total FROM bookings WHERE faculty_id=? AND booking_date=?", (faculty_id, date))
-    total_bookings = cursor.fetchone()['total']
-    
-    cursor.execute("SELECT value FROM settings WHERE key='daily_limit'")
-    setting_row = cursor.fetchone()
-    daily_limit = int(setting_row['value']) if setting_row else 2
-    
-    if daily_limit > 0 and total_bookings >= daily_limit:
-        conn.close()
-        return jsonify({"success": False, "message": "limit"})
-    
-    # Check if slot is already in fixed schedule
-    cursor.execute("SELECT id FROM fixed_schedule WHERE lab=? AND day COLLATE NOCASE = ? AND period=?", (lab_name, day, period))
-    if cursor.fetchone():
-        conn.close()
-        return jsonify({"success": False, "message": "fixed"})
 
-    # Check if already booked
-    cursor.execute("SELECT id FROM bookings WHERE lab_id=? AND day=? AND period=? AND booking_date=?", (lab_id, day, period, date))
-    if cursor.fetchone():
-        conn.close()
-        return jsonify({"success": False, "message": "booked"})
-    
     # Insert booking
-    cursor.execute("INSERT INTO bookings (lab_id, faculty_id, day, period, booking_date) VALUES (?, ?, ?, ?, ?)",
-                   (lab_id, faculty_id, day, period, date))
+    cursor.execute(
+        "INSERT INTO bookings (lab_id, faculty_id, day, period, booking_date) VALUES (?, ?, ?, ?, ?)",
+        (lab_id, faculty_id, day, period, date)
+    )
+
     conn.commit()
-# 🔔 SEND NOTIFICATION TO ALL USERS
-try:
-    notif_cursor = conn.cursor()
 
-    notif_cursor.execute("SELECT token FROM fcm_tokens")
-    tokens = [row[0] for row in notif_cursor.fetchall()]
+    # 🔔 SEND NOTIFICATION (INSIDE FUNCTION)
+    try:
+        notif_cursor = conn.cursor()
 
-    if not tokens:
-        print("⚠️ No tokens found")
+        notif_cursor.execute("SELECT token FROM fcm_tokens")
+        tokens = [row[0] for row in notif_cursor.fetchall()]
 
-    for token in tokens:
-        if not token:
-            continue
+        if not tokens:
+            print("⚠️ No tokens found")
 
-        try:
-            message = messaging.Message(
-                notification=messaging.Notification(
-                    title="Lab Booking",
-                    body="New lab booking created successfully"
-                ),
-                token=token
-            )
+        for token in tokens:
+            if not token:
+                continue
 
-            response = messaging.send(message)
-            print(f"✅ Sent to {token[:10]}... -> {response}")
+            try:
+                message = messaging.Message(
+                    notification=messaging.Notification(
+                        title="Lab Booking",
+                        body="New lab booking created successfully"
+                    ),
+                    token=token
+                )
 
-        except Exception as e:
-            print("❌ Token failed:", token, e)
+                response = messaging.send(message)
+                print(f"✅ Sent to {token[:10]}... -> {response}")
 
-except Exception as e:
-    print("❌ Notification error:", e)
+            except Exception as e:
+                print("❌ Token failed:", token, e)
 
-finally:
-    conn.close()
+    except Exception as e:
+        print("❌ Notification error:", e)
 
-return jsonify({"success": True})
+    finally:
+        conn.close()
+
+    return jsonify({"success": True})
+
+
 
 @app.route('/api/cancel_booking/<int:id>', methods=['DELETE'])
 def cancel_booking(id):
