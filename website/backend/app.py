@@ -620,19 +620,26 @@ def current_user():
 
 @app.route('/bookings', methods=['GET'])
 def get_bookings():
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT l.lab_name as lab, b.period, b.booking_date as date, f.name as faculty_name, b.faculty_id
-        FROM bookings b 
-        JOIN labs l ON b.lab_id = l.id
-        JOIN faculty f ON b.faculty_id = f.id
-    """)
-    rows = cursor.fetchall()
-    conn.close()
-    
-    bookings = [{"lab": str(r['lab']).strip(), "period": int(r['period']), "date": str(r['date']).strip(), "faculty_name": str(r['faculty_name']).strip(), "faculty_id": r['faculty_id']} for r in rows]
-    return jsonify(bookings)
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT lab, period, date, faculty_id, faculty_name FROM bookings")
+        rows = cursor.fetchall()
+
+        return jsonify([
+            {
+                "lab": row[0],
+                "period": row[1],
+                "date": row[2],
+                "faculty_id": row[3],
+                "faculty_name": row[4]
+            }
+            for row in rows
+        ])
+    except Exception as e:
+        print("❌ ERROR in /bookings:", e)
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/cancel', methods=['POST'])
 def cancel_booking_custom():
