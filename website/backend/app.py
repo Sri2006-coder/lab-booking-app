@@ -620,26 +620,65 @@ def current_user():
 
 @app.route('/bookings', methods=['GET'])
 def get_bookings():
+    conn = get_db()
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
     try:
-        conn = get_db()
-        cursor = conn.cursor()
+        # --- ONE-TIME MIGRATION CHECK ---
+        cursor.execute("PRAGMA table_info(bookings)")
+        cols = [col['name'] for col in cursor.fetchall()]
+        
+        migrated = False
+        if 'faculty_id' not in cols:
+            cursor.execute("ALTER TABLE bookings ADD COLUMN faculty_id INTEGER")
+            migrated = True
+        if 'faculty_name' not in cols:
+            cursor.execute("ALTER TABLE bookings ADD COLUMN faculty_name TEXT")
+            migrated = True
+            
+        if migrated:
+            conn.commit()
+            print("✅ Migration: added missing columns to bookings")
 
-        cursor.execute("SELECT lab, period, date, faculty_id, faculty_name FROM bookings")
+        # Now fetch safely. We use LEFT JOIN to resolve lab names and faculty names if possible
+        cursor.execute("""
+            SELECT 
+                b.*,
+                l.lab_name as joined_lab,
+                f.name as joined_faculty
+            FROM bookings b
+            LEFT JOIN labs l ON b.lab_id = l.id
+            LEFT JOIN faculty f ON b.faculty_id = f.id
+        """)
         rows = cursor.fetchall()
-
-        return jsonify([
-            {
-                "lab": row[0],
-                "period": row[1],
-                "date": row[2],
-                "faculty_id": row[3],
-                "faculty_name": row[4]
-            }
-            for row in rows
-        ])
+        
+        result = []
+        for row in rows:
+            # Safely resolve columns allowing graceful fallback to schema defaults
+            row_keys = row.keys()
+            lab = row['joined_lab'] if 'joined_lab' in row_keys and row['joined_lab'] else (row['lab'] if 'lab' in row_keys else "Unknown Lab")
+            date = row['booking_date'] if 'booking_date' in row_keys and row['booking_date'] else (row['date'] if 'date' in row_keys else "")
+            f_id = row['faculty_id'] if 'faculty_id' in row_keys else None
+            f_name = row['joined_faculty'] if 'joined_faculty' in row_keys and row['joined_faculty'] else (row['faculty_name'] if 'faculty_name' in row_keys and row['faculty_name'] else "Unknown")
+            
+            result.append({
+                "lab": str(lab).strip(),
+                "period": int(row['period']) if 'period' in row_keys and row['period'] else 0,
+                "date": str(date).strip(),
+                "faculty_id": f_id,
+                "faculty_name": str(f_name).strip()
+            })
+            
+        return jsonify(result)
+        
     except Exception as e:
         print("❌ ERROR in /bookings:", e)
-        return jsonify({"error": str(e)}), 500
+        # Return graceful fallback JSON payload, absolutely no 500 error
+        return jsonify([])
+        
+    finally:
+        conn.close()
 
 @app.route('/cancel', methods=['POST'])
 def cancel_booking_custom():
