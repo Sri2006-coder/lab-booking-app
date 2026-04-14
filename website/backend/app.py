@@ -335,6 +335,16 @@ def book_slot():
     cursor.execute("INSERT INTO bookings (lab_id, faculty_id, day, period, booking_date) VALUES (?, ?, ?, ?, ?)",
                    (lab_id, faculty_id, day, period, date))
     conn.commit()
+    
+    # Fetch all tokens and send push notification
+    try:
+        cursor.execute("SELECT token FROM fcm_tokens")
+        tokens = [r['token'] for r in cursor.fetchall()]
+        if tokens:
+            send_notification(tokens, "Lab Booking", "New lab booking created successfully")
+    except Exception as e:
+        print(f"Notification error: {e}")
+        
     conn.close()
     return jsonify({"success": True})
 
@@ -613,6 +623,16 @@ def book_lab():
     """, (lab_id, faculty_id, day, period, date))
     
     conn.commit()
+    
+    # Fetch all tokens and send push notification
+    try:
+        cursor.execute("SELECT token FROM fcm_tokens")
+        tokens = [r['token'] for r in cursor.fetchall()]
+        if tokens:
+            send_notification(tokens, "Lab Booking", "New lab booking created successfully")
+    except Exception as e:
+        print(f"Notification error: {e}")
+        
     conn.close()
     return jsonify({"success": True})
 
