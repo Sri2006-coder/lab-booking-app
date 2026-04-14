@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import React, { useState, useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { WebView } from 'react-native-webview';
@@ -78,16 +77,3 @@ async function registerForPushNotificationsAsync() {
 
   return token;
 }
-=======
-import React from 'react';
-import { WebView } from 'react-native-webview';
-
-export default function App() {
-  return (
-    <WebView
-      source={{ uri: 'http://10.250.79.39:5000' }}
-      style={{ flex: 1 }}
-    />
-  );
-}
->>>>>>> ba06191b32c5c4fd347c100bd2c9e64b23df85ee
