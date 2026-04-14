@@ -3,12 +3,12 @@ importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-comp
 
 // 🔥 Your Firebase config (REAL VALUES — NOT placeholders)
 firebase.initializeApp({
-  apiKey: "AIzaSyAyp...",
+  apiKey: "AIzaSyAYpXGDlYTg03U-WWRpEvIAqnqUyJFc6QU",
   authDomain: "lab-booking-system-e77ad.firebaseapp.com",
   projectId: "lab-booking-system-e77ad",
   storageBucket: "lab-booking-system-e77ad.firebasestorage.app",
   messagingSenderId: "492426985882",
-  appId: "1:492426985882:web:c48566f44e48acdb497a23"
+  appId: "1:492426985882:web:648566f44e48acdb497a23"
 });
 
 // Initialize messaging
