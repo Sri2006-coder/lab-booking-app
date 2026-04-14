@@ -381,23 +381,40 @@
         async function bookLab(labName, period) {
             const date = currentDate;
             const day = new Date(date).toLocaleDateString("en-US", { weekday: "long" });
-            const labObj = labs.find(l => l.lab_name === labName);
-            const lab_id = labObj ? labObj.id : null;
-            console.log("🔥 BOOK CLICKED", { labName, lab_id, period, date, day });
-            const res = await fetch('https://lab-booking-app.onrender.com/api/book', {
-                 method: "POST",
-                 headers: {
-                    "Content-Type": "application/json"
-                 },
-                 body: JSON.stringify({
-                     lab: labName,
-                     lab_id: lab_id,
-                     date: date,
-                     day: day
-                    })
+            
+            const payload = {
+                lab: labName,
+                period: period,
+                date: date,
+                day: day
+            };
+            
+            console.log("🔥 BOOK CLICKED", payload);
+            
+            try {
+                const res = await fetch('/api/book', {
+                     method: "POST",
+                     headers: {
+                        "Content-Type": "application/json"
+                     },
+                     body: JSON.stringify(payload)
                 });
-            const data = await res.json();
-            console.log("✅ RESPONSE:", data);
+                
+                const data = await res.json();
+                console.log("✅ RESPONSE:", data);
+                
+                if (res.status === 409) {
+                    alert("Slot already booked");
+                } else if (!res.ok) {
+                    alert(data.message || "Booking failed");
+                } else if (!data.success) {
+                    alert("Booking failed: " + (data.message || "Unknown error"));
+                }
+            } catch (err) {
+                console.error("Booking error:", err);
+                alert("Booking failed due to a network error.");
+            }
+
             await loadBookings();
             renderDashboard();
         }

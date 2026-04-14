@@ -295,83 +295,79 @@ def book_slot():
     if 'user_id' not in session:
         return jsonify({"success": False, "message": "Unauthorized"}), 401
 
-    data = request.get_json()
-    lab_name = data.get('lab')
-    period = data.get('period')
-    day = data.get('day')
-    date = data.get('date')
-    faculty_id = session['user_id']
-
-    conn = get_db()
-    cursor = conn.cursor()
-
     try:
-        # ✅ Get lab_id from lab_name
-        cursor.execute("SELECT id FROM labs WHERE lab_name = ?", (lab_name,))
-        row = cursor.fetchone()
+        data = request.get_json() or {}
+        lab_name = data.get('lab') or data.get('labName')
+        period = data.get('period')
+        day = data.get('day')
+        date = data.get('date')
+        faculty_id = session['user_id']
 
-        if not row:
-            conn.close()
-            return jsonify({"success": False, "message": "Invalid lab"}), 400
+        # Validation: Ensure all necessary fields exist
+        if not lab_name or period is None or not day or not date:
+            return jsonify({"success": False, "message": "Missing fields"}), 400
 
-        lab_id = row[0]
-
-        # ✅ Insert booking
-        cursor.execute(
-            "INSERT INTO bookings (lab_id, faculty_id, day, period, booking_date) VALUES (?, ?, ?, ?, ?)",
-            (lab_id, faculty_id, day, period, date)
-        )
-        conn.commit()
-
-        # 🔔 SEND NOTIFICATION & LIVE UPDATE
+        conn = get_db()
         try:
-            print("🔥 Notification/Socket triggered after booking")
-            socketio.emit('booking_update', {"type": "new_booking"}, namespace='/')
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM labs WHERE lab_name = ?", (lab_name,))
+            row = cursor.fetchone()
 
-            notif_conn = get_db()
-            notif_cursor = notif_conn.cursor()
+            if not row:
+                return jsonify({"success": False, "message": f"Invalid lab: {lab_name}"}), 400
 
-            notif_cursor.execute("SELECT token FROM fcm_tokens")
-            tokens = [row[0] for row in notif_cursor.fetchall()]
+            lab_id = row[0]
 
-            print("📦 Tokens found:", len(tokens))
+            cursor.execute(
+                "SELECT id FROM bookings WHERE lab_id = ? AND booking_date = ? AND period = ?",
+                (lab_id, date, period)
+            )
+            if cursor.fetchone():
+                return jsonify({"success": False, "message": "Slot already booked"}), 409
 
-            for token in tokens:
-                if not token:
-                    continue
+            cursor.execute(
+                "INSERT INTO bookings (lab_id, faculty_id, day, period, booking_date) VALUES (?, ?, ?, ?, ?)",
+                (lab_id, faculty_id, day, period, date)
+            )
+            conn.commit()
 
-                try:
-                    message = messaging.Message(
-                        notification=messaging.Notification(
-                            title="Lab Booking",
-                            body="New lab booking created successfully"
-                        ),
-                        token=token
-                    )
-
-                    response = messaging.send(message)
-                    print(f"✅ Sent → {response}")
-
-                except Exception as e:
-                    print("❌ Token failed:", token[:15], "...", e)
-
-        except Exception as e:
-            print("❌ Notification error:", e)
-
-        finally:
+            # 🔔 SEND NOTIFICATION & LIVE UPDATE
             try:
-                notif_conn.close()
-            except:
+                socketio.emit('booking_update', {"type": "new_booking"}, namespace='/')
+
+                notif_conn = get_db()
+                try:
+                    notif_cursor = notif_conn.cursor()
+                    notif_cursor.execute("SELECT token FROM fcm_tokens")
+                    tokens = [r[0] for r in notif_cursor.fetchall()]
+
+                    for token in tokens:
+                        if not token:
+                            continue
+                        try:
+                            message = messaging.Message(
+                                notification=messaging.Notification(
+                                    title="Lab Booking",
+                                    body="New lab booking created successfully"
+                                ),
+                                token=token
+                            )
+                            messaging.send(message)
+                        except Exception:
+                            pass
+                finally:
+                    notif_conn.close()
+            except Exception:
                 pass
 
-        return jsonify({"success": True})
+            return jsonify({"success": True})
+
+        finally:
+            conn.close()
 
     except Exception as e:
-        print("❌ Booking error:", e)
-        return jsonify({"success": False, "message": "Booking failed"}), 500
-
-    finally:
-        conn.close()
+        print("ERROR:", e)
+        return jsonify({"success": False, "message": str(e)}), 500
 
 @app.route('/api/cancel_booking/<int:id>', methods=['DELETE'])
 def cancel_booking(id):
