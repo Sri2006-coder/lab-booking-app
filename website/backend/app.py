@@ -208,111 +208,27 @@ def handle_notice():
         
         data = request.get_json()
         message = data.get('message')
-
-        if not message:
-            return jsonify({"success": False, "message": "Message required"}), 400
-
-        # Expires in 1 hour
+        # Expires in 1 hour if not specified
         expires_at = (datetime.now() + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
         
-        # ✅ SAVE NOTICE
-        cursor.execute(
-            "INSERT INTO announcements (message, expires_at) VALUES (?, ?)", 
-            (message, expires_at)
-        )
+        cursor.execute("INSERT INTO announcements (message, expires_at) VALUES (?, ?)", (message, expires_at))
         conn.commit()
-
-        # 🔔 SEND PUSH NOTIFICATION
-        try:
-            notif_conn = get_db()
-            notif_cursor = notif_conn.cursor()
-
-            notif_cursor.execute("SELECT token FROM fcm_tokens")
-            tokens = [row[0] for row in notif_cursor.fetchall()]
-
-            print(f"📢 Sending notice to {len(tokens)} users")
-
-            if tokens:
-                multicast_message = messaging.MulticastMessage(
-                    notification=messaging.Notification(
-                        title="📢 New Notice",
-                        body=message
-                    ),
-                    tokens=tokens,
-                )
-
-                response = messaging.send_multicast(multicast_message)
-
-                print(f"✅ Success: {response.success_count}, Failed: {response.failure_count}")
-            else:
-                print("⚠ No tokens found")
-
-            notif_conn.close()
-
-        except Exception as e:
-            print("❌ Notification error:", e)
-
         conn.close()
         return jsonify({"success": True})
     
     else:
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        cursor.execute(
-            "SELECT * FROM announcements WHERE expires_at > ? ORDER BY id DESC LIMIT 1", 
-            (now,)
-        )
+        cursor.execute("SELECT * FROM announcements WHERE expires_at > ? ORDER BY id DESC LIMIT 1", (now,))
         notice = cursor.fetchone()
         conn.close()
         
         if notice:
-            remaining = datetime.strptime(
-                notice['expires_at'], "%Y-%m-%d %H:%M:%S"
-            ) - datetime.now()
-
+            remaining = datetime.strptime(notice['expires_at'], "%Y-%m-%d %H:%M:%S") - datetime.now()
             minutes = max(0, int(remaining.total_seconds() // 60))
-
-            return jsonify({
-                "message": notice['message'],
-                "minutes": minutes
-            })
+            return jsonify({"message": notice['message'], "minutes": minutes})
         else:
             return jsonify(None)
-@app.route('/bookings', methods=['GET'])
-def get_bookings():
-    try:
-        conn = get_db()
-        cursor = conn.cursor()
 
-        cursor.execute("""
-            SELECT l.lab_name, b.period, b.booking_date, f.name, b.faculty_id
-            FROM bookings b 
-            JOIN labs l ON b.lab_id = l.id
-            JOIN faculty f ON b.faculty_id = f.id
-        """)
-
-        rows = cursor.fetchall()
-        conn.close()
-
-        bookings = []
-
-        for r in rows:
-            try:
-                bookings.append({
-                    "lab": str(r[0]).strip() if r[0] else "",
-                    "period": int(r[1]) if r[1] else 0,
-                    "date": str(r[2]).strip() if r[2] else "",
-                    "faculty_name": str(r[3]).strip() if r[3] else "",
-                    "faculty_id": r[4] if r[4] else None
-                })
-            except Exception as inner_error:
-                print("⚠ Row skipped:", r, inner_error)
-
-        return jsonify(bookings)
-
-    except Exception as e:
-        print("❌ BOOKINGS ERROR:", e)
-        return jsonify({"error": str(e)}), 500
-    
 @app.route('/api/notices', methods=['GET'])
 def get_all_notices():
     conn = get_db()
@@ -697,7 +613,21 @@ def current_user():
         "role": session.get("role")
     })
 
-
+@app.route('/bookings', methods=['GET'])
+def get_bookings():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT l.lab_name as lab, b.period, b.booking_date as date, f.name as faculty_name, b.faculty_id
+        FROM bookings b 
+        JOIN labs l ON b.lab_id = l.id
+        JOIN faculty f ON b.faculty_id = f.id
+    """)
+    rows = cursor.fetchall()
+    conn.close()
+    
+    bookings = [{"lab": str(r['lab']).strip(), "period": int(r['period']), "date": str(r['date']).strip(), "faculty_name": str(r['faculty_name']).strip(), "faculty_id": r['faculty_id']} for r in rows]
+    return jsonify(bookings)
 
 @app.route('/cancel', methods=['POST'])
 def cancel_booking_custom():
