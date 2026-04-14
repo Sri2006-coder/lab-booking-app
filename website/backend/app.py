@@ -310,6 +310,21 @@ def book_slot():
         conn = get_db()
         try:
             cursor = conn.cursor()
+            
+            # ✅ Enforce Daily Booking Limit
+            cursor.execute("SELECT value FROM settings WHERE key='daily_limit'")
+            setting = cursor.fetchone()
+            daily_limit = int(setting['value']) if setting and setting['value'] else 0
+            
+            if daily_limit > 0 and session.get('role') != 'admin':
+                cursor.execute(
+                    "SELECT COUNT(*) as count FROM bookings WHERE faculty_id = ? AND booking_date = ?",
+                    (faculty_id, date)
+                )
+                current_bookings = cursor.fetchone()['count']
+                if current_bookings >= daily_limit:
+                    return jsonify({"success": False, "message": f"Daily limit of {daily_limit} bookings reached."}), 403
+
             cursor.execute("SELECT id FROM labs WHERE lab_name = ?", (lab_name,))
             row = cursor.fetchone()
 
