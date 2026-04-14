@@ -1,6 +1,10 @@
 flask
 flask-cors
 gunicorn
+<<<<<<< HEAD
 firebase-admin
 flask-socketio
 eventlet
+=======
+firebase-admin
+>>>>>>> ba06191b32c5c4fd347c100bd2c9e64b23df85ee

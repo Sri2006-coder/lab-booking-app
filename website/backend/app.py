@@ -1,6 +1,9 @@
 from flask import Flask, request, jsonify, session, send_from_directory
 from flask_cors import CORS
+<<<<<<< HEAD
 from flask_socketio import SocketIO, emit
+=======
+>>>>>>> ba06191b32c5c4fd347c100bd2c9e64b23df85ee
 from database import get_db
 import os
 from datetime import datetime, timedelta
@@ -14,7 +17,10 @@ app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), '../
 app.secret_key = 'super_secret_key_for_lab_booking'
 app.permanent_session_lifetime = timedelta(minutes=10)
 CORS(app, supports_credentials=True)
+<<<<<<< HEAD
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+=======
+>>>>>>> ba06191b32c5c4fd347c100bd2c9e64b23df85ee
 import json
 
 try:
@@ -322,10 +328,16 @@ def book_slot():
         )
         conn.commit()
 
+<<<<<<< HEAD
         # 🔔 SEND NOTIFICATION & LIVE UPDATE
         try:
             print("🔥 Notification/Socket triggered after booking")
             socketio.emit('booking_update', {"type": "new_booking"}, namespace='/')
+=======
+        # 🔔 SEND NOTIFICATION
+        try:
+            print("🔥 Notification triggered after booking")
+>>>>>>> ba06191b32c5c4fd347c100bd2c9e64b23df85ee
 
             notif_conn = get_db()
             notif_cursor = notif_conn.cursor()
@@ -390,7 +402,10 @@ def cancel_booking(id):
     cursor.execute("DELETE FROM bookings WHERE id=?", (id,))
     conn.commit()
     conn.close()
+<<<<<<< HEAD
     socketio.emit('booking_update', {"type": "cancel_booking"}, namespace='/')
+=======
+>>>>>>> ba06191b32c5c4fd347c100bd2c9e64b23df85ee
     return jsonify({"success": True})
 
 @app.route('/api/upload', methods=['POST'])
@@ -650,7 +665,10 @@ def cancel_booking_custom():
         user_id = session.get('user_id')
         cursor.execute("DELETE FROM bookings WHERE lab_id=? AND period=? AND booking_date=? AND faculty_id=?", (lab_row['id'], period, date, user_id))
         conn.commit()
+<<<<<<< HEAD
         socketio.emit('booking_update', {"type": "cancel_booking"}, namespace='/')
+=======
+>>>>>>> ba06191b32c5c4fd347c100bd2c9e64b23df85ee
     conn.close()
     return jsonify({"success": True})
 
@@ -808,4 +826,8 @@ def send_test_notification():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
+<<<<<<< HEAD
     socketio.run(app, host="0.0.0.0", port=port, debug=True)
+=======
+    app.run(host="0.0.0.0", port=port)
+>>>>>>> ba06191b32c5c4fd347c100bd2c9e64b23df85ee

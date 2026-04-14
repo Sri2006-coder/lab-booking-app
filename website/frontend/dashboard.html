@@ -6,6 +6,7 @@
     <title>Timetable - Lab Booking</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+<<<<<<< HEAD
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -24,6 +25,11 @@
             <button onclick="dismissNotifBox()" class="text-blue-200 px-4 py-2 hover:text-white transition">Later</button>
         </div>
     </div>
+=======
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-50 flex min-h-screen">
+>>>>>>> ba06191b32c5c4fd347c100bd2c9e64b23df85ee
     <!-- Desktop Sidebar -->
     <aside class="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 min-h-screen sticky top-0 z-30">
         <div class="px-6 py-5 border-b border-gray-200 bg-blue-600">
@@ -122,6 +128,7 @@
 
         document.getElementById('date-picker').value = currentDate;
 
+<<<<<<< HEAD
         const API_BASE = window.location.origin;
         const socket = io(API_BASE);
 
@@ -138,6 +145,8 @@
             fetchNotice();
         });
 
+=======
+>>>>>>> ba06191b32c5c4fd347c100bd2c9e64b23df85ee
         function toggleMenu() {
             document.getElementById('mobile-menu').classList.toggle('hidden');
         }
@@ -449,6 +458,7 @@
             fetchNotice();
             await initializeDashboard();
 
+<<<<<<< HEAD
             // Check if we need to show permission box
             if (Notification.permission === 'default' && !localStorage.getItem('notif_dismissed')) {
                 document.getElementById('notif-permission-box').classList.remove('hidden');
@@ -481,6 +491,10 @@
                 });
             }
         });
+=======
+            setInterval(initializeDashboard, 5000);
+        };
+>>>>>>> ba06191b32c5c4fd347c100bd2c9e64b23df85ee
     </script>
     </div> <!-- End Main Content Wrapper -->
     <!-- FIREBASE NOTIFICATION START -->
