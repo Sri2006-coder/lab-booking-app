@@ -7,6 +7,8 @@ import firebase_admin
 from firebase_admin import credentials, messaging
 
 
+
+
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), '../frontend'))
 app.secret_key = 'super_secret_key_for_lab_booking'
 app.permanent_session_lifetime = timedelta(minutes=10)
@@ -335,18 +337,42 @@ def book_slot():
     cursor.execute("INSERT INTO bookings (lab_id, faculty_id, day, period, booking_date) VALUES (?, ?, ?, ?, ?)",
                    (lab_id, faculty_id, day, period, date))
     conn.commit()
-    
-    # Fetch all tokens and send push notification
-    try:
-        cursor.execute("SELECT token FROM fcm_tokens")
-        tokens = [r['token'] for r in cursor.fetchall()]
-        if tokens:
-            send_notification(tokens, "Lab Booking", "New lab booking created successfully")
-    except Exception as e:
-        print(f"Notification error: {e}")
-        
+# 🔔 SEND NOTIFICATION TO ALL USERS
+try:
+    notif_cursor = conn.cursor()
+
+    notif_cursor.execute("SELECT token FROM fcm_tokens")
+    tokens = [row[0] for row in notif_cursor.fetchall()]
+
+    if not tokens:
+        print("⚠️ No tokens found")
+
+    for token in tokens:
+        if not token:
+            continue
+
+        try:
+            message = messaging.Message(
+                notification=messaging.Notification(
+                    title="Lab Booking",
+                    body="New lab booking created successfully"
+                ),
+                token=token
+            )
+
+            response = messaging.send(message)
+            print(f"✅ Sent to {token[:10]}... -> {response}")
+
+        except Exception as e:
+            print("❌ Token failed:", token, e)
+
+except Exception as e:
+    print("❌ Notification error:", e)
+
+finally:
     conn.close()
-    return jsonify({"success": True})
+
+return jsonify({"success": True})
 
 @app.route('/api/cancel_booking/<int:id>', methods=['DELETE'])
 def cancel_booking(id):
