@@ -1,0 +1,22 @@
+node_modules/
+.expo/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Expo
+.expo/
+packager-info.json
+settings.json
+history.json
+manifest.json
+
+# Native
+android/
+ios/
+
+# Other
+.DS_Store
+*.pyc
+__pycache__/

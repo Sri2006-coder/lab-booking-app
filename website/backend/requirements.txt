@@ -1,0 +1,6 @@
+flask
+flask-cors
+gunicorn
+firebase-admin
+flask-socketio
+eventlet

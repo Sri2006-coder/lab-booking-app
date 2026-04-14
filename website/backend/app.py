@@ -1,0 +1,811 @@
+from flask import Flask, request, jsonify, session, send_from_directory
+from flask_cors import CORS
+from flask_socketio import SocketIO, emit
+from database import get_db
+import os
+from datetime import datetime, timedelta
+import firebase_admin
+from firebase_admin import credentials, messaging
+
+
+
+
+app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), '../frontend'))
+app.secret_key = 'super_secret_key_for_lab_booking'
+app.permanent_session_lifetime = timedelta(minutes=10)
+CORS(app, supports_credentials=True)
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+import json
+
+try:
+    firebase_json = os.environ.get("FIREBASE_KEY")
+
+    if firebase_json and not firebase_admin._apps:
+        cred_dict = json.loads(firebase_json)
+        cred = credentials.Certificate(cred_dict)
+        firebase_admin.initialize_app(cred)
+        print("✅ Firebase initialized from ENV")
+    else:
+        print("⚠ Firebase ENV not found")
+
+except Exception as e:
+    print("🔥 Firebase init error:", e)
+
+@app.route("/send-notification", methods=["POST"])
+def send_notification():
+    data = request.json
+    token = data.get("token")
+
+    if not token:
+        return jsonify({"error": "Token missing"}), 400
+
+    message = messaging.Message(
+        notification=messaging.Notification(
+            title="Lab Booking",
+            body="New booking created!"
+        ),
+        token=token
+    )
+
+    try:
+        response = messaging.send(message)
+        return jsonify({"success": True, "response": response})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+@app.after_request
+def add_header(response):
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
+@app.route('/')
+def index():
+    return send_from_directory(app.static_folder, 'index.html')
+@app.route('/firebase-messaging-sw.js')
+def serve_firebase_sw():
+    return send_from_directory(app.static_folder, 'firebase-messaging-sw.js')
+
+@app.route('/<path:path>')
+def static_proxy(path):
+    return send_from_directory(app.static_folder, path)
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM faculty WHERE email=? AND password=?", (email, password))
+    user = cursor.fetchone()
+    conn.close()
+    
+    if user:
+        session.permanent = True
+        session['user_id'] = user['id']
+        session['role'] = user['role']
+        session['name'] = user['name']
+        return jsonify({"success": True, "role": user['role'], "name": user['name']})
+    else:
+        return jsonify({"success": False, "message": "Invalid credentials"}), 401
+
+@app.route('/api/logout')
+def logout():
+    session.clear()
+    return jsonify({"success": True})
+
+@app.route('/admin/stats')
+def admin_stats():
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM bookings")
+    total = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(DISTINCT lab_id) FROM bookings")
+    labs = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM faculty WHERE role='faculty'")
+    users = cursor.fetchone()[0]
+
+    conn.close()
+
+    return jsonify({
+        "total_bookings": total,
+        "active_labs": labs,
+        "faculty_users": users
+    })
+
+@app.route('/api/stats')
+def get_stats():
+    if 'user_id' not in session or session['role'] != 'admin':
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT COUNT(*) as total FROM bookings")
+    total_bookings = cursor.fetchone()['total']
+    
+    cursor.execute("SELECT COUNT(*) as total FROM faculty")
+    total_faculty = cursor.fetchone()['total']
+    
+    cursor.execute("SELECT COUNT(DISTINCT lab_id) as total FROM fixed_schedule")
+    active_labs = cursor.fetchone()['total']
+    
+    conn.close()
+    return jsonify({
+        "totalBookings": total_bookings,
+        "totalFaculty": total_faculty,
+        "activeLabs": active_labs
+    })
+
+@app.route('/get_limit', methods=['GET'])
+def get_limit():
+    if 'user_id' not in session or session['role'] != 'admin':
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT value FROM settings WHERE key='daily_limit'")
+    setting = cursor.fetchone()
+    conn.close()
+    
+    limit = int(setting['value']) if setting else 2
+    return jsonify({"limit": limit})
+
+@app.route('/update_limit', methods=['POST'])
+def update_limit():
+    if 'user_id' not in session or session['role'] != 'admin':
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    
+    data = request.get_json()
+    new_limit = data.get('limit')
+    if new_limit is None:
+        return jsonify({"success": False, "message": "Missing limit"}), 400
+        
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('daily_limit', ?)", (str(new_limit),))
+    conn.commit()
+    conn.close()
+    
+    return jsonify({"success": True, "limit": new_limit})
+
+@app.route('/download_sample', methods=['GET'])
+def download_sample():
+    if 'user_id' not in session or session['role'] != 'admin':
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    
+    from flask import Response
+    csv_content = "day,period,lab\nMonday,1,Lab1\nMonday,2,Lab2\nTuesday,1,Lab1\n"
+    return Response(
+        csv_content,
+        mimetype="text/csv",
+        headers={"Content-disposition": "attachment; filename=sample_timetable.csv"}
+    )
+
+@app.route('/clear_timetable', methods=['POST'])
+def clear_timetable():
+    if 'user_id' not in session or session['role'] != 'admin':
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM fixed_schedule")
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True})
+
+@app.route('/api/notice', methods=['GET', 'POST'])
+def handle_notice():
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    if request.method == 'POST':
+        if 'user_id' not in session or session['role'] != 'admin':
+            return jsonify({"success": False, "message": "Unauthorized"}), 401
+        
+        data = request.get_json()
+        message = data.get('message')
+        # Expires in 1 hour if not specified
+        expires_at = (datetime.now() + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
+        
+        cursor.execute("INSERT INTO announcements (message, expires_at) VALUES (?, ?)", (message, expires_at))
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True})
+    
+    else:
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        cursor.execute("SELECT * FROM announcements WHERE expires_at > ? ORDER BY id DESC LIMIT 1", (now,))
+        notice = cursor.fetchone()
+        conn.close()
+        
+        if notice:
+            remaining = datetime.strptime(notice['expires_at'], "%Y-%m-%d %H:%M:%S") - datetime.now()
+            minutes = max(0, int(remaining.total_seconds() // 60))
+            return jsonify({"message": notice['message'], "minutes": minutes})
+        else:
+            return jsonify(None)
+
+@app.route('/api/notices', methods=['GET'])
+def get_all_notices():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM announcements ORDER BY id DESC")
+    notices = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return jsonify(notices)
+
+@app.route('/api/timetable')
+def get_timetable():
+    if 'user_id' not in session:
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    
+    date = request.args.get('date', datetime.now().strftime("%Y-%m-%d"))
+    day = datetime.strptime(date, "%Y-%m-%d").strftime("%A")
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT lab_name FROM labs ORDER BY id")
+    labs = [row['lab_name'].strip() for row in cursor.fetchall()]
+    
+    cursor.execute("SELECT day, period, lab, subject FROM fixed_schedule WHERE day COLLATE NOCASE = ?", (day,))
+    fixed_data = []
+    for row in cursor.fetchall():
+        d = dict(row)
+        d['lab'] = d['lab'].strip()
+        fixed_data.append(d)
+        
+    cursor.execute("""
+        SELECT b.day, b.period, l.lab_name as lab, f.name as faculty_name, b.id, b.faculty_id
+        FROM bookings b 
+        JOIN faculty f ON b.faculty_id = f.id 
+        JOIN labs l ON b.lab_id = l.id
+        WHERE b.booking_date=?
+    """, (date,))
+    
+    bookings_data = []
+    user_id = session.get('user_id')
+    role = session.get('role')
+    for row in cursor.fetchall():
+        b_dict = dict(row)
+        b_dict['lab'] = b_dict['lab'].strip()
+        b_dict['own'] = (b_dict['faculty_id'] == user_id or role == 'admin')
+        bookings_data.append(b_dict)
+    
+    conn.close()
+    
+    return jsonify({
+        "day": day,
+        "date": date,
+        "periods": [1, 2, 3, 4, 5, 6, 7, 8],
+        "labs": labs,
+        "fixed": fixed_data,
+        "bookings": bookings_data
+    })
+
+@app.route('/api/book', methods=['POST'])
+def book_slot():
+    if 'user_id' not in session:
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+
+    data = request.get_json()
+    lab_name = data.get('lab')
+    period = data.get('period')
+    day = data.get('day')
+    date = data.get('date')
+    faculty_id = session['user_id']
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    try:
+        # ✅ Get lab_id from lab_name
+        cursor.execute("SELECT id FROM labs WHERE lab_name = ?", (lab_name,))
+        row = cursor.fetchone()
+
+        if not row:
+            conn.close()
+            return jsonify({"success": False, "message": "Invalid lab"}), 400
+
+        lab_id = row[0]
+
+        # ✅ Insert booking
+        cursor.execute(
+            "INSERT INTO bookings (lab_id, faculty_id, day, period, booking_date) VALUES (?, ?, ?, ?, ?)",
+            (lab_id, faculty_id, day, period, date)
+        )
+        conn.commit()
+
+        # 🔔 SEND NOTIFICATION & LIVE UPDATE
+        try:
+            print("🔥 Notification/Socket triggered after booking")
+            socketio.emit('booking_update', {"type": "new_booking"}, namespace='/')
+
+            notif_conn = get_db()
+            notif_cursor = notif_conn.cursor()
+
+            notif_cursor.execute("SELECT token FROM fcm_tokens")
+            tokens = [row[0] for row in notif_cursor.fetchall()]
+
+            print("📦 Tokens found:", len(tokens))
+
+            for token in tokens:
+                if not token:
+                    continue
+
+                try:
+                    message = messaging.Message(
+                        notification=messaging.Notification(
+                            title="Lab Booking",
+                            body="New lab booking created successfully"
+                        ),
+                        token=token
+                    )
+
+                    response = messaging.send(message)
+                    print(f"✅ Sent → {response}")
+
+                except Exception as e:
+                    print("❌ Token failed:", token[:15], "...", e)
+
+        except Exception as e:
+            print("❌ Notification error:", e)
+
+        finally:
+            try:
+                notif_conn.close()
+            except:
+                pass
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        print("❌ Booking error:", e)
+        return jsonify({"success": False, "message": "Booking failed"}), 500
+
+    finally:
+        conn.close()
+
+@app.route('/api/cancel_booking/<int:id>', methods=['DELETE'])
+def cancel_booking(id):
+    if 'user_id' not in session:
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Check ownership
+    cursor.execute("SELECT faculty_id FROM bookings WHERE id=?", (id,))
+    booking = cursor.fetchone()
+    if not booking or (booking['faculty_id'] != session['user_id'] and session['role'] != 'admin'):
+        conn.close()
+        return jsonify({"success": False, "message": "Forbidden"}), 403
+    
+    cursor.execute("DELETE FROM bookings WHERE id=?", (id,))
+    conn.commit()
+    conn.close()
+    socketio.emit('booking_update', {"type": "cancel_booking"}, namespace='/')
+    return jsonify({"success": True})
+
+@app.route('/api/upload', methods=['POST'])
+def upload_timetable():
+    if 'user_id' not in session or session['role'] != 'admin':
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    
+    if 'file' not in request.files:
+        return jsonify({"success": False, "message": "No file part"})
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"success": False, "message": "No selected file"})
+
+    import csv
+    import io
+    
+    try:
+        content = file.stream.read().decode("utf-8-sig", errors="replace")
+        stream = io.StringIO(content)
+        
+        reader = csv.reader(stream)
+        next(reader, None) # skip header
+            
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        cursor.execute("DELETE FROM fixed_schedule")
+        
+        count = 0
+        for row in reader:
+            if len(row) < 4:
+                continue
+            
+            day = row[0].strip()
+            period = int(row[1].strip())
+            lab = row[2].strip()
+            subject = row[3].strip()
+            
+            print("INSERTING:", day, period, lab, subject)
+            
+            cursor.execute("""
+                INSERT INTO fixed_schedule (day, period, lab, subject) 
+                VALUES (?, ?, ?, ?)
+            """, (day, period, lab, subject))
+            count += 1
+            
+        conn.commit()
+        conn.close()
+        
+        print(f"Successfully uploaded {count} fixed schedule entries.")
+        return jsonify({"success": True, "count": count})
+    except Exception as e:
+        print(f"Upload error: {e}")
+        return jsonify({"success": False, "message": str(e)})
+
+
+@app.route('/labs', methods=['GET'])
+def get_labs_dynamic():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM labs ORDER BY lab_name ASC")
+    all_labs = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return jsonify(all_labs)
+
+@app.route('/add_lab', methods=['POST'])
+def add_lab_dynamic():
+    if 'user_id' not in session or session['role'] != 'admin':
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    name = request.json.get('name')
+    if not name:
+         return jsonify({"success": False, "message": "Name is required"})
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT id FROM labs WHERE lab_name=?", (name,))
+        if cursor.fetchone() is None:
+            cursor.execute("INSERT INTO labs (lab_name) VALUES (?)", (name,))
+            conn.commit()
+        success = True
+    except:
+        success = False
+    finally:
+        conn.close()
+    return jsonify({"success": success})
+
+@app.route('/delete_lab', methods=['POST'])
+def delete_lab_dynamic():
+    if 'user_id' not in session or session['role'] != 'admin':
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    lab_id = request.json.get('id')
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM bookings WHERE lab_id=?", (lab_id,))
+    cursor.execute("DELETE FROM labs WHERE id=?", (lab_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True})
+
+@app.route('/api/labs', methods=['GET', 'POST'])
+def handle_labs():
+    if 'user_id' not in session:
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    if request.method == 'POST':
+        if session['role'] != 'admin':
+            return jsonify({"success": False, "message": "Unauthorized"}), 401
+        data = request.get_json()
+        lab_name = data.get('name')
+        cursor.execute("SELECT id FROM labs WHERE lab_name=?", (lab_name,))
+        if cursor.fetchone() is None:
+            cursor.execute("INSERT INTO labs (lab_name) VALUES (?)", (lab_name,))
+            conn.commit()
+        conn.close()
+        return jsonify({"success": True})
+    else:
+        cursor.execute("SELECT * FROM labs ORDER BY lab_name ASC")
+        labs = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+        return jsonify(labs)
+
+@app.route('/api/mybookings')
+def get_my_bookings():
+    if 'user_id' not in session:
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    
+    faculty_id = session['user_id']
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    if session['role'] == 'admin':
+        cursor.execute("""
+            SELECT b.*, l.lab_name, f.name as faculty_name
+            FROM bookings b 
+            JOIN labs l ON b.lab_id = l.id 
+            JOIN faculty f ON b.faculty_id = f.id
+            ORDER BY b.booking_date DESC, b.period ASC
+        """)
+    else:
+        cursor.execute("""
+            SELECT b.*, l.lab_name 
+            FROM bookings b 
+            JOIN labs l ON b.lab_id = l.id 
+            WHERE b.faculty_id = ? 
+            ORDER BY b.booking_date DESC, b.period ASC
+        """, (faculty_id,))
+    
+    bookings = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return jsonify(bookings)
+
+@app.route('/api/calendar')
+def get_calendar():
+    if 'user_id' not in session:
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    
+    # Get month and year from args or default to current
+    now = datetime.now()
+    month = int(request.args.get('month', now.month))
+    year = int(request.args.get('year', now.year))
+    
+    import calendar
+    _, num_days = calendar.monthrange(year, month)
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    days = []
+    current_date_str = now.strftime("%Y-%m-%d")
+    
+    for d in range(1, num_days + 1):
+        date_str = f"{year}-{month:02d}-{d:02d}"
+        cursor.execute("SELECT id FROM bookings WHERE booking_date=?", (date_str,))
+        is_booked = cursor.fetchone() is not None
+        
+        status = "free"
+        if date_str == current_date_str:
+            status = "today"
+        elif is_booked:
+            status = "booked"
+            
+        days.append({
+            "day": d,
+            "date": date_str,
+            "status": status,
+            "booked": is_booked
+        })
+    
+    conn.close()
+    return jsonify({
+        "month": month,
+        "year": year,
+        "month_name": calendar.month_name[month],
+        "days": days
+    })
+
+
+@app.route('/set_limit', methods=['POST'])
+def set_limit():
+    from flask import request
+    limit = request.json.get("limit", 0)
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT OR REPLACE INTO settings (key, value)
+        VALUES ('daily_limit', ?)
+    """, (str(limit),))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"success": True})
+
+@app.route('/current_user')
+def current_user():
+    return jsonify({
+        "id": session.get("user_id"),
+        "role": session.get("role")
+    })
+
+@app.route('/bookings', methods=['GET'])
+def get_bookings():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT l.lab_name as lab, b.period, b.booking_date as date, f.name as faculty_name, b.faculty_id
+        FROM bookings b 
+        JOIN labs l ON b.lab_id = l.id
+        JOIN faculty f ON b.faculty_id = f.id
+    """)
+    rows = cursor.fetchall()
+    conn.close()
+    
+    bookings = [{"lab": str(r['lab']).strip(), "period": int(r['period']), "date": str(r['date']).strip(), "faculty_name": str(r['faculty_name']).strip(), "faculty_id": r['faculty_id']} for r in rows]
+    return jsonify(bookings)
+
+@app.route('/cancel', methods=['POST'])
+def cancel_booking_custom():
+    from flask import request
+    data = request.json
+    lab = data['lab']
+    period = data['period']
+    date = data['date']
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT id FROM labs WHERE lab_name=?", (lab,))
+    lab_row = cursor.fetchone()
+    if lab_row:
+        user_id = session.get('user_id')
+        cursor.execute("DELETE FROM bookings WHERE lab_id=? AND period=? AND booking_date=? AND faculty_id=?", (lab_row['id'], period, date, user_id))
+        conn.commit()
+        socketio.emit('booking_update', {"type": "cancel_booking"}, namespace='/')
+    conn.close()
+    return jsonify({"success": True})
+
+@app.route('/login', methods=['POST'])
+def custom_login():
+    data = request.json
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name, email, password, role FROM faculty WHERE email=? AND password=?",
+                   (data['email'], data['password']))
+    user = cursor.fetchone()
+    conn.close()
+
+    if user:
+        session['user_id'] = user['id']
+        session['role'] = user['role']
+        return jsonify({"success": True, "role": user['role']})
+    return jsonify({"success": False, "message": "Invalid credentials"})
+
+
+@app.route('/register', methods=['POST'])
+def register():
+    data = request.json
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM faculty WHERE email=?", (data['email'],))
+    if cursor.fetchone():
+        conn.close()
+        return jsonify({"success": False, "message": "User already exists"})
+
+    cursor.execute("""
+    INSERT INTO faculty (name, email, password, role)
+    VALUES (?, ?, ?, 'faculty')
+    """, (data['name'], data['email'], data['password']))
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True})
+
+
+@app.route('/upload_faculty', methods=['POST'])
+def bulk_upload_faculty():
+    if session.get('role') != 'admin':
+        return jsonify({"error": "Unauthorized"}), 403
+        
+    import csv
+    import io
+    file = request.files['file']
+    content = file.stream.read().decode("UTF8", errors="replace")
+    stream = io.StringIO(content)
+    reader = csv.DictReader(stream, skipinitialspace=True)
+    
+    # Normalize headers
+    if reader.fieldnames:
+        reader.fieldnames = [str(f).strip().lower() for f in reader.fieldnames]
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    count = 0
+    for row in reader:
+        # Fallbacks for empty rows
+        if not row.get('name') or not row.get('email') or not row.get('password'):
+            continue
+            
+        cursor.execute("""
+        INSERT OR IGNORE INTO faculty (name, email, password, role)
+        VALUES (?, ?, ?, 'faculty')
+        """, (row['name'].strip(), row['email'].strip(), row['password'].strip()))
+        count += 1
+
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True, "count": count})
+
+@app.route('/save-token', methods=['POST'])
+def save_token():
+    # Attempt to parse JSON input
+    data = request.get_json(silent=True)
+    
+    # 1. Error handling: If no JSON is received
+    if data is None:
+        return jsonify({"error": "No JSON received"}), 400
+        
+    # 2. Extract token safely
+    token = data.get('token')
+    
+    # 3. Error handling: If token is missing
+    if not token:
+        return jsonify({"error": "Token is missing"}), 400
+        
+    # 4. Print token to console/logs
+    print(f"Token received safely: {token}")
+    
+    # Add to DB if user matches
+    if 'user_id' in session:
+        try:
+            conn = get_db()
+            cursor = conn.cursor()
+            cursor.execute("INSERT OR IGNORE INTO fcm_tokens (faculty_id, token) VALUES (?, ?)", (session['user_id'], token))
+            conn.commit()
+            conn.close()
+        except:
+            pass
+
+    # 5. Return success JSON response
+    return jsonify({"message": "Token saved successfully"}), 200
+
+def send_notification(tokens, title, body):
+    if not tokens:
+        print("No tokens provided for push notification.")
+        return False
+        
+    try:
+        if isinstance(tokens, str):
+            tokens = [tokens]
+            
+        msg = messaging.MulticastMessage(
+            notification=messaging.Notification(
+                title=title,
+                body=body
+            ),
+            tokens=tokens,
+        )
+        response = messaging.send_multicast(msg)
+        print(f"Successfully sent {response.success_count} messages. Failed: {response.failure_count}")
+        return response.success_count > 0
+    except Exception as e:
+        print(f"Error sending FCM message: {e}")
+        return False
+
+@app.route('/send-test-notification', methods=['GET'])
+def send_test_notification():
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT token FROM fcm_tokens")
+        rows = cursor.fetchall()
+        conn.close()
+        
+        tokens = [row['token'] for row in rows]
+        
+        if not tokens:
+            return jsonify({"success": False, "message": "No tokens found in database."}), 404
+            
+        success = send_notification(tokens, "Test Notification", "This is a test push message")
+        
+        if success:
+            return jsonify({"success": True, "message": f"Test notification sent to {len(tokens)} devices."})
+        else:
+            return jsonify({"success": False, "message": "Failed to send test notification. Check server logs."}), 500
+            
+    except Exception as e:
+        print(f"Test notification error: {e}")
+        return jsonify({"success": False, "message": "Server error."}), 500
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    socketio.run(app, host="0.0.0.0", port=port, debug=True)

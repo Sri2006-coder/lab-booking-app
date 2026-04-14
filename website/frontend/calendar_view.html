@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Calendar - Lab Booking</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-50 flex flex-col min-h-screen">
+
+    <!-- Top Navbar -->
+    <nav class="bg-blue-600 text-white sticky top-0 z-40 shadow-md flex items-center justify-between px-4 py-3">
+        <div class="flex items-center">
+            <button onclick="window.location.href='dashboard.html'" class="mr-3 p-1 rounded-full hover:bg-white/20 active:scale-95 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            </button>
+            <h1 class="font-bold text-xl tracking-tight">📆 Calendar</h1>
+        </div>
+    </nav>
+
+    <main class="flex-1 px-4 py-5 w-full max-w-lg mx-auto">
+        <h2 id="calendar-title" class="text-center text-xl font-bold text-gray-800 mb-6 uppercase tracking-wide">Loading...</h2>
+
+        <!-- Mobile-friendly 7 column grid, but tightly packed -->
+        <div id="calendar-grid" class="grid grid-cols-4 sm:grid-cols-7 gap-2 pb-8">
+            <!-- Days injected here -->
+        </div>
+    </main>
+
+    <script>
+        async function loadCalendar() {
+            try {
+                const res = await fetch('/api/calendar');
+                const data = await res.json();
+                
+                document.getElementById('calendar-title').innerText = `${data.month_name} ${data.year}`;
+                
+                const grid = document.getElementById('calendar-grid');
+                grid.innerHTML = '';
+
+                data.days.forEach(d => {
+                    const dayDiv = document.createElement('div');
+                    
+                    let baseClass = "bg-white rounded-xl shadow-sm border p-3 flex flex-col items-center justify-center text-center transition active:scale-95 cursor-pointer";
+                    let stateClass = "";
+                    let indicator = "";
+
+                    if(d.status === 'today') {
+                        stateClass = "border-blue-500 bg-blue-50";
+                        indicator = "<div class='w-1.5 h-1.5 bg-blue-500 rounded-full mt-1 absolute top-2 right-2'></div>";
+                    } else if(d.status === 'booked') {
+                        stateClass = "border-orange-500 bg-orange-50";
+                    } else {
+                        stateClass = "border-gray-200";
+                    }
+
+                    dayDiv.className = `${baseClass} ${stateClass} relative`;
+                    
+                    dayDiv.innerHTML = `
+                        ${indicator}
+                        <b class="text-lg text-gray-900">${d.day}</b>
+                        <span class="text-[10px] font-bold mt-1 text-gray-500 uppercase tracking-wider">${d.booked ? 'Booked' : 'Free'}</span>
+                    `;
+                    
+                    // Make the whole card clickable instead of a tiny interior button
+                    dayDiv.onclick = () => { window.location.href = `dashboard.html?date=${d.date}`; };
+
+                    grid.appendChild(dayDiv);
+                });
+            } catch(e) {}
+        }
+
+        loadCalendar();
+    </script>
+</body>
+</html>
