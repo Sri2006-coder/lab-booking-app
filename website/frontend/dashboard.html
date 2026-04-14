@@ -334,16 +334,18 @@
 
         async function bookLab(lab, period) {
             const date = currentDate;
-
-            const res = await fetch("/book", {
+            const day = new Date(date).toLocaleDateString("en-US", { weekday: "long" });
+            console.log("🔥 BOOK CLICKED", { lab, period, date, day });
+            const res = await fetch("/api/book", {
                 method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({ lab, period, date })
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ lab, period, date, day })
             });
-
-            await loadBookings();
-            renderDashboard();
-        }
+            const data = await res.json();
+            console.log("✅ RESPONSE:", data);
+             await loadBookings();
+              renderDashboard();
+            }
 
         async function cancelBooking(lab, period) {
             if (!confirm('Cancel this booking?')) return;

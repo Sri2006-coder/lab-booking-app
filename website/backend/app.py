@@ -289,7 +289,6 @@ def get_timetable():
 
 @app.route('/api/book', methods=['POST'])
 def book_slot():
-
     if 'user_id' not in session:
         return jsonify({"success": False, "message": "Unauthorized"}), 401
 
@@ -303,52 +302,72 @@ def book_slot():
     conn = get_db()
     cursor = conn.cursor()
 
-    # Insert booking
-    cursor.execute(
-        "INSERT INTO bookings (lab_id, faculty_id, day, period, booking_date) VALUES (?, ?, ?, ?, ?)",
-        (lab_id, faculty_id, day, period, date)
-    )
-
-    conn.commit()
-
-    # 🔔 SEND NOTIFICATION (INSIDE FUNCTION)
     try:
-        notif_cursor = conn.cursor()
+        # ✅ Get lab_id from lab_name
+        cursor.execute("SELECT id FROM labs WHERE lab_name = ?", (lab_name,))
+        row = cursor.fetchone()
 
-        notif_cursor.execute("SELECT token FROM fcm_tokens")
-        tokens = [row[0] for row in notif_cursor.fetchall()]
+        if not row:
+            conn.close()
+            return jsonify({"success": False, "message": "Invalid lab"}), 400
 
-        if not tokens:
-            print("⚠️ No tokens found")
+        lab_id = row[0]
 
-        for token in tokens:
-            if not token:
-                continue
+        # ✅ Insert booking
+        cursor.execute(
+            "INSERT INTO bookings (lab_id, faculty_id, day, period, booking_date) VALUES (?, ?, ?, ?, ?)",
+            (lab_id, faculty_id, day, period, date)
+        )
+        conn.commit()
 
+        # 🔔 SEND NOTIFICATION
+        try:
+            print("🔥 Notification triggered after booking")
+
+            notif_conn = get_db()
+            notif_cursor = notif_conn.cursor()
+
+            notif_cursor.execute("SELECT token FROM fcm_tokens")
+            tokens = [row[0] for row in notif_cursor.fetchall()]
+
+            print("📦 Tokens found:", len(tokens))
+
+            for token in tokens:
+                if not token:
+                    continue
+
+                try:
+                    message = messaging.Message(
+                        notification=messaging.Notification(
+                            title="Lab Booking",
+                            body="New lab booking created successfully"
+                        ),
+                        token=token
+                    )
+
+                    response = messaging.send(message)
+                    print(f"✅ Sent → {response}")
+
+                except Exception as e:
+                    print("❌ Token failed:", token[:15], "...", e)
+
+        except Exception as e:
+            print("❌ Notification error:", e)
+
+        finally:
             try:
-                message = messaging.Message(
-                    notification=messaging.Notification(
-                        title="Lab Booking",
-                        body="New lab booking created successfully"
-                    ),
-                    token=token
-                )
+                notif_conn.close()
+            except:
+                pass
 
-                response = messaging.send(message)
-                print(f"✅ Sent to {token[:10]}... -> {response}")
-
-            except Exception as e:
-                print("❌ Token failed:", token, e)
+        return jsonify({"success": True})
 
     except Exception as e:
-        print("❌ Notification error:", e)
+        print("❌ Booking error:", e)
+        return jsonify({"success": False, "message": "Booking failed"}), 500
 
     finally:
         conn.close()
-
-    return jsonify({"success": True})
-
-
 
 @app.route('/api/cancel_booking/<int:id>', methods=['DELETE'])
 def cancel_booking(id):
