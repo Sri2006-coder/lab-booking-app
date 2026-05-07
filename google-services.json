@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "492426985882",
+    "project_id": "lab-booking-system-e77ad",
+    "storage_bucket": "lab-booking-system-e77ad.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:492426985882:android:95dbef530f8cf5a0497a23",
+        "android_client_info": {
+          "package_name": "com.labbooking.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC379CPtRnAc89_oBNfAcBqPL5gm4MNUOw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -15,7 +15,7 @@ app.secret_key = 'super_secret_key_for_lab_booking'
 app.permanent_session_lifetime = timedelta(minutes=10)
 CORS(app, supports_credentials=True)
 
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 import json
 
 try:
@@ -23,14 +23,21 @@ try:
 
     if firebase_json and not firebase_admin._apps:
         cred_dict = json.loads(firebase_json)
+        # Fix escaped newlines that Render introduces when storing JSON as a string
+        cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
         cred = credentials.Certificate(cred_dict)
         firebase_admin.initialize_app(cred)
-        print("✅ Firebase initialized from ENV")
-    else:
-        print("⚠ Firebase ENV not found")
-
+        print("[OK] Firebase initialized from ENV")
+    elif not firebase_admin._apps:
+        key_path = os.path.join(os.path.dirname(__file__), "firebase_key.json")
+        if os.path.exists(key_path):
+            cred = credentials.Certificate(key_path)
+            firebase_admin.initialize_app(cred)
+            print("[OK] Firebase initialized from firebase_key.json")
+        else:
+            print("[WARN] Firebase credentials not found")
 except Exception as e:
-    print("🔥 Firebase init error:", e)
+    print("[ERROR] Firebase init error:", e)
 
 @app.route("/send-notification", methods=["POST"])
 def send_notification():
@@ -674,7 +681,7 @@ def get_bookings():
             
         if migrated:
             conn.commit()
-            print("✅ Migration: added missing columns to bookings")
+            print("[OK] Migration: added missing columns to bookings")
 
         # Now fetch safely. We use LEFT JOIN to resolve lab names and faculty names if possible
         cursor.execute("""
@@ -708,7 +715,7 @@ def get_bookings():
         return jsonify(result)
         
     except Exception as e:
-        print("❌ ERROR in /bookings:", e)
+        print("[ERROR] ERROR in /bookings:", e)
         # Return graceful fallback JSON payload, absolutely no 500 error
         return jsonify([])
         
@@ -827,9 +834,12 @@ def bulk_upload_faculty():
 def save_token():
     # Attempt to parse JSON input
     data = request.get_json(silent=True)
+    print(f"DEBUG: /save-token hit. Data: {data}")
+    print(f"DEBUG: Session: {dict(session)}")
     
     # 1. Error handling: If no JSON is received
     if data is None:
+        print("ERROR: No JSON received at /save-token")
         return jsonify({"error": "No JSON received"}), 400
         
     # 2. Extract token safely
@@ -837,24 +847,29 @@ def save_token():
     
     # 3. Error handling: If token is missing
     if not token:
+        print("ERROR: Token missing in JSON at /save-token")
         return jsonify({"error": "Token is missing"}), 400
         
     # 4. Print token to console/logs
     print(f"Token received safely: {token}")
     
-    # Add to DB if user matches
-    if 'user_id' in session:
-        try:
-            conn = get_db()
-            cursor = conn.cursor()
-            cursor.execute("INSERT OR IGNORE INTO fcm_tokens (faculty_id, token) VALUES (?, ?)", (session['user_id'], token))
-            conn.commit()
-            conn.close()
-        except:
-            pass
+    # Add to DB
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        user_id = session.get('user_id')
+        
+        # Save token. If user_id is None, it's a guest/unlogged token (useful for testing)
+        cursor.execute("INSERT OR IGNORE INTO fcm_tokens (faculty_id, token) VALUES (?, ?)", (user_id, token))
+        conn.commit()
+        conn.close()
+        print(f"SUCCESS: Token saved to DB. User ID: {user_id}")
+    except Exception as e:
+        print(f"DB ERROR in /save-token: {e}")
+        pass
 
     # 5. Return success JSON response
-    return jsonify({"message": "Token saved successfully"}), 200
+    return jsonify({"message": "Token saved successfully", "user_id": session.get('user_id')}), 200
 
 def send_notification(tokens, title, body):
     if not tokens:
@@ -905,5 +920,5 @@ def send_test_notification():
         return jsonify({"success": False, "message": "Server error."}), 500
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    socketio.run(app, host="0.0.0.0", port=port, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    socketio.run(app, host="0.0.0.0", port=port, debug=True, allow_unsafe_werkzeug=True)

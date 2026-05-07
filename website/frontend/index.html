@@ -41,6 +41,22 @@
     </div>
 
     <script>
+        // Listen for token from Mobile App (Expo)
+        window.addEventListener("message", (event) => {
+            const data = event.data;
+            if (data.type === 'expo-token') {
+                console.log("📱 Mobile Token Received on Login Page:", data.token);
+                // Save to localStorage so it persists after login
+                localStorage.setItem('expo-token', data.token);
+                
+                fetch('/save-token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: data.token })
+                }).then(r => r.json()).then(d => console.log("Token save response:", d));
+            }
+        });
+
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;

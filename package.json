@@ -4,8 +4,8 @@
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web"
   },
   "dependencies": {
@@ -15,17 +15,14 @@
     "axios": "^1.7.0",
     "expo": "54",
     "expo-asset": "~12.0.12",
+    "expo-constants": "~18.0.13",
+    "expo-device": "~8.0.10",
+    "expo-notifications": "~0.32.17",
     "react": "19.1.0",
     "react-native": "0.81.5",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
-<<<<<<< HEAD
-    "react-native-webview": "13.15.0",
-    "expo-notifications": "~0.29.11",
-    "expo-device": "~7.0.2"
-=======
     "react-native-webview": "13.15.0"
->>>>>>> ba06191b32c5c4fd347c100bd2c9e64b23df85ee
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"

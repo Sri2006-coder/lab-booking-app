@@ -508,14 +508,29 @@
         window.addEventListener("message", (event) => {
             const data = event.data;
             if (data.type === 'expo-token') {
-                console.log("📱 Mobile Token Received:", data.token);
-                safeFetch('/save-token', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: data.token })
-                });
+                console.log("📱 Mobile Token Received on Dashboard:", data.token);
+                localStorage.setItem('expo-token', data.token);
+                saveToken(data.token);
             }
         });
+
+        async function saveToken(token) {
+            console.log("Attempting to save token to backend...");
+            const res = await fetch('/save-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: token })
+            });
+            const result = await res.json();
+            console.log("Token save result:", result);
+        }
+
+        // On load, check if we have a stored token and try to save it again (in case login was just completed)
+        const storedToken = localStorage.getItem('expo-token');
+        if (storedToken) {
+            console.log("Found stored token, re-syncing...");
+            saveToken(storedToken);
+        }
     </script>
     </div> <!-- End Main Content Wrapper -->
     <!-- FIREBASE NOTIFICATION START -->
