@@ -46,10 +46,25 @@
     <script>
         document.getElementById('register-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const name = document.getElementById('name').value;
-            const email = document.getElementById('email').value;
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim().toLowerCase();
             const password = document.getElementById('password').value;
             const errorMsg = document.getElementById('error-msg');
+
+            // Faculty email domain validation
+            if (!email.endsWith('@jayshriram.edu.in')) {
+                // Try to use native React Native alert if available
+                if (window.ReactNativeWebView) {
+                    window.ReactNativeWebView.postMessage(JSON.stringify({
+                        type: 'alert',
+                        title: 'Access Denied',
+                        message: 'Only official Jay Shriram faculty emails are allowed.'
+                    }));
+                } else {
+                    alert("Access Denied: Only official Jay Shriram faculty emails are allowed.");
+                }
+                return;
+            }
 
             try {
                 const res = await fetch('/register', {
@@ -60,7 +75,15 @@
 
                 const data = await res.json();
                 if (data.success) {
-                    alert("Registered successfully");
+                    if (window.ReactNativeWebView) {
+                        window.ReactNativeWebView.postMessage(JSON.stringify({
+                            type: 'alert',
+                            title: 'Success',
+                            message: 'Registered successfully'
+                        }));
+                    } else {
+                        alert("Registered successfully");
+                    }
                     window.location.href = "index.html";
                 } else {
                     errorMsg.innerText = "❌ " + data.message;

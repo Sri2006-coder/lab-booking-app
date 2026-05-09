@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Platform, Alert, Text, View, StyleSheet } from 'react-native';
+import { Platform, Text, View, StyleSheet, Alert } from 'react-native';
 import { WebView } from 'react-native-webview';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 
-// 1. Configure the notification handler for foreground alerts
+// Configure the notification handler for foreground alerts
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -17,39 +17,25 @@ Notifications.setNotificationHandler({
 
 export default function App() {
   const [expoPushToken, setExpoPushToken] = useState('');
-  const [debugInfo, setDebugInfo] = useState('Initializing...');
   const webViewRef = useRef(null);
 
-  // STEP 1 & 2: Component Mounting & useEffect Log
   useEffect(() => {
-    console.log("DEBUG: App Component Mounted");
-    setDebugInfo('App started, setting up notifications...');
-    
-    // Immediate feedback for the user
-    alert("DEBUG 1: App Started");
+    console.log("App Component Mounted");
 
     async function setup() {
-        try {
-            console.log("DEBUG: Calling registerForPushNotificationsAsync");
-            alert("DEBUG 2: Registration function called");
-            
-            const token = await registerForPushNotificationsAsync();
-            
-            if (token) {
-                console.log("DEBUG: Token received:", token);
-                setExpoPushToken(token);
-                setDebugInfo('Token Generated Successfully');
-                alert("DEBUG 5: Token received in App.js: " + token.substring(0, 10) + "...");
-            } else {
-                console.log("DEBUG: No token returned");
-                setDebugInfo('Failed to generate token');
-                alert("DEBUG 5: Failed to generate token");
-            }
-        } catch (error) {
-            console.error("DEBUG: Setup error:", error);
-            setDebugInfo('Error: ' + error.message);
-            alert("DEBUG ERROR: " + error.message);
+      try {
+        console.log("Calling registerForPushNotificationsAsync");
+        const token = await registerForPushNotificationsAsync();
+
+        if (token) {
+          console.log("Token received:", token);
+          setExpoPushToken(token);
+        } else {
+          console.warn("No token returned from registration");
         }
+      } catch (error) {
+        console.error("Setup error:", error);
+      }
     }
 
     setup();
@@ -82,7 +68,7 @@ export default function App() {
         })();
       `;
       webViewRef.current.injectJavaScript(js);
-      console.log("DEBUG: Token injected into WebView");
+      console.log("Token injected into WebView");
     }
   };
 
@@ -99,19 +85,24 @@ export default function App() {
         source={{ uri: 'https://lab-booking-app.onrender.com' }}
         style={{ flex: 1 }}
         onLoad={() => {
-            console.log("DEBUG: WebView Loaded");
-            if (expoPushToken) injectToken(expoPushToken);
+          console.log("WebView Loaded");
+          if (expoPushToken) injectToken(expoPushToken);
         }}
         javaScriptEnabled={true}
         domStorageEnabled={true}
         onMessage={(event) => {
-            console.log("WebView Log:", event.nativeEvent.data);
+          try {
+            const data = JSON.parse(event.nativeEvent.data);
+            if (data.type === 'alert') {
+              Alert.alert(data.title, data.message);
+              return;
+            }
+          } catch (e) {
+            // Not a JSON message or not an alert
+          }
+          console.log("WebView Log:", event.nativeEvent.data);
         }}
       />
-      {/* Debug overlay to see status on screen */}
-      <View style={styles.debugOverlay}>
-        <Text style={styles.debugText}>{debugInfo}</Text>
-      </View>
     </View>
   );
 }
@@ -119,27 +110,22 @@ export default function App() {
 async function registerForPushNotificationsAsync() {
   let token;
 
-  // STEP 3: Initial Check
-  console.log("DEBUG: STEP 3: Checking device status");
-  alert("DEBUG 3: Checking device and permissions");
-
   if (!Device.isDevice) {
-    console.warn("DEBUG: Not a physical device");
-    alert("WARNING: Running on Emulator. Push may not work.");
+    console.warn("Not a physical device. Push notifications may not work on emulators.");
   }
 
-  // STEP 4: Permissions
+  // Check and request permissions
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
-  
+
   if (existingStatus !== 'granted') {
-    console.log("DEBUG: Requesting new permissions");
+    console.log("Requesting notification permissions");
     const { status } = await Notifications.requestPermissionsAsync();
     finalStatus = status;
   }
-  
+
   if (finalStatus !== 'granted') {
-    alert("CRITICAL: Permission for notifications not granted!");
+    console.warn("Permission for push notifications not granted");
     return null;
   }
 
@@ -153,36 +139,25 @@ async function registerForPushNotificationsAsync() {
     });
   }
 
-  // STEP 5: Token Generation
+  // Fetch FCM Device Token
   try {
-    console.log("DEBUG: STEP 4: Fetching FCM Device Token");
-    alert("DEBUG 4: Fetching FCM Token...");
-
-    // Important: projectId is often required in newer Expo versions even for native tokens
-    const projectId = Constants?.expoConfig?.extra?.eas?.projectId || Constants?.easConfig?.projectId;
-    
-    // We try to get the device push token (native FCM token)
-    // Note: getDevicePushTokenAsync() is specifically for direct Firebase integration
+    console.log("Fetching FCM Device Token");
     const deviceToken = await Notifications.getDevicePushTokenAsync();
     token = deviceToken.data;
-
-    console.log("DEBUG: FCM Token Success:", token);
-    alert("SUCCESS: Token Generated!");
-    
+    console.log("FCM Token generated successfully");
   } catch (error) {
-    console.error("DEBUG: Token Generation Error:", error);
-    alert("ERROR at STEP 4: " + error.message);
-    
+    console.error("Token generation error:", error);
+
     // Fallback: Try Expo Push Token if Device Token fails
     try {
-        console.log("DEBUG: Attempting Fallback to Expo Push Token");
-        const expoToken = await Notifications.getExpoPushTokenAsync({
-            projectId: Constants?.expoConfig?.extra?.eas?.projectId
-        });
-        token = expoToken.data;
-        console.log("DEBUG: Expo Token Generated (Fallback):", token);
+      console.log("Attempting fallback to Expo Push Token");
+      const expoToken = await Notifications.getExpoPushTokenAsync({
+        projectId: Constants?.expoConfig?.extra?.eas?.projectId,
+      });
+      token = expoToken.data;
+      console.log("Expo Push Token generated (fallback)");
     } catch (fallbackError) {
-        console.error("DEBUG: Fallback Error:", fallbackError);
+      console.error("Fallback token generation error:", fallbackError);
     }
   }
 
@@ -193,15 +168,4 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  debugOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    padding: 10,
-    width: '100%',
-  },
-  debugText: {
-    color: 'white',
-    fontSize: 10,
-  }
 });

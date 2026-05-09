@@ -763,9 +763,15 @@ def custom_login():
 @app.route('/register', methods=['POST'])
 def register():
     data = request.json
+    email = data.get('email', '').strip().toLowerCase()
+    
+    # Faculty-only domain validation
+    if not email.endswith('@jayshriram.edu.in'):
+        return jsonify({"success": False, "message": "Only @jayshriram.edu.in emails are allowed"}), 403
+
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM faculty WHERE email=?", (data['email'],))
+    cursor.execute("SELECT * FROM faculty WHERE email=?", (email,))
     if cursor.fetchone():
         conn.close()
         return jsonify({"success": False, "message": "User already exists"})
@@ -773,7 +779,7 @@ def register():
     cursor.execute("""
     INSERT INTO faculty (name, email, password, role)
     VALUES (?, ?, ?, 'faculty')
-    """, (data['name'], data['email'], data['password']))
+    """, (data.get('name', ''), email, data.get('password', '')))
     conn.commit()
     conn.close()
     return jsonify({"success": True})
