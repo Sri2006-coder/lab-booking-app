@@ -763,7 +763,7 @@ def custom_login():
 @app.route('/register', methods=['POST'])
 def register():
     data = request.json
-    email = data.get('email', '').strip().toLowerCase()
+    email = data.get('email', '').strip().lower()
     
     # Faculty-only domain validation
     if not email.endswith('@jayshriram.edu.in'):
