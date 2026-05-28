@@ -41,9 +41,7 @@
     </div>
 
     <script>
-        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-            ? ''
-            : 'https://lab-booking-app.koyeb.app'; // Replace with your actual Koyeb Backend URL
+        const API_BASE = ''; // Same-origin: frontend and backend served from same Render domain
 
         // Listen for token from Mobile App (Expo)
         window.addEventListener("message", (event) => {

@@ -10,9 +10,7 @@
     <script>
         (function() {
             const originalFetch = window.fetch;
-            const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-                ? '' 
-                : 'https://lab-booking-app.koyeb.app'; // Replace with your actual Koyeb Backend URL
+            const API_BASE = ''; // Same-origin: frontend and backend served from same Render domain
             
             window.fetch = function(input, init) {
                 if (typeof input === 'string' && input.startsWith('/')) {

@@ -98,6 +98,29 @@ def add_header(response):
     response.headers["Expires"] = "0"
     return response
 
+def make_row_dict(row, cursor):
+    """
+    Safely converts a database row (tuple, list, dict, or RealDictRow) 
+    into a standard Python dict. Returns None if row is None.
+    """
+    if row is None:
+        return None
+    if isinstance(row, dict) or (hasattr(row, 'keys') and hasattr(row, '__getitem__')):
+        return dict(row)
+    colnames = [desc[0] for desc in cursor.description]
+    return dict(zip(colnames, row))
+
+def get_first_value(row):
+    """
+    Safely extracts the first column's value from a database row.
+    Returns None if row is None.
+    """
+    if row is None:
+        return None
+    if isinstance(row, (tuple, list)):
+        return row[0]
+    return list(row.values())[0]
+
 @app.route('/api/test-db')
 def test_db():
     try:
@@ -109,7 +132,7 @@ def test_db():
         # Also check if faculty table exists and how many users it has
         cursor.execute("SELECT COUNT(*) FROM faculty")
         fac_res = cursor.fetchone()
-        fac_count = fac_res[0] if isinstance(fac_res, tuple) else list(fac_res.values())[0]
+        fac_count = get_first_value(fac_res)
         
         conn.close()
         return jsonify({
@@ -146,7 +169,7 @@ def login():
     cursor = conn.cursor()
     # Fetch user by email only; verify password hash in Python
     cursor.execute("SELECT * FROM faculty WHERE email=%s", (email,))
-    user = cursor.fetchone()
+    user = make_row_dict(cursor.fetchone(), cursor)
     conn.close()
     
     if user and check_password_hash(user['password'], password):
@@ -170,15 +193,15 @@ def admin_stats():
 
     cursor.execute("SELECT COUNT(*) FROM bookings")
     total_res = cursor.fetchone()
-    total = total_res[0] if isinstance(total_res, tuple) else list(total_res.values())[0]
+    total = get_first_value(total_res)
 
     cursor.execute("SELECT COUNT(DISTINCT lab_id) FROM bookings")
     labs_res = cursor.fetchone()
-    labs = labs_res[0] if isinstance(labs_res, tuple) else list(labs_res.values())[0]
+    labs = get_first_value(labs_res)
 
     cursor.execute("SELECT COUNT(*) FROM faculty WHERE role='faculty'")
     users_res = cursor.fetchone()
-    users = users_res[0] if isinstance(users_res, tuple) else list(users_res.values())[0]
+    users = get_first_value(users_res)
 
     conn.close()
 
@@ -197,13 +220,13 @@ def get_stats():
     cursor = conn.cursor()
     
     cursor.execute("SELECT COUNT(*) as total FROM bookings")
-    total_bookings = cursor.fetchone()['total']
+    total_bookings = get_first_value(cursor.fetchone())
     
     cursor.execute("SELECT COUNT(*) as total FROM faculty")
-    total_faculty = cursor.fetchone()['total']
+    total_faculty = get_first_value(cursor.fetchone())
     
     cursor.execute("SELECT COUNT(DISTINCT lab_id) as total FROM fixed_schedule")
-    active_labs = cursor.fetchone()['total']
+    active_labs = get_first_value(cursor.fetchone())
     
     conn.close()
     return jsonify({
@@ -220,10 +243,10 @@ def get_limit():
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT value FROM settings WHERE key='daily_limit'")
-    setting = cursor.fetchone()
+    setting = make_row_dict(cursor.fetchone(), cursor)
     conn.close()
     
-    limit = int(setting['value']) if setting else 2
+    limit = int(setting['value']) if setting and 'value' in setting else 2
     return jsonify({"limit": limit})
 
 @app.route('/update_limit', methods=['POST'])
@@ -293,7 +316,7 @@ def handle_notice():
             socketio.emit('notice_update', {}, namespace='/')
             
             cursor.execute("SELECT token FROM fcm_tokens")
-            tokens = [r[0] for r in cursor.fetchall()]
+            tokens = [get_first_value(r) for r in cursor.fetchall()]
 
             for token in tokens:
                 if not token:
@@ -318,7 +341,7 @@ def handle_notice():
     else:
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         cursor.execute("SELECT * FROM announcements WHERE expires_at > %s ORDER BY id DESC LIMIT 1", (now,))
-        notice = cursor.fetchone()
+        notice = make_row_dict(cursor.fetchone(), cursor)
         conn.close()
         
         if notice:
@@ -333,7 +356,7 @@ def get_all_notices():
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM announcements ORDER BY id DESC")
-    notices = [dict(row) for row in cursor.fetchall()]
+    notices = [make_row_dict(row, cursor) for row in cursor.fetchall()]
     conn.close()
     return jsonify(notices)
 
@@ -349,14 +372,16 @@ def get_timetable():
     cursor = conn.cursor()
     
     cursor.execute("SELECT lab_name FROM labs ORDER BY id")
-    labs = [row['lab_name'].strip() for row in cursor.fetchall()]
+    labs_rows = [make_row_dict(row, cursor) for row in cursor.fetchall()]
+    labs = [row['lab_name'].strip() for row in labs_rows if row and row.get('lab_name')]
     
     cursor.execute("SELECT day, period, lab, subject FROM fixed_schedule WHERE day ILIKE %s", (day,))
     fixed_data = []
     for row in cursor.fetchall():
-        d = dict(row)
-        d['lab'] = d['lab'].strip()
-        fixed_data.append(d)
+        d = make_row_dict(row, cursor)
+        if d and d.get('lab'):
+            d['lab'] = d['lab'].strip()
+            fixed_data.append(d)
         
     cursor.execute("""
         SELECT b.day, b.period, l.lab_name as lab, f.name as faculty_name, b.id, b.faculty_id
@@ -370,10 +395,11 @@ def get_timetable():
     user_id = session.get('user_id')
     role = session.get('role')
     for row in cursor.fetchall():
-        b_dict = dict(row)
-        b_dict['lab'] = b_dict['lab'].strip()
-        b_dict['own'] = (b_dict['faculty_id'] == user_id or role == 'admin')
-        bookings_data.append(b_dict)
+        b_dict = make_row_dict(row, cursor)
+        if b_dict:
+            b_dict['lab'] = b_dict['lab'].strip() if b_dict.get('lab') else ""
+            b_dict['own'] = (b_dict.get('faculty_id') == user_id or role == 'admin')
+            bookings_data.append(b_dict)
     
     conn.close()
     
@@ -409,12 +435,12 @@ def book_slot():
             
             # ✅ Enforce Daily Booking Limit
             cursor.execute("SELECT value FROM settings WHERE key='daily_limit'")
-            setting = cursor.fetchone()
-            daily_limit = int(setting['value']) if setting and setting['value'] else 0
+            setting = make_row_dict(cursor.fetchone(), cursor)
+            daily_limit = int(setting['value']) if setting and setting.get('value') else 0
             
             if daily_limit > 0 and session.get('role') != 'admin':
                 cursor.execute("SELECT COUNT(*) as count FROM bookings WHERE faculty_id = %s AND booking_date = %s", (faculty_id, date))
-                current_bookings = cursor.fetchone()['count']
+                current_bookings = get_first_value(cursor.fetchone()) or 0
                 if current_bookings >= daily_limit:
                     return jsonify({"success": False, "message": f"Daily limit of {daily_limit} bookings reached."}), 403
 
@@ -422,12 +448,14 @@ def book_slot():
             row = cursor.fetchone()
 
             if not row:
+                conn.close()
                 return jsonify({"success": False, "message": f"Invalid lab: {lab_name}"}), 400
 
-            lab_id = row[0]
+            lab_id = get_first_value(row)
 
             cursor.execute("SELECT id FROM bookings WHERE lab_id = %s AND booking_date = %s AND period = %s", (lab_id, date, period))
             if cursor.fetchone():
+                conn.close()
                 return jsonify({"success": False, "message": "Slot already booked"}), 409
 
             cursor.execute("INSERT INTO bookings (lab_id, faculty_id, day, period, booking_date) VALUES (%s, %s, %s, %s, %s)", (lab_id, faculty_id, day, period, date))
@@ -441,7 +469,7 @@ def book_slot():
                 try:
                     notif_cursor = notif_conn.cursor()
                     notif_cursor.execute("SELECT token FROM fcm_tokens")
-                    tokens = [r[0] for r in notif_cursor.fetchall()]
+                    tokens = [get_first_value(r) for r in notif_cursor.fetchall()]
 
                     for token in tokens:
                         if not token:
@@ -468,7 +496,7 @@ def book_slot():
             conn.close()
 
     except Exception as e:
-        logging.error(f"ERROR: {e}")
+        logging.error(f"ERROR: {e}", exc_info=True)
         return jsonify({"success": False, "message": str(e)}), 500
 
 @app.route('/api/cancel_booking/<int:id>', methods=['DELETE'])
@@ -481,8 +509,8 @@ def cancel_booking(id):
     
     # Check ownership
     cursor.execute("SELECT faculty_id FROM bookings WHERE id=%s", (id,))
-    booking = cursor.fetchone()
-    if not booking or (booking['faculty_id'] != session['user_id'] and session['role'] != 'admin'):
+    booking = make_row_dict(cursor.fetchone(), cursor)
+    if not booking or (booking.get('faculty_id') != session['user_id'] and session['role'] != 'admin'):
         conn.close()
         return jsonify({"success": False, "message": "Forbidden"}), 403
     
@@ -549,7 +577,7 @@ def get_labs_dynamic():
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM labs ORDER BY lab_name ASC")
-    all_labs = [dict(row) for row in cursor.fetchall()]
+    all_labs = [make_row_dict(row, cursor) for row in cursor.fetchall()]
     conn.close()
     return jsonify(all_labs)
 
@@ -568,7 +596,8 @@ def add_lab_dynamic():
             cursor.execute("INSERT INTO labs (lab_name) VALUES (%s)", (name,))
             conn.commit()
         success = True
-    except:
+    except Exception as e:
+        logging.error(f"Error adding lab: {e}", exc_info=True)
         success = False
     finally:
         conn.close()
@@ -608,7 +637,7 @@ def handle_labs():
         return jsonify({"success": True})
     else:
         cursor.execute("SELECT * FROM labs ORDER BY lab_name ASC")
-        labs = [dict(row) for row in cursor.fetchall()]
+        labs = [make_row_dict(row, cursor) for row in cursor.fetchall()]
         conn.close()
         return jsonify(labs)
 
@@ -632,7 +661,7 @@ def get_my_bookings():
     else:
         cursor.execute("SELECT b.*, l.lab_name FROM bookings b JOIN labs l ON b.lab_id = l.id WHERE b.faculty_id = %s ORDER BY b.booking_date DESC, b.period ASC", (faculty_id,))
     
-    bookings = [dict(row) for row in cursor.fetchall()]
+    bookings = [make_row_dict(row, cursor) for row in cursor.fetchall()]
     conn.close()
     return jsonify(bookings)
 
@@ -724,7 +753,7 @@ def get_bookings():
             LEFT JOIN labs l ON b.lab_id = l.id
             LEFT JOIN faculty f ON b.faculty_id = f.id
         """)
-        rows = cursor.fetchall()
+        rows = [make_row_dict(r, cursor) for r in cursor.fetchall()]
         
         result = []
         for row in rows:
@@ -746,7 +775,7 @@ def get_bookings():
         return jsonify(result)
         
     except Exception as e:
-        logging.error(f"[ERROR] ERROR in /bookings: {e}")
+        logging.error(f"[ERROR] ERROR in /bookings: {e}", exc_info=True)
         # Return graceful fallback JSON payload, absolutely no 500 error
         return jsonify([])
         
@@ -765,7 +794,7 @@ def cancel_booking_custom():
     cursor = conn.cursor()
     
     cursor.execute("SELECT id FROM labs WHERE lab_name=%s", (lab,))
-    lab_row = cursor.fetchone()
+    lab_row = make_row_dict(cursor.fetchone(), cursor)
     if lab_row:
         user_id = session.get('user_id')
         cursor.execute("DELETE FROM bookings WHERE lab_id=%s AND period=%s AND booking_date=%s AND faculty_id=%s", (lab_row['id'], period, date, user_id))
@@ -782,7 +811,7 @@ def custom_login():
     # Fetch user by email only; verify password hash in Python
     cursor.execute("SELECT id, name, email, password, role FROM faculty WHERE email=%s",
                    (data['email'],))
-    user = cursor.fetchone()
+    user = make_row_dict(cursor.fetchone(), cursor)
     conn.close()
 
     if user and check_password_hash(user['password'], data['password']):
@@ -829,7 +858,7 @@ def get_faculty_list():
     rows = cursor.fetchall()
     conn.close()
     
-    faculty_list = [dict(row) for row in rows]
+    faculty_list = [make_row_dict(row, cursor) for row in rows]
     return jsonify({"success": True, "faculty": faculty_list})
 
 
@@ -941,10 +970,10 @@ def send_test_notification():
         conn = get_db()
         cursor = conn.cursor()
         cursor.execute("SELECT token FROM fcm_tokens")
-        rows = cursor.fetchall()
+        rows = [make_row_dict(row, cursor) for row in cursor.fetchall()]
         conn.close()
         
-        tokens = [row['token'] for row in rows]
+        tokens = [row['token'] for row in rows if row and row.get('token')]
         
         if not tokens:
             return jsonify({"success": False, "message": "No tokens found in database."}), 404
