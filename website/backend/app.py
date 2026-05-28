@@ -108,7 +108,8 @@ def test_db():
         
         # Also check if faculty table exists and how many users it has
         cursor.execute("SELECT COUNT(*) FROM faculty")
-        fac_count = cursor.fetchone()[0]
+        fac_res = cursor.fetchone()
+        fac_count = fac_res[0] if isinstance(fac_res, tuple) else list(fac_res.values())[0]
         
         conn.close()
         return jsonify({
@@ -168,13 +169,16 @@ def admin_stats():
     cursor = conn.cursor()
 
     cursor.execute("SELECT COUNT(*) FROM bookings")
-    total = cursor.fetchone()[0]
+    total_res = cursor.fetchone()
+    total = total_res[0] if isinstance(total_res, tuple) else list(total_res.values())[0]
 
     cursor.execute("SELECT COUNT(DISTINCT lab_id) FROM bookings")
-    labs = cursor.fetchone()[0]
+    labs_res = cursor.fetchone()
+    labs = labs_res[0] if isinstance(labs_res, tuple) else list(labs_res.values())[0]
 
     cursor.execute("SELECT COUNT(*) FROM faculty WHERE role='faculty'")
-    users = cursor.fetchone()[0]
+    users_res = cursor.fetchone()
+    users = users_res[0] if isinstance(users_res, tuple) else list(users_res.values())[0]
 
     conn.close()
 
