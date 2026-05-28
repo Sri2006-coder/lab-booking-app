@@ -98,6 +98,32 @@ def add_header(response):
     response.headers["Expires"] = "0"
     return response
 
+@app.route('/api/test-db')
+def test_db():
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1")
+        row = cursor.fetchone()
+        
+        # Also check if faculty table exists and how many users it has
+        cursor.execute("SELECT COUNT(*) FROM faculty")
+        fac_count = cursor.fetchone()[0]
+        
+        conn.close()
+        return jsonify({
+            "status": "success",
+            "connection_test": row,
+            "faculty_count": fac_count
+        })
+    except Exception as e:
+        import traceback
+        return jsonify({
+            "status": "error",
+            "message": str(e),
+            "traceback": traceback.format_exc()
+        }), 500
+
 @app.route('/')
 def index():
     return send_from_directory(app.static_folder, 'index.html')
