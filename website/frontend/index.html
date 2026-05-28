@@ -41,6 +41,10 @@
     </div>
 
     <script>
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? ''
+            : 'https://lab-booking-app.koyeb.app'; // Replace with your actual Koyeb Backend URL
+
         // Listen for token from Mobile App (Expo)
         window.addEventListener("message", (event) => {
             const data = event.data;
@@ -49,7 +53,7 @@
                 // Save to localStorage so it persists after login
                 localStorage.setItem('expo-token', data.token);
                 
-                fetch('/save-token', {
+                fetch(API_BASE + '/save-token', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ token: data.token })
@@ -64,7 +68,7 @@
             const errorMsg = document.getElementById('error-msg');
 
             try {
-                const res = await fetch('/login', {
+                const res = await fetch(API_BASE + '/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })

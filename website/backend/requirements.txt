@@ -1,6 +1,8 @@
 flask
 flask-cors
+flask-wtf
 gunicorn
 firebase-admin
 flask-socketio
 eventlet
+psycopg2-binary

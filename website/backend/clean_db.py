@@ -4,11 +4,11 @@ def clean_labs():
     conn = get_db()
     cursor = conn.cursor()
     
-    cursor.execute("DELETE FROM labs")
+    cursor.execute("TRUNCATE TABLE labs CASCADE")
     
     clean_list = ["Lab 1", "Lab 2", "Lab 5", "Lab 6", "Lab 7", "Seminar Hall", "Conference Hall"]
     for lab in clean_list:
-        cursor.execute("INSERT INTO labs (lab_name) VALUES (?)", (lab,))
+        cursor.execute("INSERT INTO labs (lab_name) VALUES (%s)", (lab,))
         
     conn.commit()
     conn.close()
@@ -16,3 +16,4 @@ def clean_labs():
 
 if __name__ == "__main__":
     clean_labs()
+

@@ -1,11 +1,13 @@
-import sqlite3
+import psycopg2
+from psycopg2.extras import RealDictCursor
 import os
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'lab_booking.db')
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
+    if not DATABASE_URL:
+        raise ValueError("DATABASE_URL environment variable is not set!")
+    conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
     return conn
 
 def init_db():
@@ -15,7 +17,7 @@ def init_db():
     # Faculty Table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS faculty (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         name TEXT NOT NULL,
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
@@ -26,15 +28,15 @@ def init_db():
     # Labs Table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS labs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        lab_name TEXT NOT NULL
+        id SERIAL PRIMARY KEY,
+        lab_name TEXT UNIQUE NOT NULL
     )
     ''')
     
     # Fixed Schedule Table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS fixed_schedule (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         day TEXT,
         period INTEGER,
         lab TEXT,
@@ -45,21 +47,21 @@ def init_db():
     # Bookings Table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS bookings (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         lab_id INTEGER,
         faculty_id INTEGER,
         day TEXT,
         period INTEGER,
         booking_date TEXT,
-        FOREIGN KEY (lab_id) REFERENCES labs(id),
-        FOREIGN KEY (faculty_id) REFERENCES faculty(id)
+        FOREIGN KEY (lab_id) REFERENCES labs(id) ON DELETE CASCADE,
+        FOREIGN KEY (faculty_id) REFERENCES faculty(id) ON DELETE CASCADE
     )
     ''')
     
     # Announcements Table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS announcements (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         message TEXT NOT NULL,
         expires_at TEXT NOT NULL
     )
@@ -72,15 +74,15 @@ def init_db():
         value TEXT NOT NULL
     )
     ''')
-    cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('daily_limit', '2')")
+    cursor.execute("INSERT INTO settings (key, value) VALUES ('daily_limit', '2') ON CONFLICT (key) DO NOTHING")
     
     # FCM Tokens Table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS fcm_tokens (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         faculty_id INTEGER,
         token TEXT UNIQUE NOT NULL,
-        FOREIGN KEY (faculty_id) REFERENCES faculty(id)
+        FOREIGN KEY (faculty_id) REFERENCES faculty(id) ON DELETE CASCADE
     )
     ''')
     
@@ -90,3 +92,4 @@ def init_db():
 if __name__ == '__main__':
     init_db()
     print("Database initialized successfully.")
+

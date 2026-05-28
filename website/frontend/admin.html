@@ -7,6 +7,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
+    <script>
+        (function() {
+            const originalFetch = window.fetch;
+            const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+                ? '' 
+                : 'https://lab-booking-app.koyeb.app'; // Replace with your actual Koyeb Backend URL
+            
+            window.fetch = function(input, init) {
+                if (typeof input === 'string' && input.startsWith('/')) {
+                    input = API_BASE + input;
+                }
+                return originalFetch(input, init);
+            };
+        })();
+    </script>
 </head>
 <body class="bg-gray-50 flex flex-col min-h-screen">
 

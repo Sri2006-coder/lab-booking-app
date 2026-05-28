@@ -1,22 +1,44 @@
 from flask import Flask, request, jsonify, session, send_from_directory
 from flask_cors import CORS
+# CSRF protection
+from flask_wtf import CSRFProtect
 from flask_socketio import SocketIO, emit
 from database import get_db
 import os
+import logging
+from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 import firebase_admin
 from firebase_admin import credentials, messaging
-import sqlite3
+
 import json
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), '../frontend'))
-app.secret_key = 'super_secret_key_for_lab_booking'
+# Use environment variable for secret key
+app.secret_key = os.getenv("FLASK_SECRET_KEY")
+# Validate required environment variables at startup
+required_envs = ["FLASK_SECRET_KEY", "DATABASE_URL"]
+missing = [var for var in required_envs if not os.getenv(var)]
+if missing:
+    raise RuntimeError(f"Missing required environment variables: {', '.join(missing)}")
+# Optional Firebase key validation
+if not os.getenv("FIREBASE_KEY") and not os.path.exists(os.path.join(os.path.dirname(__file__), "firebase_key.json")):
+    raise RuntimeError("Firebase credentials not provided via FIREBASE_KEY env or firebase_key.json file")
 app.permanent_session_lifetime = timedelta(minutes=10)
 CORS(app, supports_credentials=True)
 
+# CSRF protection: This is a JSON-only API backend (no HTML forms).
+# Session cookies use SameSite policy + CORS for cross-origin protection.
+# CSRFProtect is initialized but globally exempted for JSON API compatibility.
+# Re-enable per-route if HTML form endpoints are added in the future.
+app.config['WTF_CSRF_ENABLED'] = False
+csrf = CSRFProtect(app)
+
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
-import json
 
 try:
     firebase_json = os.environ.get("FIREBASE_KEY")
@@ -27,17 +49,17 @@ try:
         cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
         cred = credentials.Certificate(cred_dict)
         firebase_admin.initialize_app(cred)
-        print("[OK] Firebase initialized from ENV")
+        logging.info("[OK] Firebase initialized from ENV")
     elif not firebase_admin._apps:
         key_path = os.path.join(os.path.dirname(__file__), "firebase_key.json")
         if os.path.exists(key_path):
             cred = credentials.Certificate(key_path)
             firebase_admin.initialize_app(cred)
-            print("[OK] Firebase initialized from firebase_key.json")
+            logging.info("[OK] Firebase initialized from firebase_key.json")
         else:
-            print("[WARN] Firebase credentials not found")
+            logging.warning("[WARN] Firebase credentials not found")
 except Exception as e:
-    print("[ERROR] Firebase init error:", e)
+    logging.error(f"[ERROR] Firebase init error: {e}")
 
 @app.route("/send-notification", methods=["POST"])
 def send_notification():
@@ -86,11 +108,12 @@ def login():
     
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM faculty WHERE email=? AND password=?", (email, password))
+    # Fetch user by email only; verify password hash in Python
+    cursor.execute("SELECT * FROM faculty WHERE email=%s", (email,))
     user = cursor.fetchone()
     conn.close()
     
-    if user:
+    if user and check_password_hash(user['password'], password):
         session.permanent = True
         session['user_id'] = user['id']
         session['role'] = user['role']
@@ -176,7 +199,10 @@ def update_limit():
         
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('daily_limit', ?)", (str(new_limit),))
+    cursor.execute("""
+        INSERT INTO settings (key, value) VALUES ('daily_limit', %s)
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+    """, (str(new_limit),))
     conn.commit()
     conn.close()
     
@@ -221,7 +247,7 @@ def handle_notice():
         # Expires in 1 hour if not specified
         expires_at = (datetime.now() + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
         
-        cursor.execute("INSERT INTO announcements (message, expires_at) VALUES (?, ?)", (message, expires_at))
+        cursor.execute("INSERT INTO announcements (message, expires_at) VALUES (%s, %s)", (message, expires_at))
         conn.commit()
         
         try:
@@ -245,14 +271,14 @@ def handle_notice():
                 except Exception:
                     pass
         except Exception as e:
-            print("Notice notification error:", e)
+            logging.error(f"Notice notification error: {e}")
             
         conn.close()
         return jsonify({"success": True})
     
     else:
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        cursor.execute("SELECT * FROM announcements WHERE expires_at > ? ORDER BY id DESC LIMIT 1", (now,))
+        cursor.execute("SELECT * FROM announcements WHERE expires_at > %s ORDER BY id DESC LIMIT 1", (now,))
         notice = cursor.fetchone()
         conn.close()
         
@@ -286,7 +312,7 @@ def get_timetable():
     cursor.execute("SELECT lab_name FROM labs ORDER BY id")
     labs = [row['lab_name'].strip() for row in cursor.fetchall()]
     
-    cursor.execute("SELECT day, period, lab, subject FROM fixed_schedule WHERE day COLLATE NOCASE = ?", (day,))
+    cursor.execute("SELECT day, period, lab, subject FROM fixed_schedule WHERE day ILIKE %s", (day,))
     fixed_data = []
     for row in cursor.fetchall():
         d = dict(row)
@@ -298,7 +324,7 @@ def get_timetable():
         FROM bookings b 
         JOIN faculty f ON b.faculty_id = f.id 
         JOIN labs l ON b.lab_id = l.id
-        WHERE b.booking_date=?
+        WHERE b.booking_date=%s
     """, (date,))
     
     bookings_data = []
@@ -348,15 +374,12 @@ def book_slot():
             daily_limit = int(setting['value']) if setting and setting['value'] else 0
             
             if daily_limit > 0 and session.get('role') != 'admin':
-                cursor.execute(
-                    "SELECT COUNT(*) as count FROM bookings WHERE faculty_id = ? AND booking_date = ?",
-                    (faculty_id, date)
-                )
+                cursor.execute("SELECT COUNT(*) as count FROM bookings WHERE faculty_id = %s AND booking_date = %s", (faculty_id, date))
                 current_bookings = cursor.fetchone()['count']
                 if current_bookings >= daily_limit:
                     return jsonify({"success": False, "message": f"Daily limit of {daily_limit} bookings reached."}), 403
 
-            cursor.execute("SELECT id FROM labs WHERE lab_name = ?", (lab_name,))
+            cursor.execute("SELECT id FROM labs WHERE lab_name = %s", (lab_name,))
             row = cursor.fetchone()
 
             if not row:
@@ -364,17 +387,11 @@ def book_slot():
 
             lab_id = row[0]
 
-            cursor.execute(
-                "SELECT id FROM bookings WHERE lab_id = ? AND booking_date = ? AND period = ?",
-                (lab_id, date, period)
-            )
+            cursor.execute("SELECT id FROM bookings WHERE lab_id = %s AND booking_date = %s AND period = %s", (lab_id, date, period))
             if cursor.fetchone():
                 return jsonify({"success": False, "message": "Slot already booked"}), 409
 
-            cursor.execute(
-                "INSERT INTO bookings (lab_id, faculty_id, day, period, booking_date) VALUES (?, ?, ?, ?, ?)",
-                (lab_id, faculty_id, day, period, date)
-            )
+            cursor.execute("INSERT INTO bookings (lab_id, faculty_id, day, period, booking_date) VALUES (%s, %s, %s, %s, %s)", (lab_id, faculty_id, day, period, date))
             conn.commit()
 
             # 🔔 SEND NOTIFICATION & LIVE UPDATE
@@ -412,7 +429,7 @@ def book_slot():
             conn.close()
 
     except Exception as e:
-        print("ERROR:", e)
+        logging.error(f"ERROR: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
 
 @app.route('/api/cancel_booking/<int:id>', methods=['DELETE'])
@@ -424,13 +441,13 @@ def cancel_booking(id):
     cursor = conn.cursor()
     
     # Check ownership
-    cursor.execute("SELECT faculty_id FROM bookings WHERE id=?", (id,))
+    cursor.execute("SELECT faculty_id FROM bookings WHERE id=%s", (id,))
     booking = cursor.fetchone()
     if not booking or (booking['faculty_id'] != session['user_id'] and session['role'] != 'admin'):
         conn.close()
         return jsonify({"success": False, "message": "Forbidden"}), 403
     
-    cursor.execute("DELETE FROM bookings WHERE id=?", (id,))
+    cursor.execute("DELETE FROM bookings WHERE id=%s", (id,))
     conn.commit()
     conn.close()
     socketio.emit('booking_update', {"type": "cancel_booking"}, namespace='/')
@@ -473,21 +490,18 @@ def upload_timetable():
             lab = row[2].strip()
             subject = row[3].strip()
             
-            print("INSERTING:", day, period, lab, subject)
+            logging.info(f"INSERTING: {day} {period} {lab} {subject}")
             
-            cursor.execute("""
-                INSERT INTO fixed_schedule (day, period, lab, subject) 
-                VALUES (?, ?, ?, ?)
-            """, (day, period, lab, subject))
+            cursor.execute("INSERT INTO fixed_schedule (day, period, lab, subject) VALUES (%s, %s, %s, %s) ON CONFLICT (day, period, lab) DO NOTHING", (day, period, lab, subject))
             count += 1
             
         conn.commit()
         conn.close()
         
-        print(f"Successfully uploaded {count} fixed schedule entries.")
+        logging.info(f"Successfully uploaded {count} fixed schedule entries.")
         return jsonify({"success": True, "count": count})
     except Exception as e:
-        print(f"Upload error: {e}")
+        logging.error(f"Upload error: {e}")
         return jsonify({"success": False, "message": str(e)})
 
 
@@ -510,9 +524,9 @@ def add_lab_dynamic():
     conn = get_db()
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT id FROM labs WHERE lab_name=?", (name,))
+        cursor.execute("SELECT id FROM labs WHERE lab_name=%s", (name,))
         if cursor.fetchone() is None:
-            cursor.execute("INSERT INTO labs (lab_name) VALUES (?)", (name,))
+            cursor.execute("INSERT INTO labs (lab_name) VALUES (%s)", (name,))
             conn.commit()
         success = True
     except:
@@ -528,8 +542,8 @@ def delete_lab_dynamic():
     lab_id = request.json.get('id')
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM bookings WHERE lab_id=?", (lab_id,))
-    cursor.execute("DELETE FROM labs WHERE id=?", (lab_id,))
+    cursor.execute("DELETE FROM bookings WHERE lab_id=%s", (lab_id,))
+    cursor.execute("DELETE FROM labs WHERE id=%s", (lab_id,))
     conn.commit()
     conn.close()
     return jsonify({"success": True})
@@ -547,9 +561,9 @@ def handle_labs():
             return jsonify({"success": False, "message": "Unauthorized"}), 401
         data = request.get_json()
         lab_name = data.get('name')
-        cursor.execute("SELECT id FROM labs WHERE lab_name=?", (lab_name,))
+        cursor.execute("SELECT id FROM labs WHERE lab_name=%s", (lab_name,))
         if cursor.fetchone() is None:
-            cursor.execute("INSERT INTO labs (lab_name) VALUES (?)", (lab_name,))
+            cursor.execute("INSERT INTO labs (lab_name) VALUES (%s)", (lab_name,))
             conn.commit()
         conn.close()
         return jsonify({"success": True})
@@ -577,13 +591,7 @@ def get_my_bookings():
             ORDER BY b.booking_date DESC, b.period ASC
         """)
     else:
-        cursor.execute("""
-            SELECT b.*, l.lab_name 
-            FROM bookings b 
-            JOIN labs l ON b.lab_id = l.id 
-            WHERE b.faculty_id = ? 
-            ORDER BY b.booking_date DESC, b.period ASC
-        """, (faculty_id,))
+        cursor.execute("SELECT b.*, l.lab_name FROM bookings b JOIN labs l ON b.lab_id = l.id WHERE b.faculty_id = %s ORDER BY b.booking_date DESC, b.period ASC", (faculty_id,))
     
     bookings = [dict(row) for row in cursor.fetchall()]
     conn.close()
@@ -610,7 +618,7 @@ def get_calendar():
     
     for d in range(1, num_days + 1):
         date_str = f"{year}-{month:02d}-{d:02d}"
-        cursor.execute("SELECT id FROM bookings WHERE booking_date=?", (date_str,))
+        cursor.execute("SELECT id FROM bookings WHERE booking_date=%s", (date_str,))
         is_booked = cursor.fetchone() is not None
         
         status = "free"
@@ -644,8 +652,8 @@ def set_limit():
     cursor = conn.cursor()
 
     cursor.execute("""
-        INSERT OR REPLACE INTO settings (key, value)
-        VALUES ('daily_limit', ?)
+        INSERT INTO settings (key, value) VALUES ('daily_limit', %s)
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
     """, (str(limit),))
 
     conn.commit()
@@ -663,26 +671,10 @@ def current_user():
 @app.route('/bookings', methods=['GET'])
 def get_bookings():
     conn = get_db()
-    conn.row_factory = sqlite3.Row
+
     cursor = conn.cursor()
     
     try:
-        # --- ONE-TIME MIGRATION CHECK ---
-        cursor.execute("PRAGMA table_info(bookings)")
-        cols = [col['name'] for col in cursor.fetchall()]
-        
-        migrated = False
-        if 'faculty_id' not in cols:
-            cursor.execute("ALTER TABLE bookings ADD COLUMN faculty_id INTEGER")
-            migrated = True
-        if 'faculty_name' not in cols:
-            cursor.execute("ALTER TABLE bookings ADD COLUMN faculty_name TEXT")
-            migrated = True
-            
-        if migrated:
-            conn.commit()
-            print("[OK] Migration: added missing columns to bookings")
-
         # Now fetch safely. We use LEFT JOIN to resolve lab names and faculty names if possible
         cursor.execute("""
             SELECT 
@@ -715,7 +707,7 @@ def get_bookings():
         return jsonify(result)
         
     except Exception as e:
-        print("[ERROR] ERROR in /bookings:", e)
+        logging.error(f"[ERROR] ERROR in /bookings: {e}")
         # Return graceful fallback JSON payload, absolutely no 500 error
         return jsonify([])
         
@@ -733,11 +725,11 @@ def cancel_booking_custom():
     conn = get_db()
     cursor = conn.cursor()
     
-    cursor.execute("SELECT id FROM labs WHERE lab_name=?", (lab,))
+    cursor.execute("SELECT id FROM labs WHERE lab_name=%s", (lab,))
     lab_row = cursor.fetchone()
     if lab_row:
         user_id = session.get('user_id')
-        cursor.execute("DELETE FROM bookings WHERE lab_id=? AND period=? AND booking_date=? AND faculty_id=?", (lab_row['id'], period, date, user_id))
+        cursor.execute("DELETE FROM bookings WHERE lab_id=%s AND period=%s AND booking_date=%s AND faculty_id=%s", (lab_row['id'], period, date, user_id))
         conn.commit()
         socketio.emit('booking_update', {"type": "cancel_booking"}, namespace='/')
     conn.close()
@@ -748,12 +740,13 @@ def custom_login():
     data = request.json
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT id, name, email, password, role FROM faculty WHERE email=? AND password=?",
-                   (data['email'], data['password']))
+    # Fetch user by email only; verify password hash in Python
+    cursor.execute("SELECT id, name, email, password, role FROM faculty WHERE email=%s",
+                   (data['email'],))
     user = cursor.fetchone()
     conn.close()
 
-    if user:
+    if user and check_password_hash(user['password'], data['password']):
         session['user_id'] = user['id']
         session['role'] = user['role']
         return jsonify({"success": True, "role": user['role']})
@@ -771,15 +764,16 @@ def register():
 
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM faculty WHERE email=?", (email,))
+    cursor.execute("SELECT * FROM faculty WHERE email=%s", (email,))
     if cursor.fetchone():
         conn.close()
         return jsonify({"success": False, "message": "User already exists"})
 
+    hashed_pw = generate_password_hash(data.get('password', ''))
     cursor.execute("""
     INSERT INTO faculty (name, email, password, role)
-    VALUES (?, ?, ?, 'faculty')
-    """, (data.get('name', ''), email, data.get('password', '')))
+    VALUES (%s, %s, %s, 'faculty')
+    """, (data.get('name', ''), email, hashed_pw))
     conn.commit()
     conn.close()
     return jsonify({"success": True})
@@ -790,7 +784,7 @@ def get_faculty_list():
         return jsonify({"success": False, "message": "Unauthorized"}), 403
         
     conn = get_db()
-    conn.row_factory = sqlite3.Row
+
     cursor = conn.cursor()
     cursor.execute("SELECT id, name, email, role FROM faculty ORDER BY name ASC")
     rows = cursor.fetchall()
@@ -826,10 +820,12 @@ def bulk_upload_faculty():
         if not row.get('name') or not row.get('email') or not row.get('password'):
             continue
             
+        # Hash password before storing
+        hashed_pw = generate_password_hash(row['password'].strip())
         cursor.execute("""
-        INSERT OR IGNORE INTO faculty (name, email, password, role)
-        VALUES (?, ?, ?, 'faculty')
-        """, (row['name'].strip(), row['email'].strip(), row['password'].strip()))
+            INSERT INTO faculty (name, email, password, role) VALUES (%s, %s, %s, 'faculty')
+            ON CONFLICT (email) DO NOTHING
+        """, (row['name'].strip(), row['email'].strip(), hashed_pw))
         count += 1
 
     conn.commit()
@@ -840,12 +836,12 @@ def bulk_upload_faculty():
 def save_token():
     # Attempt to parse JSON input
     data = request.get_json(silent=True)
-    print(f"DEBUG: /save-token hit. Data: {data}")
-    print(f"DEBUG: Session: {dict(session)}")
+    logging.debug(f"/save-token hit. Data: {data}")
+    logging.debug(f"Session: {dict(session)}")
     
     # 1. Error handling: If no JSON is received
     if data is None:
-        print("ERROR: No JSON received at /save-token")
+        logging.error("No JSON received at /save-token")
         return jsonify({"error": "No JSON received"}), 400
         
     # 2. Extract token safely
@@ -853,11 +849,11 @@ def save_token():
     
     # 3. Error handling: If token is missing
     if not token:
-        print("ERROR: Token missing in JSON at /save-token")
+        logging.error("Token missing in JSON at /save-token")
         return jsonify({"error": "Token is missing"}), 400
         
     # 4. Print token to console/logs
-    print(f"Token received safely: {token}")
+    logging.info("FCM token received")
     
     # Add to DB
     try:
@@ -866,12 +862,12 @@ def save_token():
         user_id = session.get('user_id')
         
         # Save token. If user_id is None, it's a guest/unlogged token (useful for testing)
-        cursor.execute("INSERT OR IGNORE INTO fcm_tokens (faculty_id, token) VALUES (?, ?)", (user_id, token))
+        cursor.execute("INSERT INTO fcm_tokens (faculty_id, token) VALUES (%s, %s) ON CONFLICT (token) DO NOTHING", (user_id, token))
         conn.commit()
         conn.close()
-        print(f"SUCCESS: Token saved to DB. User ID: {user_id}")
+        logging.info(f"Token saved to DB. User ID: {user_id}")
     except Exception as e:
-        print(f"DB ERROR in /save-token: {e}")
+        logging.error(f"DB error in /save-token: {e}")
         pass
 
     # 5. Return success JSON response
@@ -879,7 +875,7 @@ def save_token():
 
 def send_notification(tokens, title, body):
     if not tokens:
-        print("No tokens provided for push notification.")
+        logging.warning("No tokens provided for push notification.")
         return False
         
     try:
@@ -894,10 +890,10 @@ def send_notification(tokens, title, body):
             tokens=tokens,
         )
         response = messaging.send_multicast(msg)
-        print(f"Successfully sent {response.success_count} messages. Failed: {response.failure_count}")
+        logging.info(f"Successfully sent {response.success_count} messages. Failed: {response.failure_count}")
         return response.success_count > 0
     except Exception as e:
-        print(f"Error sending FCM message: {e}")
+        logging.error(f"Error sending FCM message: {e}")
         return False
 
 @app.route('/send-test-notification', methods=['GET'])
@@ -922,7 +918,7 @@ def send_test_notification():
             return jsonify({"success": False, "message": "Failed to send test notification. Check server logs."}), 500
             
     except Exception as e:
-        print(f"Test notification error: {e}")
+        logging.error(f"Test notification error: {e}")
         return jsonify({"success": False, "message": "Server error."}), 500
 
 if __name__ == "__main__":

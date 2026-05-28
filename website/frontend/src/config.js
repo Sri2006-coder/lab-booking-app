@@ -38,6 +38,10 @@ async function initNotifications() {
       serviceWorkerRegistration: registration
     });
 
+    const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? ''
+      : 'https://lab-booking-app.koyeb.app'; // Replace with your actual Koyeb Backend URL
+
     if (currentToken) {
       console.log("✅ Token:", currentToken);
 
@@ -45,7 +49,7 @@ async function initNotifications() {
       localStorage.setItem("fcm_token", currentToken);
 
       // Send to backend
-      await fetch("/save-token", {
+      await fetch(API_BASE + "/save-token", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

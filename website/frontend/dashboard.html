@@ -8,6 +8,21 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <link rel="stylesheet" href="style.css">
+    <script>
+        (function() {
+            const originalFetch = window.fetch;
+            const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+                ? '' 
+                : 'https://lab-booking-app.koyeb.app'; // Replace with your actual Koyeb Backend URL
+            
+            window.fetch = function(input, init) {
+                if (typeof input === 'string' && input.startsWith('/')) {
+                    input = API_BASE + input;
+                }
+                return originalFetch(input, init);
+            };
+        })();
+    </script>
 </head>
 <body class="bg-gray-50 flex min-h-screen">
     <!-- Notification Permission Box -->
@@ -122,8 +137,10 @@
 
         document.getElementById('date-picker').value = currentDate;
 
-        const API_BASE = "https://lab-booking-app.onrender.com";
-        const socket = io(API_BASE);
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? ''
+            : 'https://lab-booking-app.koyeb.app'; // Replace with your actual Koyeb Backend URL
+        const socket = io(API_BASE || window.location.origin);
 
        async function safeFetch(path, options = {}) {
         try {
@@ -423,7 +440,7 @@
             if (!confirm('Cancel this booking?')) return;
             const date = currentDate;
 
-            await fetch("https://lab-booking-app.onrender.com/cancel", {
+            await fetch(API_BASE + "/cancel", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({ lab, period, date })

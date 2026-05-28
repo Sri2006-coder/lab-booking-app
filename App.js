@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Platform, Text, View, StyleSheet, Alert } from 'react-native';
+import { Platform, Text, View, StyleSheet, Alert, ActivityIndicator, TouchableOpacity, SafeAreaView } from 'react-native';
 import { WebView } from 'react-native-webview';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
@@ -17,6 +17,8 @@ Notifications.setNotificationHandler({
 
 export default function App() {
   const [expoPushToken, setExpoPushToken] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const webViewRef = useRef(null);
 
   useEffect(() => {
@@ -78,32 +80,80 @@ export default function App() {
     }
   }, [expoPushToken]);
 
+  const handleReload = () => {
+    setHasError(false);
+    setIsLoading(true);
+    if (webViewRef.current) {
+      webViewRef.current.reload();
+    }
+  };
+
   return (
-    <View style={styles.container}>
-      <WebView
-        ref={webViewRef}
-        source={{ uri: 'https://lab-booking-app.onrender.com' }}
-        style={{ flex: 1 }}
-        onLoad={() => {
-          console.log("WebView Loaded");
-          if (expoPushToken) injectToken(expoPushToken);
-        }}
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
-        onMessage={(event) => {
-          try {
-            const data = JSON.parse(event.nativeEvent.data);
-            if (data.type === 'alert') {
-              Alert.alert(data.title, data.message);
-              return;
-            }
-          } catch (e) {
-            // Not a JSON message or not an alert
-          }
-          console.log("WebView Log:", event.nativeEvent.data);
-        }}
-      />
-    </View>
+    <SafeAreaView style={styles.container}>
+      {hasError ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorEmoji}>📶</Text>
+          <Text style={styles.errorTitle}>Connection Timeout</Text>
+          <Text style={styles.errorText}>
+            Could not connect to the Lab Booking server. Please make sure you are connected to the internet.
+          </Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleReload}>
+            <Text style={styles.retryButtonText}>Tap to Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View style={{ flex: 1 }}>
+          <WebView
+            ref={webViewRef}
+            source={{ uri: 'https://lab-booking-system-e77ad.web.app' }}
+            style={{ flex: 1 }}
+            onLoadStart={() => setIsLoading(true)}
+            onLoad={() => {
+              console.log("WebView Loaded successfully");
+              setIsLoading(false);
+              setHasError(false);
+              if (expoPushToken) injectToken(expoPushToken);
+            }}
+            onError={(syntheticEvent) => {
+              const { nativeEvent } = syntheticEvent;
+              console.warn('WebView error: ', nativeEvent);
+              setHasError(true);
+              setIsLoading(false);
+            }}
+            onHttpError={(syntheticEvent) => {
+              const { nativeEvent } = syntheticEvent;
+              console.warn('WebView HTTP error: ', nativeEvent);
+              // Only fail on critical server crashes (5xx errors)
+              if (nativeEvent.statusCode >= 500) {
+                setHasError(true);
+              }
+              setIsLoading(false);
+            }}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            onMessage={(event) => {
+              try {
+                const data = JSON.parse(event.nativeEvent.data);
+                if (data.type === 'alert') {
+                  Alert.alert(data.title, data.message);
+                  return;
+                }
+              } catch (e) {
+                // Not a JSON message or not an alert
+              }
+              console.log("WebView Log:", event.nativeEvent.data);
+            }}
+          />
+          
+          {isLoading && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#2563EB" />
+              <Text style={styles.loadingText}>Connecting to Lab Panel...</Text>
+            </View>
+          )}
+        </View>
+      )}
+    </SafeAreaView>
   );
 }
 
@@ -167,5 +217,60 @@ async function registerForPushNotificationsAsync() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F3F4F6',
+  },
+  loadingContainer: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(243, 244, 246, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 15,
+    color: '#1E293B',
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 30,
+    backgroundColor: '#FFFFFF',
+  },
+  errorEmoji: {
+    fontSize: 70,
+    marginBottom: 20,
+  },
+  errorTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  errorText: {
+    fontSize: 15,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 30,
+  },
+  retryButton: {
+    backgroundColor: '#2563EB',
+    paddingVertical: 14,
+    paddingHorizontal: 30,
+    borderRadius: 12,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
