@@ -25,6 +25,15 @@ required_envs = ["FLASK_SECRET_KEY", "DATABASE_URL"]
 missing = [var for var in required_envs if not os.getenv(var)]
 if missing:
     raise RuntimeError(f"Missing required environment variables: {', '.join(missing)}")
+
+# Auto-initialize and seed database on startup
+try:
+    from seed_db import seed_db
+    seed_db()
+    logging.info("[OK] Database initialized and seeded successfully.")
+except Exception as e:
+    logging.error(f"[ERROR] Database initialization/seeding failed: {e}")
+
 # Optional Firebase key validation
 if not os.getenv("FIREBASE_KEY") and not os.path.exists(os.path.join(os.path.dirname(__file__), "firebase_key.json")):
     raise RuntimeError("Firebase credentials not provided via FIREBASE_KEY env or firebase_key.json file")
