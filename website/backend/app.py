@@ -10,6 +10,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 import firebase_admin
 from firebase_admin import credentials, messaging
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 import json
 
@@ -18,6 +19,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(mess
 
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), '../frontend'))
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 # Use environment variable for secret key
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
 # Validate required environment variables at startup
