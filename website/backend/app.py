@@ -135,6 +135,10 @@ def get_first_value(row):
         return row[0]
     return list(row.values())[0]
 
+@app.route('/health')
+def health():
+    return {"status": "ok"}, 200
+
 @app.route('/api/test-db')
 def test_db():
     try:
