@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 node_modules/
 .expo/
 dist/
@@ -7,7 +6,6 @@ yarn-debug.log*
 yarn-error.log*
 
 # Expo
-.expo/
 packager-info.json
 settings.json
 history.json
@@ -17,10 +15,12 @@ manifest.json
 android/
 ios/
 
-# Other
-.DS_Store
+# Python
 *.pyc
 __pycache__/
-=======
-node_modules
->>>>>>> 6624dc54 (Initial commit)
+
+# Firebase
+.firebase
+
+# OS
+.DS_Store
