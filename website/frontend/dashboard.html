@@ -328,9 +328,11 @@
             });
         }
         async function initializeDashboard() {
-            await loadLabs();
-            await loadTimetable();
-            await loadBookings();
+            await Promise.all([
+                loadLabs(),
+                loadTimetable(),
+                loadBookings()
+            ]);
             renderDashboard();
         }
 
