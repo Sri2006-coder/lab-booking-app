@@ -48,6 +48,10 @@
         async function loadCalendar() {
             try {
                 const res = await fetch('/api/calendar');
+                if (res.status === 401) {
+                    window.location.href = 'index.html';
+                    return;
+                }
                 const data = await res.json();
                 
                 document.getElementById('calendar-title').innerText = `${data.month_name} ${data.year}`;

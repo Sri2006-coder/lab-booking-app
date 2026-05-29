@@ -181,6 +181,10 @@
         async function loadUser() {
             try {
                 const user = await safeFetch("/current_user");
+                if (!user || !user.id) {
+                    window.location.href = 'index.html';
+                    return;
+                }
                 currentUserId = user.id;
                 isAdmin = (user.role === 'admin');
                 
@@ -190,6 +194,7 @@
                 }
             } catch(e) {
                 console.error(e);
+                window.location.href = 'index.html';
             }
         }
 

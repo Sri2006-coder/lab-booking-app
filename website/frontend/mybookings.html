@@ -55,9 +55,14 @@
             try {
                 const res = await fetch("/current_user");
                 const user = await res.json();
+                if (!user || !user.id) {
+                    window.location.href = 'index.html';
+                    return;
+                }
                 currentUserId = user.id;
             } catch(e) {
                 console.error(e);
+                window.location.href = 'index.html';
             }
         }
 

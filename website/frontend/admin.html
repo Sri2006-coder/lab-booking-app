@@ -163,6 +163,18 @@
     </main>
 
     <script>
+        async function checkAdmin() {
+            try {
+                const res = await fetch("/current_user");
+                const user = await res.json();
+                if (!user || user.role !== 'admin') {
+                    window.location.href = 'index.html';
+                }
+            } catch(e) {
+                window.location.href = 'index.html';
+            }
+        }
+
         async function fetchStats() {
             try {
                 const res = await fetch('/admin/stats', { cache: "no-store" });
@@ -324,10 +336,12 @@
             }
         }
 
-        fetchStats();
-        fetchNotice();
-        fetchLimit();
-        fetchFacultyList();
+        checkAdmin().then(() => {
+            fetchStats();
+            fetchNotice();
+            fetchLimit();
+            fetchFacultyList();
+        });
     </script>
 </body>
 </html>
