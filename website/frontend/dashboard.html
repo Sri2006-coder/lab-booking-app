@@ -17,6 +17,8 @@
                 if (typeof input === 'string' && input.startsWith('/')) {
                     input = API_BASE + input;
                 }
+                init = init || {};
+                init.credentials = 'include';
                 return originalFetch(input, init);
             };
         })();
@@ -140,7 +142,8 @@
        async function safeFetch(path, options = {}) {
         try {
             const url = path.startsWith('http') ? path : API_BASE + path;
-            const res = await fetch(url, options);
+            const fetchOptions = { credentials: "include", ...options };
+            const res = await fetch(url, fetchOptions);
             if (!res.ok) {
                 console.error("HTTP Error:", res.status);
                 return null;

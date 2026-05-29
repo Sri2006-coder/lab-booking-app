@@ -16,6 +16,8 @@
                 if (typeof input === 'string' && input.startsWith('/')) {
                     input = API_BASE + input;
                 }
+                init = init || {};
+                init.credentials = 'include';
                 return originalFetch(input, init);
             };
         })();

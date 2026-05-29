@@ -40,6 +40,12 @@ if not os.getenv("FIREBASE_KEY") and not os.path.exists(os.path.join(os.path.dir
 app.permanent_session_lifetime = timedelta(minutes=10)
 CORS(app, supports_credentials=True)
 
+if not app.debug:
+    app.config.update(
+        SESSION_COOKIE_SECURE=True,
+        SESSION_COOKIE_SAMESITE='None',
+    )
+
 # CSRF protection: This is a JSON-only API backend (no HTML forms).
 # Session cookies use SameSite policy + CORS for cross-origin protection.
 # CSRFProtect is initialized but globally exempted for JSON API compatibility.

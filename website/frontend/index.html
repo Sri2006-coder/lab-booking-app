@@ -54,7 +54,8 @@
                 fetch(API_BASE + '/save-token', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: data.token })
+                    body: JSON.stringify({ token: data.token }),
+                    credentials: 'include'
                 }).then(r => r.json()).then(d => console.log("Token save response:", d));
             }
         });
@@ -69,7 +70,8 @@
                 const res = await fetch(API_BASE + '/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
+                    body: JSON.stringify({ email, password }),
+                    credentials: 'include'
                 });
 
                 const data = await res.json();
