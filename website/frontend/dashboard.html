@@ -6,7 +6,7 @@
     <title>Timetable - Lab Booking</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
     <link rel="stylesheet" href="style.css">
     <script>
         (function() {
@@ -159,18 +159,6 @@
     }
 
 
-        socket.on('connect', () => {
-            console.log('✅ Connected to Real-time Server');
-        });
-
-        socket.on('booking_update', (data) => {
-            console.log('🔄 Live Update Received:', data);
-            initializeDashboard();
-        });
-
-        socket.on('notice_update', () => {
-            fetchNotice();
-        });
 
         function toggleMenu() {
             document.getElementById('mobile-menu').classList.toggle('hidden');
