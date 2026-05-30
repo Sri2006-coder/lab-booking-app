@@ -1,0 +1,45 @@
+day,period,lab,subject
+Monday,1,Lab 1,Data Structures Lab
+Monday,2,Lab 1,Data Structures Lab
+Monday,3,Lab 2,DBMS Lab
+Monday,4,Lab 2,DBMS Lab
+Monday,5,Lab 5,Python Programming Lab
+Monday,6,Lab 6,Computer Networks Lab
+Monday,7,Lab 7,Web Technology Lab
+Monday,8,Conference Hall,Faculty Meeting
+Tuesday,1,Lab 2,Operating Systems Lab
+Tuesday,2,Lab 2,Operating Systems Lab
+Tuesday,3,Lab 1,Java Programming Lab
+Tuesday,4,Lab 1,Java Programming Lab
+Tuesday,5,Lab 6,Digital Electronics Lab
+Tuesday,6,Lab 7,AI & ML Lab
+Tuesday,7,Lab 5,Software Engineering Lab
+Tuesday,8,Seminar Hall,Guest Lecture
+Wednesday,1,Lab 5,Cloud Computing Lab
+Wednesday,2,Lab 5,Cloud Computing Lab
+Wednesday,3,Lab 6,Cyber Security Lab
+Wednesday,4,Lab 6,Cyber Security Lab
+Wednesday,5,Lab 1,C Programming Lab
+Wednesday,6,Lab 2,Microprocessor Lab
+Wednesday,7,Conference Hall,Seminar Session
+Wednesday,8,Lab 7,IoT Lab
+Thursday,1,Lab 7,Machine Learning Lab
+Thursday,2,Lab 7,Machine Learning Lab
+Thursday,3,Lab 5,Mobile App Development Lab
+Thursday,4,Lab 5,Mobile App Development Lab
+Thursday,5,Lab 1,Data Structures Lab
+Thursday,6,Lab 2,DBMS Lab
+Thursday,7,Lab 6,Embedded Systems Lab
+Thursday,8,Seminar Hall,Workshop
+Friday,1,Lab 1,Java Programming Lab
+Friday,2,Lab 1,Java Programming Lab
+Friday,3,Lab 6,Computer Networks Lab
+Friday,4,Lab 6,Computer Networks Lab
+Friday,5,Lab 7,Web Technology Lab
+Friday,6,Lab 5,Python Programming Lab
+Friday,7,Lab 2,Operating Systems Lab
+Friday,8,Conference Hall,Department Meeting
+Saturday,1,Lab 1,C Programming Lab
+Saturday,2,Lab 2,Microprocessor Lab
+Saturday,3,Lab 5,Software Engineering Lab
+Saturday,4,Lab 6,Digital Electronics Lab

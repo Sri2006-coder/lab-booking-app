@@ -40,8 +40,14 @@ def init_db():
         day TEXT,
         period INTEGER,
         lab TEXT,
-        subject TEXT
+        subject TEXT,
+        UNIQUE (day, period, lab)
     )
+    ''')
+    # Ensure unique constraint exists for databases created before this migration
+    cursor.execute('''
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_fixed_schedule_day_period_lab
+    ON fixed_schedule (day, period, lab)
     ''')
     
     # Bookings Table
