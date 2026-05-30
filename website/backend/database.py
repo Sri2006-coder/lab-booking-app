@@ -1,14 +1,43 @@
 import psycopg2
+from psycopg2.pool import ThreadedConnectionPool
 from psycopg2.extras import RealDictCursor
 import os
+import logging
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
+# Connection pool: reuse connections instead of creating a new one per request
+_pool = None
+
+def _get_pool():
+    global _pool
+    if _pool is None or _pool.closed:
+        if not DATABASE_URL:
+            raise ValueError("DATABASE_URL environment variable is not set!")
+        _pool = ThreadedConnectionPool(
+            minconn=2,
+            maxconn=10,
+            dsn=DATABASE_URL,
+            cursor_factory=RealDictCursor
+        )
+        logging.info("[OK] Database connection pool created (2-10 connections)")
+    return _pool
+
 def get_db():
-    if not DATABASE_URL:
-        raise ValueError("DATABASE_URL environment variable is not set!")
-    conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
-    return conn
+    """Get a connection from the pool."""
+    return _get_pool().getconn()
+
+def return_db(conn):
+    """Return a connection to the pool (use instead of conn.close())."""
+    try:
+        if conn and not conn.closed:
+            _get_pool().putconn(conn)
+    except Exception:
+        # If pool is somehow broken, just close the connection
+        try:
+            conn.close()
+        except Exception:
+            pass
 
 def init_db():
     conn = get_db()
@@ -93,7 +122,7 @@ def init_db():
     ''')
     
     conn.commit()
-    conn.close()
+    return_db(conn)
 
 if __name__ == '__main__':
     init_db()

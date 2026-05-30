@@ -1,4 +1,4 @@
-from database import init_db, get_db
+from database import init_db, get_db, return_db
 from werkzeug.security import generate_password_hash
 import logging
 
@@ -23,7 +23,7 @@ def seed_db():
     cursor.executemany("INSERT INTO labs (lab_name) VALUES (%s) ON CONFLICT (lab_name) DO NOTHING", labs)
     
     conn.commit()
-    conn.close()
+    return_db(conn)
     logging.info("Database seeded successfully.")
 
 if __name__ == '__main__':

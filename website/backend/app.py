@@ -3,9 +3,10 @@ from flask_cors import CORS
 # CSRF protection
 from flask_wtf import CSRFProtect
 from flask_socketio import SocketIO, emit
-from database import get_db
+from database import get_db, return_db
 import os
 import logging
+import threading
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 import firebase_admin
@@ -84,6 +85,25 @@ try:
 except Exception as e:
     logging.error(f"[ERROR] Firebase init error: {e}")
 
+# ── Background Push Notification Helper ──────────────────────────────────
+# Sends FCM notifications in a background thread so HTTP responses are instant
+def _send_push_background(tokens, title, body):
+    """Fire-and-forget push notifications in a background thread."""
+    def _worker():
+        for token in tokens:
+            if not token:
+                continue
+            try:
+                msg = messaging.Message(
+                    notification=messaging.Notification(title=title, body=body),
+                    token=token
+                )
+                messaging.send(msg)
+            except Exception:
+                pass
+    thread = threading.Thread(target=_worker, daemon=True)
+    thread.start()
+
 @app.route("/send-notification", methods=["POST"])
 def send_notification():
     data = request.json
@@ -152,7 +172,7 @@ def test_db():
         fac_res = cursor.fetchone()
         fac_count = get_first_value(fac_res)
         
-        conn.close()
+        return_db(conn)
         return jsonify({
             "status": "success",
             "connection_test": row,
@@ -188,7 +208,7 @@ def login():
     # Fetch user by email only; verify password hash in Python
     cursor.execute("SELECT * FROM faculty WHERE email=%s", (email,))
     user = make_row_dict(cursor.fetchone(), cursor)
-    conn.close()
+    return_db(conn)
     
     if user and check_password_hash(user['password'], password):
         session.permanent = True
@@ -221,7 +241,7 @@ def admin_stats():
     users_res = cursor.fetchone()
     users = get_first_value(users_res)
 
-    conn.close()
+    return_db(conn)
 
     return jsonify({
         "total_bookings": total,
@@ -246,7 +266,7 @@ def get_stats():
     cursor.execute("SELECT COUNT(DISTINCT lab_id) as total FROM fixed_schedule")
     active_labs = get_first_value(cursor.fetchone())
     
-    conn.close()
+    return_db(conn)
     return jsonify({
         "totalBookings": total_bookings,
         "totalFaculty": total_faculty,
@@ -262,7 +282,7 @@ def get_limit():
     cursor = conn.cursor()
     cursor.execute("SELECT value FROM settings WHERE key='daily_limit'")
     setting = make_row_dict(cursor.fetchone(), cursor)
-    conn.close()
+    return_db(conn)
     
     limit = int(setting['value']) if setting and 'value' in setting else 2
     return jsonify({"limit": limit})
@@ -284,7 +304,7 @@ def update_limit():
         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
     """, (str(new_limit),))
     conn.commit()
-    conn.close()
+    return_db(conn)
     
     return jsonify({"success": True, "limit": new_limit})
 
@@ -310,7 +330,7 @@ def clear_timetable():
     cursor = conn.cursor()
     cursor.execute("DELETE FROM fixed_schedule")
     conn.commit()
-    conn.close()
+    return_db(conn)
     return jsonify({"success": True})
 
 @app.route('/api/notice', methods=['GET', 'POST'])
@@ -336,31 +356,20 @@ def handle_notice():
             cursor.execute("SELECT token FROM fcm_tokens")
             tokens = [get_first_value(r) for r in cursor.fetchall()]
 
-            for token in tokens:
-                if not token:
-                    continue
-                try:
-                    msg = messaging.Message(
-                        notification=messaging.Notification(
-                            title="Admin Notice",
-                            body=message
-                        ),
-                        token=token
-                    )
-                    messaging.send(msg)
-                except Exception:
-                    pass
+            # Send push notifications in background thread (non-blocking)
+            if tokens:
+                _send_push_background(tokens, "Admin Notice", message)
         except Exception as e:
             logging.error(f"Notice notification error: {e}")
             
-        conn.close()
+        return_db(conn)
         return jsonify({"success": True})
     
     else:
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         cursor.execute("SELECT * FROM announcements WHERE expires_at > %s ORDER BY id DESC LIMIT 1", (now,))
         notice = make_row_dict(cursor.fetchone(), cursor)
-        conn.close()
+        return_db(conn)
         
         if notice:
             remaining = datetime.strptime(notice['expires_at'], "%Y-%m-%d %H:%M:%S") - datetime.now()
@@ -375,7 +384,7 @@ def get_all_notices():
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM announcements ORDER BY id DESC")
     notices = [make_row_dict(row, cursor) for row in cursor.fetchall()]
-    conn.close()
+    return_db(conn)
     return jsonify(notices)
 
 @app.route('/api/timetable')
@@ -419,7 +428,7 @@ def get_timetable():
             b_dict['own'] = (b_dict.get('faculty_id') == user_id or role == 'admin')
             bookings_data.append(b_dict)
     
-    conn.close()
+    return_db(conn)
     
     return jsonify({
         "day": day,
@@ -466,14 +475,14 @@ def book_slot():
             row = cursor.fetchone()
 
             if not row:
-                conn.close()
+                return_db(conn)
                 return jsonify({"success": False, "message": f"Invalid lab: {lab_name}"}), 400
 
             lab_id = get_first_value(row)
 
             cursor.execute("SELECT id FROM bookings WHERE lab_id = %s AND booking_date = %s AND period = %s", (lab_id, date, period))
             if cursor.fetchone():
-                conn.close()
+                return_db(conn)
                 return jsonify({"success": False, "message": "Slot already booked"}), 409
 
             cursor.execute("INSERT INTO bookings (lab_id, faculty_id, day, period, booking_date) VALUES (%s, %s, %s, %s, %s)", (lab_id, faculty_id, day, period, date))
@@ -483,35 +492,24 @@ def book_slot():
             try:
                 socketio.emit('booking_update', {"type": "new_booking"}, namespace='/')
 
+                # Send push notifications in background thread (non-blocking)
                 notif_conn = get_db()
                 try:
                     notif_cursor = notif_conn.cursor()
                     notif_cursor.execute("SELECT token FROM fcm_tokens")
                     tokens = [get_first_value(r) for r in notif_cursor.fetchall()]
 
-                    for token in tokens:
-                        if not token:
-                            continue
-                        try:
-                            message = messaging.Message(
-                                notification=messaging.Notification(
-                                    title="Lab Booking",
-                                    body="New lab booking created successfully"
-                                ),
-                                token=token
-                            )
-                            messaging.send(message)
-                        except Exception:
-                            pass
+                    if tokens:
+                        _send_push_background(tokens, "Lab Booking", "New lab booking created successfully")
                 finally:
-                    notif_conn.close()
+                    return_db(notif_conn)
             except Exception:
                 pass
 
             return jsonify({"success": True})
 
         finally:
-            conn.close()
+            return_db(conn)
 
     except Exception as e:
         logging.error(f"ERROR: {e}", exc_info=True)
@@ -529,12 +527,12 @@ def cancel_booking(id):
     cursor.execute("SELECT faculty_id FROM bookings WHERE id=%s", (id,))
     booking = make_row_dict(cursor.fetchone(), cursor)
     if not booking or (booking.get('faculty_id') != session['user_id'] and session['role'] != 'admin'):
-        conn.close()
+        return_db(conn)
         return jsonify({"success": False, "message": "Forbidden"}), 403
     
     cursor.execute("DELETE FROM bookings WHERE id=%s", (id,))
     conn.commit()
-    conn.close()
+    return_db(conn)
     socketio.emit('booking_update', {"type": "cancel_booking"}, namespace='/')
     return jsonify({"success": True})
 
@@ -581,7 +579,7 @@ def upload_timetable():
             count += 1
             
         conn.commit()
-        conn.close()
+        return_db(conn)
         
         logging.info(f"Successfully uploaded {count} fixed schedule entries.")
         return jsonify({"success": True, "count": count})
@@ -596,7 +594,7 @@ def get_labs_dynamic():
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM labs ORDER BY lab_name ASC")
     all_labs = [make_row_dict(row, cursor) for row in cursor.fetchall()]
-    conn.close()
+    return_db(conn)
     return jsonify(all_labs)
 
 @app.route('/add_lab', methods=['POST'])
@@ -618,7 +616,7 @@ def add_lab_dynamic():
         logging.error(f"Error adding lab: {e}", exc_info=True)
         success = False
     finally:
-        conn.close()
+        return_db(conn)
     return jsonify({"success": success})
 
 @app.route('/delete_lab', methods=['POST'])
@@ -631,7 +629,7 @@ def delete_lab_dynamic():
     cursor.execute("DELETE FROM bookings WHERE lab_id=%s", (lab_id,))
     cursor.execute("DELETE FROM labs WHERE id=%s", (lab_id,))
     conn.commit()
-    conn.close()
+    return_db(conn)
     return jsonify({"success": True})
 
 @app.route('/api/labs', methods=['GET', 'POST'])
@@ -651,12 +649,12 @@ def handle_labs():
         if cursor.fetchone() is None:
             cursor.execute("INSERT INTO labs (lab_name) VALUES (%s)", (lab_name,))
             conn.commit()
-        conn.close()
+        return_db(conn)
         return jsonify({"success": True})
     else:
         cursor.execute("SELECT * FROM labs ORDER BY lab_name ASC")
         labs = [make_row_dict(row, cursor) for row in cursor.fetchall()]
-        conn.close()
+        return_db(conn)
         return jsonify(labs)
 
 @app.route('/api/mybookings')
@@ -680,7 +678,7 @@ def get_my_bookings():
         cursor.execute("SELECT b.*, l.lab_name FROM bookings b JOIN labs l ON b.lab_id = l.id WHERE b.faculty_id = %s ORDER BY b.booking_date DESC, b.period ASC", (faculty_id,))
     
     bookings = [make_row_dict(row, cursor) for row in cursor.fetchall()]
-    conn.close()
+    return_db(conn)
     return jsonify(bookings)
 
 @app.route('/api/calendar')
@@ -720,7 +718,7 @@ def get_calendar():
             "booked": is_booked
         })
     
-    conn.close()
+    return_db(conn)
     return jsonify({
         "month": month,
         "year": year,
@@ -743,7 +741,7 @@ def set_limit():
     """, (str(limit),))
 
     conn.commit()
-    conn.close()
+    return_db(conn)
 
     return jsonify({"success": True})
 
@@ -798,7 +796,7 @@ def get_bookings():
         return jsonify([])
         
     finally:
-        conn.close()
+        return_db(conn)
 
 @app.route('/cancel', methods=['POST'])
 def cancel_booking_custom():
@@ -818,7 +816,7 @@ def cancel_booking_custom():
         cursor.execute("DELETE FROM bookings WHERE lab_id=%s AND period=%s AND booking_date=%s AND faculty_id=%s", (lab_row['id'], period, date, user_id))
         conn.commit()
         socketio.emit('booking_update', {"type": "cancel_booking"}, namespace='/')
-    conn.close()
+    return_db(conn)
     return jsonify({"success": True})
 
 @app.route('/login', methods=['POST'])
@@ -830,7 +828,7 @@ def custom_login():
     cursor.execute("SELECT id, name, email, password, role FROM faculty WHERE email=%s",
                    (data['email'],))
     user = make_row_dict(cursor.fetchone(), cursor)
-    conn.close()
+    return_db(conn)
 
     if user and check_password_hash(user['password'], data['password']):
         session['user_id'] = user['id']
@@ -852,7 +850,7 @@ def register():
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM faculty WHERE email=%s", (email,))
     if cursor.fetchone():
-        conn.close()
+        return_db(conn)
         return jsonify({"success": False, "message": "User already exists"})
 
     hashed_pw = generate_password_hash(data.get('password', ''))
@@ -861,7 +859,7 @@ def register():
     VALUES (%s, %s, %s, 'faculty')
     """, (data.get('name', ''), email, hashed_pw))
     conn.commit()
-    conn.close()
+    return_db(conn)
     return jsonify({"success": True})
 
 @app.route('/api/faculty', methods=['GET'])
@@ -874,7 +872,7 @@ def get_faculty_list():
     cursor = conn.cursor()
     cursor.execute("SELECT id, name, email, role FROM faculty ORDER BY name ASC")
     rows = cursor.fetchall()
-    conn.close()
+    return_db(conn)
     
     faculty_list = [make_row_dict(row, cursor) for row in rows]
     return jsonify({"success": True, "faculty": faculty_list})
@@ -915,7 +913,7 @@ def bulk_upload_faculty():
         count += 1
 
     conn.commit()
-    conn.close()
+    return_db(conn)
     return jsonify({"success": True, "count": count})
 
 @app.route('/save-token', methods=['POST'])
@@ -950,7 +948,7 @@ def save_token():
         # Save token. If user_id is None, it's a guest/unlogged token (useful for testing)
         cursor.execute("INSERT INTO fcm_tokens (faculty_id, token) VALUES (%s, %s) ON CONFLICT (token) DO NOTHING", (user_id, token))
         conn.commit()
-        conn.close()
+        return_db(conn)
         logging.info(f"Token saved to DB. User ID: {user_id}")
     except Exception as e:
         logging.error(f"DB error in /save-token: {e}")
@@ -989,7 +987,7 @@ def send_test_notification():
         cursor = conn.cursor()
         cursor.execute("SELECT token FROM fcm_tokens")
         rows = [make_row_dict(row, cursor) for row in cursor.fetchall()]
-        conn.close()
+        return_db(conn)
         
         tokens = [row['token'] for row in rows if row and row.get('token')]
         
@@ -1006,6 +1004,23 @@ def send_test_notification():
     except Exception as e:
         logging.error(f"Test notification error: {e}")
         return jsonify({"success": False, "message": "Server error."}), 500
+
+# ── Keep-Alive Ping (prevents Render free tier from sleeping) ────────────
+def _keep_alive():
+    """Ping own /health endpoint every 10 minutes to prevent cold starts."""
+    import urllib.request
+    import time
+    url = os.environ.get("RENDER_EXTERNAL_URL", "http://localhost:5000") + "/health"
+    while True:
+        time.sleep(600)  # 10 minutes
+        try:
+            urllib.request.urlopen(url, timeout=10)
+            logging.info("[KEEPALIVE] Ping sent")
+        except Exception:
+            pass
+
+_keepalive_thread = threading.Thread(target=_keep_alive, daemon=True)
+_keepalive_thread.start()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
