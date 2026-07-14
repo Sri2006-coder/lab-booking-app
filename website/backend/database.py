@@ -3,6 +3,10 @@ from psycopg2.pool import ThreadedConnectionPool
 from psycopg2.extras import RealDictCursor
 import os
 import logging
+from dotenv import load_dotenv
+
+# Ensure environment variables from .env are loaded before reading DATABASE_URL
+load_dotenv()
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
@@ -10,8 +14,10 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 _pool = None
 
 def _get_pool():
-    global _pool
+    global _pool, DATABASE_URL
     if _pool is None or _pool.closed:
+        if not DATABASE_URL:
+            DATABASE_URL = os.environ.get("DATABASE_URL")
         if not DATABASE_URL:
             raise ValueError("DATABASE_URL environment variable is not set!")
         _pool = ThreadedConnectionPool(
@@ -118,6 +124,26 @@ def init_db():
         faculty_id INTEGER,
         token TEXT UNIQUE NOT NULL,
         FOREIGN KEY (faculty_id) REFERENCES faculty(id) ON DELETE CASCADE
+    )
+    ''')
+
+    # Apply database migrations for Lab Maintenance feature
+    cursor.execute('''
+    ALTER TABLE labs ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active';
+    ALTER TABLE labs ADD COLUMN IF NOT EXISTS maintenance_reason TEXT;
+    ALTER TABLE labs ADD COLUMN IF NOT EXISTS maintenance_start TIMESTAMP;
+    ALTER TABLE labs ADD COLUMN IF NOT EXISTS maintenance_end TIMESTAMP;
+    ''')
+
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS notifications (
+        id SERIAL PRIMARY KEY,
+        lab_id INTEGER REFERENCES labs(id) ON DELETE CASCADE,
+        title TEXT NOT NULL,
+        message TEXT NOT NULL,
+        notification_type TEXT NOT NULL,
+        created_by INTEGER REFERENCES faculty(id) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     ''')
     

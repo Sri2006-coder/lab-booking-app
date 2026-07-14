@@ -1,10 +1,15 @@
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file at application startup
+load_dotenv()
+
 from flask import Flask, request, jsonify, session, send_from_directory
 from flask_cors import CORS
 # CSRF protection
 from flask_wtf import CSRFProtect
 from flask_socketio import SocketIO, emit
 from database import get_db, return_db
-import os
 import logging
 import threading
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -14,6 +19,7 @@ from firebase_admin import credentials, messaging
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 import json
+import requests
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
@@ -62,6 +68,11 @@ if not app.debug:
 app.config['WTF_CSRF_ENABLED'] = False
 csrf = CSRFProtect(app)
 
+# Load UltraMsg configs for WhatsApp Group Integration
+app.config['ULTRAMSG_INSTANCE_ID'] = os.environ.get("ULTRAMSG_INSTANCE_ID")
+app.config['ULTRAMSG_TOKEN'] = os.environ.get("ULTRAMSG_TOKEN")
+app.config['ULTRAMSG_GROUP_ID'] = os.environ.get("ULTRAMSG_GROUP_ID")
+
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 try:
@@ -103,6 +114,56 @@ def _send_push_background(tokens, title, body):
                 pass
     thread = threading.Thread(target=_worker, daemon=True)
     thread.start()
+
+def send_whatsapp_maintenance_notice(lab_name, status, reason=None, expected_end=None):
+    instance_id = app.config.get("ULTRAMSG_INSTANCE_ID")
+    token = app.config.get("ULTRAMSG_TOKEN")
+    group_id = app.config.get("ULTRAMSG_GROUP_ID")
+    
+    if not (instance_id and token and group_id):
+        logging.warning("WhatsApp credentials missing. Skipping WhatsApp notification.")
+        return False
+        
+    url = f"https://api.ultramsg.com/{instance_id}/messages/chat"
+    
+    if status == 'maintenance':
+        message = (
+            "🔧 *LAB MAINTENANCE NOTICE*\n\n"
+            f"*Laboratory:* {lab_name}\n"
+            f"*Status:* Under Maintenance\n"
+            f"*Reason:* {reason or 'N/A'}\n"
+            f"*Expected Completion:* {expected_end or 'TBD'}\n\n"
+            "Please avoid booking this laboratory until further notice.\n\n"
+            "Regards,\n"
+            "Lab Booking System"
+        )
+    else:
+        message = (
+            "✅ *LAB AVAILABLE*\n\n"
+            f"*Laboratory:* {lab_name}\n\n"
+            "Maintenance work has been completed.\n"
+            "This laboratory is now available for booking.\n\n"
+            "Regards,\n"
+            "Lab Booking System"
+        )
+        
+    payload = {
+        "token": token,
+        "to": group_id,
+        "body": message
+    }
+    
+    try:
+        response = requests.post(url, data=payload, timeout=10)
+        if response.status_code == 200:
+            logging.info(f"WhatsApp notification sent successfully for {lab_name}")
+            return True
+        else:
+            logging.error(f"WhatsApp API error ({response.status_code}): {response.text}")
+            return False
+    except Exception as e:
+        logging.error(f"Failed to send WhatsApp message for {lab_name}: {e}")
+        return False
 
 @app.route("/send-notification", methods=["POST"])
 def send_notification():
@@ -471,14 +532,22 @@ def book_slot():
                 if current_bookings >= daily_limit:
                     return jsonify({"success": False, "message": f"Daily limit of {daily_limit} bookings reached."}), 403
 
-            cursor.execute("SELECT id FROM labs WHERE lab_name = %s", (lab_name,))
+            cursor.execute("SELECT id, status FROM labs WHERE lab_name = %s", (lab_name,))
             row = cursor.fetchone()
 
             if not row:
                 return_db(conn)
                 return jsonify({"success": False, "message": f"Invalid lab: {lab_name}"}), 400
 
-            lab_id = get_first_value(row)
+            lab_id = row['id']
+            
+            # Check if lab is under maintenance
+            if row.get('status') == 'maintenance':
+                return_db(conn)
+                return jsonify({
+                    "success": False,
+                    "message": "This laboratory is currently under maintenance. Please choose another laboratory."
+                }), 403
 
             cursor.execute("SELECT id FROM bookings WHERE lab_id = %s AND booking_date = %s AND period = %s", (lab_id, date, period))
             if cursor.fetchone():
@@ -496,11 +565,18 @@ def book_slot():
                 notif_conn = get_db()
                 try:
                     notif_cursor = notif_conn.cursor()
-                    notif_cursor.execute("SELECT token FROM fcm_tokens")
+                    notif_cursor.execute("""
+                        SELECT f.token 
+                        FROM fcm_tokens f 
+                        JOIN faculty u ON f.faculty_id = u.id 
+                        WHERE u.role = 'admin'
+                    """)
                     tokens = [get_first_value(r) for r in notif_cursor.fetchall()]
 
                     if tokens:
-                        _send_push_background(tokens, "Lab Booking", "New lab booking created successfully")
+                        faculty_name = session.get('name', 'Faculty')
+                        msg_body = f"{faculty_name} booked {lab_name} (Period {period}) on {date}"
+                        _send_push_background(tokens, "Lab Booking", msg_body)
                 finally:
                     return_db(notif_conn)
             except Exception:
@@ -656,6 +732,130 @@ def handle_labs():
         labs = [make_row_dict(row, cursor) for row in cursor.fetchall()]
         return_db(conn)
         return jsonify(labs)
+
+@app.route('/api/labs/<int:lab_id>/status', methods=['POST'])
+def update_lab_status(lab_id):
+    if 'user_id' not in session or session.get('role') != 'admin':
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+        
+    data = request.get_json() or {}
+    new_status = data.get('status')
+    
+    if new_status not in ['active', 'maintenance']:
+        return jsonify({"success": False, "message": "Invalid status. Accepted values are: active, maintenance."}), 400
+        
+    reason = None
+    expected_end = None
+    
+    if new_status == 'maintenance':
+        reason = data.get('reason')
+        expected_end = data.get('expected_end')
+        
+        if not reason:
+            return jsonify({"success": False, "message": "Maintenance reason is mandatory."}), 400
+        if not expected_end:
+            return jsonify({"success": False, "message": "Expected completion date is mandatory."}), 400
+            
+        try:
+            datetime.strptime(expected_end, "%Y-%m-%d")
+        except ValueError:
+            return jsonify({"success": False, "message": "Expected completion date must be in YYYY-MM-DD format."}), 400
+
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    try:
+        # Verify lab exists and fetch current status
+        cursor.execute("SELECT id, lab_name, status FROM labs WHERE id = %s", (lab_id,))
+        lab = cursor.fetchone()
+        
+        if not lab:
+            return_db(conn)
+            return jsonify({"success": False, "message": "Laboratory not found."}), 404
+            
+        lab_name = lab['lab_name']
+        old_status = lab['status']
+        
+        # Duplicate Protection
+        if old_status == new_status:
+            return_db(conn)
+            return jsonify({
+                "success": True,
+                "message": "No status change required."
+            }), 200
+
+        # Update lab status
+        if new_status == 'maintenance':
+            cursor.execute("""
+                UPDATE labs 
+                SET status = %s, maintenance_reason = %s, maintenance_start = %s, maintenance_end = %s
+                WHERE id = %s
+            """, (new_status, reason, datetime.now(), expected_end, lab_id))
+            
+            title = "Lab Status Update"
+            message_text = f"🔧 {lab_name} is under maintenance."
+            notif_type = "maintenance_start"
+        else:
+            cursor.execute("""
+                UPDATE labs 
+                SET status = 'active', maintenance_reason = NULL, maintenance_start = NULL, maintenance_end = NULL
+                WHERE id = %s
+            """, (lab_id,))
+            
+            title = "Lab Status Update"
+            message_text = f"✅ {lab_name} is available for booking again."
+            notif_type = "maintenance_end"
+            
+        # Write notification history
+        cursor.execute("""
+            INSERT INTO notifications (lab_id, title, message, notification_type, created_by)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (lab_id, title, message_text, notif_type, session.get('user_id')))
+        
+        conn.commit()
+        logging.info(f"STATUS CHANGE: Admin={session.get('user_id')}, Lab={lab_id}, Prev={old_status}, New={new_status}, Timestamp={datetime.now()}")
+        
+    except Exception as e:
+        conn.rollback()
+        logging.error(f"Database error during lab status toggle: {e}", exc_info=True)
+        return_db(conn)
+        return jsonify({"success": False, "message": "Internal database error occurred."}), 500
+        
+    finally:
+        return_db(conn)
+
+    # Dispatch notifications in a background thread
+    def dispatch_notifications():
+        try:
+            notif_conn = get_db()
+            notif_cursor = notif_conn.cursor()
+            notif_cursor.execute("SELECT f.token FROM fcm_tokens f JOIN faculty u ON f.faculty_id = u.id WHERE u.role = 'faculty'")
+            tokens = [r['token'] for r in notif_cursor.fetchall() if r and r.get('token')]
+            return_db(notif_conn)
+            
+            if tokens:
+                _send_push_background(tokens, "Lab Status Update", message_text)
+        except Exception as fcm_err:
+            logging.error(f"FCM Notification dispatch error: {fcm_err}")
+            
+        try:
+            send_whatsapp_maintenance_notice(lab_name, new_status, reason, expected_end)
+        except Exception as wa_err:
+            logging.error(f"WhatsApp Notification dispatch error: {wa_err}")
+
+    threading.Thread(target=dispatch_notifications, daemon=True).start()
+
+    return jsonify({
+        "success": True,
+        "message": f"Lab status updated to {new_status}.",
+        "lab": {
+            "id": lab_id,
+            "name": lab_name,
+            "status": new_status,
+            "reason": reason,
+            "expected_end": expected_end
+        }
+    }), 200
 
 @app.route('/api/mybookings')
 def get_my_bookings():

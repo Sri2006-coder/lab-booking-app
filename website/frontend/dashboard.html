@@ -290,7 +290,20 @@
                         const booking = getBooking(labName, period, currentDate);
                         let statusHtml = '';
                         
-                        if (block) {
+                        if (labObj.status === 'maintenance') {
+                            const reason = labObj.maintenance_reason || 'No reason provided';
+                            const completionDate = labObj.maintenance_end ? labObj.maintenance_end.split(' ')[0] : 'TBD';
+                            statusHtml = `
+                                <div class="w-full bg-red-50 border-red-200 border p-3.5 rounded-xl flex flex-col shadow-sm">
+                                    <span class="text-red-700 font-bold text-sm mb-1.5 flex items-center">
+                                        <span class="mr-1.5">🔧</span> Under Maintenance
+                                    </span>
+                                    <p class="text-xs text-red-600 mb-1"><strong>Reason:</strong> ${reason}</p>
+                                    <p class="text-xs text-red-600 mb-2.5"><strong>Expected Completion:</strong> ${completionDate}</p>
+                                    <p class="text-[11px] text-red-500 italic font-medium leading-relaxed">This laboratory is currently under maintenance. Please choose another laboratory.</p>
+                                </div>
+                            `;
+                        } else if (block) {
                             statusHtml = `<button class="w-full bg-red-50 text-red-700 font-bold py-3 px-4 rounded-xl border border-red-200 cursor-not-allowed shadow-sm blocked-btn" disabled>🔴 ${block.subject}</button>`;
                         } else if (booking) {
                             if (booking.faculty_id === currentUserId) {
