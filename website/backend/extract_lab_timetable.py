@@ -72,7 +72,7 @@ def parse_timetable_text(page_text, config, is_scanned=False):
             # Escape strings for regex replacement
             esc_subject = re.escape(subject)
             esc_lab = re.escape(lab)
-            match_regex = f"{esc_subject}\\s*\\[{esc_lab}\\]"
+            match_regex = f"{esc_subject}\\s*\\[?{esc_lab}\\]?"
             replacement = f"{subject.replace(' ', '_')}_[{lab}]"
             temp_line = re.sub(match_regex, replacement, temp_line)
             

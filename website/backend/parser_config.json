@@ -1,6 +1,6 @@
 {
   "lab_patterns": [
-    "([A-Z]{2,5}\\s+LAB)\\s*\\[(LAB-\\d+)\\]"
+    "([A-Z]{2,5}\\s+LAB)\\s*\\[?(LAB-\\d+)\\]?"
   ],
   "day_names": [
     "Monday",
