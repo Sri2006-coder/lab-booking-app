@@ -116,13 +116,50 @@
                 <p class="mt-2 text-xs text-gray-500 italic">(Note: spaces are allowed)</p>
             </div>
 
-            <input type="file" id="csv-file" accept=".csv" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer mb-3 outline-none border border-gray-200 rounded-lg p-1">
+            <input type="file" id="csv-file" accept=".csv,.pdf" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer mb-3 outline-none border border-gray-200 rounded-lg p-1">
             
             <div class="grid grid-cols-2 gap-3 mt-4">
                 <button onclick="uploadCSV()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm sm:text-base font-bold py-2.5 rounded-lg shadow-sm active:scale-95 transition">Upload Timetable</button>
                 <button onclick="clearTimetable()" class="w-full bg-red-100 hover:bg-red-200 text-red-700 text-sm sm:text-base font-bold py-2.5 rounded-lg shadow-sm border border-red-200 active:scale-95 transition">Delete All Schedule</button>
             </div>
             <div id="upload-status" class="mt-3 text-sm font-medium text-center"></div>
+        </div>
+
+        <!-- Timetable Preview Widget -->
+        <div id="timetable-preview-container" class="hidden bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-8">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
+                <div class="flex items-center">
+                    <span class="text-2xl mr-2">📋</span>
+                    <h4 class="font-semibold text-gray-800">Timetable Extraction Preview</h4>
+                </div>
+                <button onclick="addNewPreviewRow()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold py-1.5 px-3 rounded-lg border border-indigo-100 transition active:scale-95">
+                    ➕ Add Entry
+                </button>
+            </div>
+            
+            <div class="overflow-x-auto border border-gray-100 rounded-xl mb-4">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-100 text-gray-600 font-bold">
+                            <th class="p-3">Class</th>
+                            <th class="p-3">Day</th>
+                            <th class="p-3">Period(s)</th>
+                            <th class="p-3">Subject</th>
+                            <th class="p-3">Physical Lab</th>
+                            <th class="p-3 text-center">Confidence</th>
+                            <th class="p-3 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="preview-table-body" class="divide-y divide-gray-100">
+                        <!-- Dynamic rows here -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="flex space-x-3 justify-end mt-4">
+                <button onclick="saveExtractedTimetable()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-5 rounded-lg active:scale-95 transition text-sm shadow-sm">Save to Database</button>
+                <button onclick="cancelPreview()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-5 rounded-lg active:scale-95 transition text-sm border border-gray-200">Cancel</button>
+            </div>
         </div>
 
         <!-- Laboratory Maintenance Management Widget -->
@@ -282,6 +319,153 @@
             }
         }
 
+        let extractedRecords = [];
+
+        function renderPreviewTable() {
+            const tbody = document.getElementById('preview-table-body');
+            const container = document.getElementById('timetable-preview-container');
+            
+            if (extractedRecords.length === 0) {
+                container.classList.add('hidden');
+                tbody.innerHTML = '';
+                return;
+            }
+            
+            container.classList.remove('hidden');
+            
+            let html = '';
+            extractedRecords.forEach((record, index) => {
+                const isLowConf = record.confidence < 80;
+                const rowBg = isLowConf ? 'bg-amber-50 border-l-4 border-amber-500' : 'hover:bg-gray-50';
+                const badgeColor = isLowConf ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800';
+                const badgeText = isLowConf ? `⚠️ ${record.confidence}%` : `✅ ${record.confidence}%`;
+                
+                // Build Day select element
+                const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                let daySelectHtml = `<select onchange="updateRecordField(${index}, 'day', this.value)" class="px-2 py-1 text-xs border border-gray-200 rounded bg-white outline-none focus:border-indigo-500">`;
+                days.forEach(d => {
+                    const selected = (record.day.toLowerCase() === d.toLowerCase()) ? "selected" : "";
+                    daySelectHtml += `<option value="${d}" ${selected}>${d}</option>`;
+                });
+                daySelectHtml += `</select>`;
+                
+                // Join periods array as string
+                const periodsStr = Array.isArray(record.periods) ? record.periods.join(', ') : record.periods;
+
+                html += `
+                <tr class="${rowBg} transition">
+                    <td class="p-2.5">
+                        <input type="text" value="${record.class || ''}" onchange="updateRecordField(${index}, 'class', this.value)" class="w-16 px-1.5 py-1 text-xs border border-gray-200 rounded outline-none focus:border-indigo-500 bg-white">
+                    </td>
+                    <td class="p-2.5">
+                        ${daySelectHtml}
+                    </td>
+                    <td class="p-2.5">
+                        <input type="text" value="${periodsStr}" onchange="updateRecordPeriods(${index}, this.value)" class="w-24 px-1.5 py-1 text-xs border border-gray-200 rounded outline-none focus:border-indigo-500 bg-white" placeholder="e.g. 5, 6, 7">
+                    </td>
+                    <td class="p-2.5">
+                        <input type="text" value="${record.subject || ''}" onchange="updateRecordField(${index}, 'subject', this.value)" class="w-32 px-1.5 py-1 text-xs border border-gray-200 rounded outline-none focus:border-indigo-500 bg-white">
+                    </td>
+                    <td class="p-2.5">
+                        <input type="text" value="${record.lab || ''}" onchange="updateRecordField(${index}, 'lab', this.value)" class="w-24 px-1.5 py-1 text-xs border border-gray-200 rounded outline-none focus:border-indigo-500 bg-white" placeholder="e.g. LAB-1">
+                    </td>
+                    <td class="p-2.5 text-center font-semibold text-xs">
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${badgeColor}">
+                            ${badgeText}
+                        </span>
+                    </td>
+                    <td class="p-2.5 text-center">
+                        <button onclick="deletePreviewRow(${index})" class="text-red-600 hover:text-red-800 text-sm font-semibold active:scale-95 transition">
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        function updateRecordField(index, field, value) {
+            if (extractedRecords[index]) {
+                extractedRecords[index][field] = value;
+                if (field === 'lab' || field === 'subject') {
+                    // Update confidence to 100 since it has been verified manually
+                    extractedRecords[index].confidence = 100;
+                    renderPreviewTable();
+                }
+            }
+        }
+
+        function updateRecordPeriods(index, value) {
+            if (extractedRecords[index]) {
+                const arr = value.split(',')
+                    .map(x => parseInt(x.trim()))
+                    .filter(x => !isNaN(x));
+                extractedRecords[index].periods = arr;
+            }
+        }
+
+        function deletePreviewRow(index) {
+            extractedRecords.splice(index, 1);
+            renderPreviewTable();
+        }
+
+        function addNewPreviewRow() {
+            extractedRecords.unshift({
+                "class": "II-A",
+                "day": "Monday",
+                "periods": [5, 6, 7],
+                "subject": "DS LAB",
+                "lab": "LAB-1",
+                "confidence": 100
+            });
+            renderPreviewTable();
+        }
+
+        function cancelPreview() {
+            if (confirm("Cancel timetable preview? Extracted data will be lost.")) {
+                extractedRecords = [];
+                renderPreviewTable();
+                document.getElementById('csv-file').value = '';
+                document.getElementById('upload-status').innerText = '';
+            }
+        }
+
+        async function saveExtractedTimetable() {
+            if (extractedRecords.length === 0) return;
+            
+            const status = document.getElementById('upload-status');
+            status.innerText = '⏳ Saving timetable to database...';
+            status.className = 'mt-3 text-sm font-medium text-center text-gray-600';
+            showSpinner(true);
+            
+            try {
+                const res = await fetch('/api/save_timetable', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(extractedRecords)
+                });
+                const data = await res.json();
+                showSpinner(false);
+                if (data.success) {
+                    status.innerText = `✅ Timetable saved! ${data.count} periods registered.`;
+                    status.className = 'mt-3 text-sm font-medium text-center text-emerald-600';
+                    showToast(`Successfully saved ${data.count} timetable slots!`);
+                    extractedRecords = [];
+                    renderPreviewTable();
+                    document.getElementById('csv-file').value = '';
+                    fetchStats();
+                } else {
+                    status.innerText = '❌ Failed to save: ' + data.message;
+                    status.className = 'mt-3 text-sm font-medium text-center text-red-600';
+                }
+            } catch (err) {
+                showSpinner(false);
+                status.innerText = '❌ Error saving database records';
+                status.className = 'mt-3 text-sm font-medium text-center text-red-600';
+            }
+        }
+
         async function uploadCSV() {
             const fileInput = document.getElementById('csv-file');
             const status = document.getElementById('upload-status');
@@ -290,23 +474,31 @@
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
 
-            status.innerText = '⏳ Uploading...';
+            status.innerText = '⏳ Uploading and extracting...';
             status.className = 'mt-3 text-sm font-medium text-center text-gray-600';
+            showSpinner(true);
             
             try {
                 const res = await fetch('/api/upload', { method: 'POST', body: formData });
                 const data = await res.json();
+                showSpinner(false);
                 if (data.success) {
-                    status.innerText = '✅ Uploaded successfully';
+                    extractedRecords = data.records || [];
+                    renderPreviewTable();
+                    status.innerText = `✅ Extraction completed! Found ${extractedRecords.length} entries.`;
                     status.className = 'mt-3 text-sm font-medium text-center text-emerald-600';
-                    fetchStats();
                 } else {
                     status.innerText = '❌ ' + data.message;
                     status.className = 'mt-3 text-sm font-medium text-center text-red-600';
+                    extractedRecords = [];
+                    renderPreviewTable();
                 }
             } catch (err) {
+                showSpinner(false);
                 status.innerText = '❌ Error uploading';
                 status.className = 'mt-3 text-sm font-medium text-center text-red-600';
+                extractedRecords = [];
+                renderPreviewTable();
             }
         }
 

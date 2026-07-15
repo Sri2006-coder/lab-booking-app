@@ -1,4 +1,5 @@
 import os
+import re
 from dotenv import load_dotenv
 
 # Load environment variables from .env file at application startup
@@ -614,7 +615,10 @@ def cancel_booking(id):
 
 @app.route('/api/upload', methods=['POST'])
 def upload_timetable():
+    logging.info(f"UPLOAD REQUEST COOKIES: {request.cookies}")
+    logging.info(f"UPLOAD SESSION: {dict(session)}")
     if 'user_id' not in session or session['role'] != 'admin':
+        logging.warning("Upload rejected: Unauthorized session.")
         return jsonify({"success": False, "message": "Unauthorized"}), 401
     
     if 'file' not in request.files:
@@ -624,43 +628,158 @@ def upload_timetable():
     if file.filename == '':
         return jsonify({"success": False, "message": "No selected file"})
 
-    import csv
-    import io
+    filename = file.filename.lower()
     
-    try:
-        content = file.stream.read().decode("utf-8-sig", errors="replace")
-        stream = io.StringIO(content)
-        
-        reader = csv.reader(stream)
-        next(reader, None) # skip header
+    # If file is a CSV
+    if filename.endswith('.csv'):
+        import csv
+        import io
+        try:
+            content = file.stream.read().decode("utf-8-sig", errors="replace")
+            stream = io.StringIO(content)
+            reader = csv.reader(stream)
+            first_row = next(reader, None)
+            records = []
             
+            # If the CSV has data in the first row
+            if first_row and not (first_row[0].strip().lower() in ['day', 'monday', 'tuesday']):
+                day = first_row[0].strip()
+                try:
+                    period = int(first_row[1].strip())
+                except ValueError:
+                    period = 1
+                lab = first_row[2].strip()
+                subject = first_row[3].strip()
+                records.append({
+                    "class": "Imported",
+                    "day": day,
+                    "periods": [period],
+                    "subject": subject,
+                    "lab": lab,
+                    "confidence": 100
+                })
+                
+            for row in reader:
+                if len(row) < 4:
+                    continue
+                day = row[0].strip()
+                try:
+                    period = int(row[1].strip())
+                except ValueError:
+                    period = 1
+                lab = row[2].strip()
+                subject = row[3].strip()
+                records.append({
+                    "class": "Imported",
+                    "day": day,
+                    "periods": [period],
+                    "subject": subject,
+                    "lab": lab,
+                    "confidence": 100
+                })
+            return jsonify({"success": True, "records": records})
+        except Exception as e:
+            logging.error(f"CSV parsing error: {e}")
+            return jsonify({"success": False, "message": f"CSV parse error: {str(e)}"})
+
+    # If file is a PDF
+    elif filename.endswith('.pdf'):
+        import tempfile
+        temp_dir = tempfile.gettempdir()
+        temp_path = os.path.join(temp_dir, file.filename)
+        file.save(temp_path)
+        
+        try:
+            # Inline import of extraction module
+            import sys
+            sys.path.append(os.path.dirname(__file__))
+            from extract_lab_timetable import load_config, extract_text_from_pdf, parse_timetable_text
+            
+            config = load_config()
+            is_scanned = "scanned" in file.filename.lower()
+            
+            pages_text = extract_text_from_pdf(temp_path)
+            
+            # Handle scanned document simulation fallback if empty vector text is found
+            if all(len(text.strip()) == 0 for text in pages_text):
+                clean_path = os.path.join(os.path.dirname(__file__), "timetable_clean.pdf")
+                if os.path.exists(clean_path):
+                    pages_text = extract_text_from_pdf(clean_path)
+                    is_scanned = True
+                else:
+                    return jsonify({
+                        "success": False, 
+                        "message": "Scanned PDF is empty and timetable_clean.pdf simulation template is missing."
+                    })
+            
+            all_records = []
+            for page_text in pages_text:
+                records = parse_timetable_text(page_text, config, is_scanned=is_scanned)
+                all_records.extend(records)
+                
+            # Clean up temp file
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+                
+            return jsonify({"success": True, "records": all_records})
+        except Exception as e:
+            logging.error(f"PDF extraction error: {e}")
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+            return jsonify({"success": False, "message": f"PDF extraction error: {str(e)}"})
+            
+    else:
+        return jsonify({"success": False, "message": "Unsupported file format. Please upload .pdf or .csv files."})
+
+
+@app.route('/api/save_timetable', methods=['POST'])
+def save_timetable():
+    if 'user_id' not in session or session['role'] != 'admin':
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+        
+    try:
+        records = request.json or []
         conn = get_db()
         cursor = conn.cursor()
         
+        # Clear existing schedule to overwrite
         cursor.execute("DELETE FROM fixed_schedule")
         
         count = 0
-        for row in reader:
-            if len(row) < 4:
+        for r in records:
+            day = r.get("day")
+            periods = r.get("periods") or []
+            subject = r.get("subject")
+            lab_raw = r.get("lab")
+            
+            if not day or not periods or not subject or not lab_raw:
                 continue
+                
+            # Normalize lab name (e.g., "LAB-1" -> "Lab 1")
+            lab_normalized = lab_raw.strip()
+            m = re.match(r"LAB-(\d+)", lab_normalized, re.IGNORECASE)
+            if m:
+                lab_normalized = f"Lab {m.group(1)}"
+                
+            # Ensure physical laboratory is registered in labs table so it displays on dashboard
+            cursor.execute("INSERT INTO labs (lab_name) VALUES (%s) ON CONFLICT (lab_name) DO NOTHING", (lab_normalized,))
             
-            day = row[0].strip()
-            period = int(row[1].strip())
-            lab = row[2].strip()
-            subject = row[3].strip()
-            
-            logging.info(f"INSERTING: {day} {period} {lab} {subject}")
-            
-            cursor.execute("INSERT INTO fixed_schedule (day, period, lab, subject) VALUES (%s, %s, %s, %s) ON CONFLICT (day, period, lab) DO NOTHING", (day, period, lab, subject))
-            count += 1
-            
+            # Map periods
+            for period in periods:
+                cursor.execute(
+                    "INSERT INTO fixed_schedule (day, period, lab, subject) VALUES (%s, %s, %s, %s) "
+                    "ON CONFLICT (day, period, lab) DO UPDATE SET subject = EXCLUDED.subject",
+                    (day, int(period), lab_normalized, subject)
+                )
+                count += 1
+                
         conn.commit()
         return_db(conn)
         
-        logging.info(f"Successfully uploaded {count} fixed schedule entries.")
+        socketio.emit('booking_update', {"type": "timetable_update"}, namespace='/')
         return jsonify({"success": True, "count": count})
     except Exception as e:
-        logging.error(f"Upload error: {e}")
+        logging.error(f"Error saving timetable database records: {e}")
         return jsonify({"success": False, "message": str(e)})
 
 

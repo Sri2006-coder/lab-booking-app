@@ -1,0 +1,30 @@
+{
+  "lab_patterns": [
+    "([A-Z]{2,5}\\s+LAB)\\s*\\[(LAB-\\d+)\\]"
+  ],
+  "day_names": [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday"
+  ],
+  "orientation_col": 1,
+  "break_cols": [4, 7, 10],
+  "period_col_mapping": {
+    "2": 1,
+    "3": 2,
+    "5": 3,
+    "6": 4,
+    "8": 5,
+    "9": 6,
+    "11": 7,
+    "12": 8
+  },
+  "metadata_patterns": {
+    "class": "Year/Semester\\s*:\\s*([^\\n\\r\\|\\s]+)",
+    "hall": "Hall\\s*No\\s*:\\s*([^\\n\\r]+)",
+    "advisor": "Class\\s*Advisor\\s*:\\s*([^\\n\\r]+)"
+  }
+}

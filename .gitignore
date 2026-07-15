@@ -28,3 +28,8 @@ __pycache__/
 # Environments
 .env
 *.env
+
+# Secrets & Keys
+firebase_key.json
+*key.json
+*.json.key
