@@ -91,8 +91,8 @@ def parse_timetable_text(page_text, config, is_scanned=False):
         for idx, token in enumerate(periods_tokens):
             period_num = idx + 1
             
-            # Check if this token is a lab token (contains "_[LAB-")
-            if "_[LAB-" in token:
+            # Check if this token is a lab token (contains "_[LAB")
+            if "_[LAB" in token.upper():
                 # Reconstruct subject and lab room
                 # e.g., "DS_LAB_[LAB-1]" -> Subject="DS LAB", Lab="LAB-1"
                 parts = token.split("_[")

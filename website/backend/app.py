@@ -757,7 +757,7 @@ def save_timetable():
                 
             # Normalize lab name (e.g., "LAB-1" -> "Lab 1")
             lab_normalized = lab_raw.strip()
-            m = re.match(r"LAB-(\d+)", lab_normalized, re.IGNORECASE)
+            m = re.match(r"LAB[- ]?(\d+)", lab_normalized, re.IGNORECASE)
             if m:
                 lab_normalized = f"Lab {m.group(1)}"
                 
