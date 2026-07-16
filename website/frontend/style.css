@@ -163,3 +163,30 @@ html, body {
   0%, 100% { transform: scale(1); opacity: 0.9; }
   50% { transform: scale(1.08); opacity: 1; }
 }
+
+/* Tailwind custom fallback classes for absolute compatibility */
+.bg-slate-50 { background-color: #F8FAFC !important; }
+.bg-slate-100 { background-color: #F1F5F9 !important; }
+.bg-slate-200 { background-color: #E2E8F0 !important; }
+.bg-slate-50\/50 { background-color: rgba(248, 250, 252, 0.5) !important; }
+.bg-slate-50\/30 { background-color: rgba(248, 250, 252, 0.3) !important; }
+.bg-brand-50 { background-color: #EFF6FF !important; }
+.bg-brand-600 { background-color: #2563EB !important; }
+.bg-brand-700 { background-color: #1D4ED8 !important; }
+.text-brand-600 { color: #2563EB !important; }
+.text-brand-700 { color: #1D4ED8 !important; }
+.border-brand-100 { border-color: #DBEAFE !important; }
+.border-slate-100 { border-color: #F1F5F9 !important; }
+.border-slate-200 { border-color: #E2E8F0 !important; }
+.border-slate-200\/60 { border-color: rgba(226, 232, 240, 0.6) !important; }
+.shadow-brand-500\/10 { box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.1), 0 2px 4px -2px rgba(37, 99, 235, 0.1) !important; }
+.shadow-brand-500\/20 { box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2), 0 2px 4px -2px rgba(37, 99, 235, 0.2) !important; }
+.focus\:ring-brand-500\/10:focus { --tw-ring-color: rgba(37, 99, 235, 0.1) !important; }
+.focus\:border-brand-500:focus { border-color: #2563EB !important; }
+.text-slate-900 { color: #0F172A !important; }
+.text-slate-800 { color: #1E293B !important; }
+.text-slate-700 { color: #334155 !important; }
+.text-slate-600 { color: #475569 !important; }
+.text-slate-500 { color: #64748B !important; }
+.text-slate-400 { color: #94A3B8 !important; }
+
