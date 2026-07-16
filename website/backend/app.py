@@ -395,59 +395,59 @@ def clear_timetable():
     return_db(conn)
     return jsonify({"success": True})
 
-@app.route('/api/notice', methods=['GET', 'POST'])
-def handle_notice():
+@app.route('/api/booking_history', methods=['GET'])
+def get_booking_history():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
     conn = get_db()
     cursor = conn.cursor()
-    
-    if request.method == 'POST':
-        if 'user_id' not in session or session['role'] != 'admin':
-            return jsonify({"success": False, "message": "Unauthorized"}), 401
-        
-        data = request.get_json()
-        message = data.get('message')
-        # Expires in 1 hour if not specified
-        expires_at = (datetime.now() + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
-        
-        cursor.execute("INSERT INTO announcements (message, expires_at) VALUES (%s, %s)", (message, expires_at))
-        conn.commit()
-        
-        try:
-            socketio.emit('notice_update', {}, namespace='/')
-            
-            cursor.execute("SELECT token FROM fcm_tokens")
-            tokens = [get_first_value(r) for r in cursor.fetchall()]
-
-            # Send push notifications in background thread (non-blocking)
-            if tokens:
-                _send_push_background(tokens, "Admin Notice", message)
-        except Exception as e:
-            logging.error(f"Notice notification error: {e}")
-            
+    try:
+        cursor.execute("""
+            SELECT b.id, l.lab_name, f.name as faculty_name, b.booking_date, b.day, b.period,
+                   CASE 
+                       WHEN b.booking_date >= CURRENT_DATE::text THEN 'Active'
+                       ELSE 'Completed'
+                   END as status
+            FROM bookings b
+            JOIN labs l ON b.lab_id = l.id
+            JOIN faculty f ON b.faculty_id = f.id
+            ORDER BY b.booking_date DESC, b.period ASC
+        """)
+        rows = cursor.fetchall()
+        return jsonify({"success": True, "bookings": [make_row_dict(r, cursor) for r in rows]})
+    except Exception as e:
+        logging.error(f"Error fetching booking history: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
         return_db(conn)
-        return jsonify({"success": True})
-    
-    else:
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        cursor.execute("SELECT * FROM announcements WHERE expires_at > %s ORDER BY id DESC LIMIT 1", (now,))
-        notice = make_row_dict(cursor.fetchone(), cursor)
-        return_db(conn)
-        
-        if notice:
-            remaining = datetime.strptime(notice['expires_at'], "%Y-%m-%d %H:%M:%S") - datetime.now()
-            minutes = max(0, int(remaining.total_seconds() // 60))
-            return jsonify({"message": notice['message'], "minutes": minutes})
-        else:
-            return jsonify(None)
 
-@app.route('/api/notices', methods=['GET'])
-def get_all_notices():
+@app.route('/api/notification_history', methods=['GET'])
+def get_notification_history():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM announcements ORDER BY id DESC")
-    notices = [make_row_dict(row, cursor) for row in cursor.fetchall()]
-    return_db(conn)
-    return jsonify(notices)
+    try:
+        cursor.execute("""
+            SELECT n.id, n.title, n.message, n.notification_type, n.destination, n.status, n.created_at, l.lab_name, f.name as created_by_name
+            FROM notifications n
+            LEFT JOIN labs l ON n.lab_id = l.id
+            LEFT JOIN faculty f ON n.created_by = f.id
+            ORDER BY n.created_at DESC
+        """)
+        rows = cursor.fetchall()
+        notifications = []
+        for r in rows:
+            d = make_row_dict(r, cursor)
+            if d.get("created_at"):
+                d["created_at"] = d["created_at"].strftime("%Y-%m-%d %H:%M:%S")
+            notifications.append(d)
+        return jsonify({"success": True, "notifications": notifications})
+    except Exception as e:
+        logging.error(f"Error fetching notification history: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        return_db(conn)
 
 @app.route('/api/timetable')
 def get_timetable():
@@ -560,7 +560,13 @@ def book_slot():
 
             # 🔔 SEND NOTIFICATION & LIVE UPDATE
             try:
-                socketio.emit('booking_update', {"type": "new_booking"}, namespace='/')
+                socketio.emit('booking_created', {
+                    "lab": lab_name,
+                    "period": period,
+                    "date": date,
+                    "faculty_id": faculty_id,
+                    "faculty_name": session.get('name', 'Faculty')
+                }, namespace='/')
 
                 # Send push notifications in background thread (non-blocking)
                 notif_conn = get_db()
@@ -607,10 +613,20 @@ def cancel_booking(id):
         return_db(conn)
         return jsonify({"success": False, "message": "Forbidden"}), 403
     
+    # Fetch details before delete so we can broadcast them
+    cursor.execute("SELECT b.period, b.booking_date, l.lab_name FROM bookings b JOIN labs l ON b.lab_id = l.id WHERE b.id=%s", (id,))
+    b_details = make_row_dict(cursor.fetchone(), cursor)
+    
     cursor.execute("DELETE FROM bookings WHERE id=%s", (id,))
     conn.commit()
     return_db(conn)
-    socketio.emit('booking_update', {"type": "cancel_booking"}, namespace='/')
+    
+    if b_details:
+        socketio.emit('booking_cancelled', {
+            "lab": b_details['lab_name'].strip(),
+            "period": b_details['period'],
+            "date": b_details['booking_date']
+        }, namespace='/')
     return jsonify({"success": True})
 
 @app.route('/api/upload', methods=['POST'])
@@ -776,7 +792,7 @@ def save_timetable():
         conn.commit()
         return_db(conn)
         
-        socketio.emit('booking_update', {"type": "timetable_update"}, namespace='/')
+        socketio.emit('timetable_updated', {}, namespace='/')
         return jsonify({"success": True, "count": count})
     except Exception as e:
         logging.error(f"Error saving timetable database records: {e}")
@@ -889,7 +905,6 @@ def update_lab_status(lab_id):
         lab = cursor.fetchone()
         
         if not lab:
-            return_db(conn)
             return jsonify({"success": False, "message": "Laboratory not found."}), 404
             
         lab_name = lab['lab_name']
@@ -897,7 +912,6 @@ def update_lab_status(lab_id):
         
         # Duplicate Protection
         if old_status == new_status:
-            return_db(conn)
             return jsonify({
                 "success": True,
                 "message": "No status change required."
@@ -927,17 +941,33 @@ def update_lab_status(lab_id):
             
         # Write notification history
         cursor.execute("""
-            INSERT INTO notifications (lab_id, title, message, notification_type, created_by)
-            VALUES (%s, %s, %s, %s, %s)
-        """, (lab_id, title, message_text, notif_type, session.get('user_id')))
+            INSERT INTO notifications (lab_id, title, message, notification_type, created_by, destination, status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (lab_id, title, message_text, notif_type, session.get('user_id'), "WhatsApp Group + FCM Push + Socket.IO", "Sent"))
         
         conn.commit()
         logging.info(f"STATUS CHANGE: Admin={session.get('user_id')}, Lab={lab_id}, Prev={old_status}, New={new_status}, Timestamp={datetime.now()}")
         
+        # Emit Socket.IO events AFTER successful commit
+        socketio.emit('lab_status_updated', {
+            "lab_id": lab_id,
+            "lab_name": lab_name,
+            "status": new_status,
+            "reason": reason,
+            "expected_end": expected_end
+        }, namespace='/')
+        
+        socketio.emit('notification_created', {
+            "title": title,
+            "message": message_text,
+            "notification_type": notif_type,
+            "destination": "WhatsApp Group + FCM Push + Socket.IO",
+            "status": "Sent"
+        }, namespace='/')
+        
     except Exception as e:
         conn.rollback()
         logging.error(f"Database error during lab status toggle: {e}", exc_info=True)
-        return_db(conn)
         return jsonify({"success": False, "message": "Internal database error occurred."}), 500
         
     finally:
@@ -1134,7 +1164,11 @@ def cancel_booking_custom():
         user_id = session.get('user_id')
         cursor.execute("DELETE FROM bookings WHERE lab_id=%s AND period=%s AND booking_date=%s AND faculty_id=%s", (lab_row['id'], period, date, user_id))
         conn.commit()
-        socketio.emit('booking_update', {"type": "cancel_booking"}, namespace='/')
+        socketio.emit('booking_cancelled', {
+            "lab": lab.strip(),
+            "period": period,
+            "date": date
+        }, namespace='/')
     return_db(conn)
     return jsonify({"success": True})
 

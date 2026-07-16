@@ -6,6 +6,7 @@
     <title>Timetable - Lab Booking</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
     <link rel="stylesheet" href="style.css">
     <script>
@@ -90,10 +91,6 @@
 
         <!-- Main Content -->
         <main class="flex-1 px-4 md:px-6 lg:px-8 py-4 md:py-6 w-full max-w-7xl mx-auto">
-        <!-- Notice Bar -->
-        <div id="notice-bar" class="hidden mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800 font-medium shadow-sm flex items-center">
-            <span class="mr-2">🔔</span> <span id="notice-text-content"></span>
-        </div>
         
         <!-- Date Header Card -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-5 flex flex-col space-y-3">
@@ -163,16 +160,7 @@
             document.getElementById('mobile-menu').classList.toggle('hidden');
         }
 
-        async function fetchNotice() {
-            try {
-                const data = await safeFetch('/api/notice');
-                if (data) {
-                    const bar = document.getElementById('notice-bar');
-                    bar.innerHTML = `<span>🔔 ${data.message} (${data.minutes} mins remaining)</span>`;
-                    bar.classList.remove('hidden');
-                }
-            } catch(e) {}
-        }
+
 
         async function loadUser() {
             try {
@@ -500,7 +488,6 @@
 
         window.onload = async function() {
             await loadUser();
-            fetchNotice();
             await initializeDashboard();
 
             // Check if we need to show permission box
@@ -550,6 +537,49 @@
             console.log("Found stored token, re-syncing...");
             saveToken(storedToken);
         }
+
+        // Initialize Socket.io connection for real-time dashboard updates
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? '' : 'https://lab-booking-app.onrender.com';
+        const socket = io(API_BASE);
+        
+        socket.on('lab_status_updated', (data) => {
+            console.log("⚡ Real-time Event: lab_status_updated", data);
+            const lab = labs.find(l => l.id == data.lab_id);
+            if (lab) {
+                lab.status = data.status;
+                lab.maintenance_reason = data.reason;
+                lab.maintenance_end = data.expected_end;
+                renderDashboard();
+            } else {
+                loadLabs().then(() => renderDashboard());
+            }
+        });
+        
+        socket.on('booking_created', (data) => {
+            console.log("⚡ Real-time Event: booking_created", data);
+            const exists = bookings.some(b => b.lab === data.lab && b.period === data.period && b.booking_date === data.date);
+            if (!exists) {
+                bookings.push({
+                    lab: data.lab,
+                    period: data.period,
+                    booking_date: data.date,
+                    faculty_id: data.faculty_id,
+                    faculty_name: data.faculty_name
+                });
+                renderDashboard();
+            }
+        });
+        
+        socket.on('booking_cancelled', (data) => {
+            console.log("⚡ Real-time Event: booking_cancelled", data);
+            bookings = bookings.filter(b => !(b.lab === data.lab && b.period === data.period && b.booking_date === data.date));
+            renderDashboard();
+        });
+        
+        socket.on('timetable_updated', () => {
+            console.log("⚡ Real-time Event: timetable_updated");
+            loadTimetable().then(() => renderDashboard());
+        });
     </script>
     </div> <!-- End Main Content Wrapper -->
     <!-- FIREBASE NOTIFICATION START -->

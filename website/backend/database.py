@@ -143,8 +143,16 @@ def init_db():
         message TEXT NOT NULL,
         notification_type TEXT NOT NULL,
         created_by INTEGER REFERENCES faculty(id) ON DELETE SET NULL,
+        destination TEXT DEFAULT 'All (WhatsApp, FCM, Socket)',
+        status TEXT DEFAULT 'Sent',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
+    ''')
+    
+    # Run migration to add columns if they don't exist
+    cursor.execute('''
+    ALTER TABLE notifications ADD COLUMN IF NOT EXISTS destination TEXT DEFAULT 'All (WhatsApp, FCM, Socket)';
+    ALTER TABLE notifications ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Sent';
     ''')
     
     conn.commit()

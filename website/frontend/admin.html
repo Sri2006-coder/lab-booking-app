@@ -37,16 +37,6 @@
 
     <!-- Main Content -->
     <main class="flex-1 px-4 py-5 w-full max-w-lg mx-auto">
-        <!-- Notice Display -->
-        <div id="notice-container" class="hidden mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl shadow-sm">
-            <div class="flex items-start">
-                <span class="text-xl mr-3">🔔</span>
-                <div>
-                    <p class="font-semibold text-yellow-900" id="notice-text"></p>
-                    <p class="text-sm text-yellow-700 mt-1">⏳ Ends in <span id="notice-mins" class="font-bold"></span> mins</p>
-                </div>
-            </div>
-        </div>
 
         <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 px-1">System Overview</h3>
         
@@ -70,16 +60,6 @@
         
         <!-- Action Cards Grid -->
         <div class="grid grid-cols-2 gap-3 mb-8">
-            <a href="add_lab.html" style="display: none;" class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col items-center justify-center text-center active:scale-95 transition">
-                <span class="text-3xl mb-2">➕</span>
-                <span class="text-sm font-semibold text-gray-800">Add Lab</span>
-            </a>
-            
-            <a href="admin_notice.html" class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col items-center justify-center text-center active:scale-95 transition">
-                <span class="text-3xl mb-2">🔔</span>
-                <span class="text-sm font-semibold text-gray-800">Post Notice</span>
-            </a>
-
             <a href="dashboard.html" class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col items-center justify-center text-center active:scale-95 transition col-span-2">
                 <span class="text-3xl mb-2">📅</span>
                 <span class="text-sm font-semibold text-gray-800">View Timetable</span>
@@ -110,10 +90,20 @@
                 </div>
             </div>
             
-            <div class="mb-4 bg-gray-50 rounded-lg p-3 border border-gray-200 text-sm text-gray-600">
-                <p class="font-bold text-gray-700 mb-1 flex items-center flex-wrap">Format: <span class="font-normal font-mono text-xs bg-gray-200 px-1.5 py-0.5 ml-2 rounded border border-gray-300">day, period, lab, subject</span></p>
-                <p class="flex items-center mt-1 flex-wrap">Example: <span class="font-mono text-xs bg-gray-200 px-1.5 py-0.5 ml-1 rounded border border-gray-300">Monday, 1, Lab 1, WT Lab</span></p>
-                <p class="mt-2 text-xs text-gray-500 italic">(Note: spaces are allowed)</p>
+            <div class="mb-4 bg-gray-50 rounded-lg p-4 border border-gray-200 text-xs sm:text-sm text-gray-600">
+                <p class="font-bold text-gray-800 mb-2">Upload Official Timetable</p>
+                <div class="flex items-center space-x-4 mb-3 border-b border-gray-200 pb-2">
+                    <span class="font-semibold text-gray-700">Supported Formats:</span>
+                    <span class="bg-indigo-50 border border-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-xs font-bold font-mono">✓ PDF</span>
+                    <span class="bg-indigo-50 border border-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-xs font-bold font-mono">✓ CSV</span>
+                </div>
+                <p class="font-semibold text-gray-700 mb-1">Workflow Steps:</p>
+                <ol class="list-decimal pl-4 space-y-1 mt-1 text-gray-500">
+                    <li>Upload the PDF/CSV department schedule sheet.</li>
+                    <li>Schedules and physical rooms are extracted automatically.</li>
+                    <li>Verify, edit, or adjust entries inside the live preview table.</li>
+                    <li>Click **Save All** to commit changes to the active database.</li>
+                </ol>
             </div>
 
             <input type="file" id="csv-file" accept=".csv,.pdf" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer mb-3 outline-none border border-gray-200 rounded-lg p-1">
@@ -213,6 +203,67 @@
             </div>
         </div>
 
+        <!-- Booking History Widget -->
+        <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 px-1 mt-6">Booking History</h3>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center">
+                    <span class="text-2xl mr-2">📊</span>
+                    <h4 class="font-semibold text-gray-800">Reservations Log</h4>
+                </div>
+                <button onclick="fetchBookingHistory()" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800">Refresh</button>
+            </div>
+            <div class="overflow-x-auto border border-gray-100 rounded-lg">
+                <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-100 text-gray-600 font-bold">
+                            <th class="p-3">Lab</th>
+                            <th class="p-3">Faculty</th>
+                            <th class="p-3">Date</th>
+                            <th class="p-3">Day</th>
+                            <th class="p-3">Periods</th>
+                            <th class="p-3">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="booking-history-body" class="divide-y divide-gray-100">
+                        <tr>
+                            <td colspan="6" class="text-xs text-gray-400 text-center py-4">Loading bookings...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Notification History Widget -->
+        <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 px-1 mt-6">Notification History</h3>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center">
+                    <span class="text-2xl mr-2">💬</span>
+                    <h4 class="font-semibold text-gray-800">Alerts & Messaging Log</h4>
+                </div>
+                <button onclick="fetchNotificationHistory()" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800">Refresh</button>
+            </div>
+            <div class="overflow-x-auto border border-gray-100 rounded-lg">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-100 text-gray-600 font-bold">
+                            <th class="p-3">Time</th>
+                            <th class="p-3">Type</th>
+                            <th class="p-3">Destination</th>
+                            <th class="p-3">Status</th>
+                            <th class="p-3">Created By</th>
+                        </tr>
+                    </thead>
+                    <tbody id="notification-history-body" class="divide-y divide-gray-100">
+                        <tr>
+                            <td colspan="5" class="text-xs text-gray-400 text-center py-4">Loading notifications...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     </main>
 
     <!-- Maintenance Modal -->
@@ -276,18 +327,6 @@
                 document.getElementById('active-labs').innerText = data.active_labs;
                 document.getElementById('faculty-users').innerText = data.faculty_users;
             } catch (e) {}
-        }
-
-        async function fetchNotice() {
-            try {
-                const res = await fetch('/api/notice');
-                const data = await res.json();
-                if (data) {
-                    document.getElementById('notice-container').classList.remove('hidden');
-                    document.getElementById('notice-text').innerText = data.message;
-                    document.getElementById('notice-mins').innerText = data.minutes;
-                }
-            } catch(e) {}
         }
 
         async function uploadFaculty() {
@@ -625,6 +664,12 @@
             const container = document.getElementById('labs-list-container');
             if(!container) return;
             try {
+                // Fetch bookings log once to match "Current Booking"
+                const bookingsRes = await fetch('/api/booking_history');
+                const bookingsData = await bookingsRes.json();
+                const allBookings = bookingsData.success ? bookingsData.bookings : [];
+                const todayStr = new Date().toISOString().split('T')[0];
+
                 const res = await fetch('/api/labs');
                 const labs = await res.json();
                 if (Array.isArray(labs)) {
@@ -638,24 +683,39 @@
                         const badgeColor = isMaint ? 'bg-red-100 text-red-800 border-red-200' : 'bg-green-100 text-green-800 border-green-200';
                         const badgeText = isMaint ? '🔴 Under Maintenance' : '🟢 Active';
                         
-                        let detailsHtml = '';
+                        const currentBookings = allBookings.filter(b => b.lab_name === lab.lab_name && b.booking_date === todayStr && b.status === 'Active');
+                        let bookingText = '<span class="text-gray-500 italic">No bookings today</span>';
+                        if (currentBookings.length > 0) {
+                            bookingText = currentBookings.map(b => `<span class="bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded text-[11px] font-mono text-gray-700">P${b.period} (${b.faculty_name})</span>`).join(' ');
+                        }
+
+                        const lastMaint = lab.maintenance_start ? lab.maintenance_start.split(' ')[0] : 'N/A';
+
+                        let detailsHtml = `
+                            <div class="mt-2.5 p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs space-y-1 text-gray-600">
+                                <p><strong>Current Booking:</strong> ${bookingText}</p>
+                                <p><strong>Last Maintenance Date:</strong> <span class="font-mono">${lastMaint}</span></p>
+                            </div>
+                        `;
                         if (isMaint) {
                             const reason = lab.maintenance_reason || 'N/A';
                             const completionDate = lab.maintenance_end ? lab.maintenance_end.split(' ')[0] : 'TBD';
                             detailsHtml = `
-                                <div class="mt-2 p-2.5 bg-red-50 rounded-lg text-xs text-red-700 border border-red-100">
-                                    <p><strong>Reason:</strong> ${reason}</p>
-                                    <p class="mt-1"><strong>Expected End:</strong> ${completionDate}</p>
+                                <div class="mt-2.5 p-3 bg-red-50 border border-red-100 rounded-lg text-xs space-y-1 text-red-700">
+                                    <p><strong>Current Booking:</strong> ${bookingText}</p>
+                                    <p><strong>Last Maintenance Date:</strong> <span class="font-mono">${lastMaint}</span></p>
+                                    <p class="pt-1.5 border-t border-red-100"><strong>Reason:</strong> ${reason}</p>
+                                    <p><strong>Expected End:</strong> <span class="font-mono font-semibold">${completionDate}</span></p>
                                 </div>
                             `;
                         }
                         
                         const actionBtn = isMaint 
-                            ? `<button onclick="setActiveStatus(${lab.id})" class="text-xs font-bold text-emerald-600 hover:text-white border border-emerald-500 hover:bg-emerald-500 px-3 py-1.5 rounded-lg active:scale-95 transition">Set Active</button>`
-                            : `<button onclick="openMaintenanceModal(${lab.id}, '${lab.lab_name}')" class="text-xs font-bold text-gray-500 hover:text-white border border-gray-300 hover:bg-gray-500 px-3 py-1.5 rounded-lg active:scale-95 transition">Put Under Maintenance</button>`;
+                            ? `<button onclick="setActiveStatus(${lab.id})" class="text-xs font-bold text-emerald-600 hover:text-white border border-emerald-500 hover:bg-emerald-500 px-3 py-1.5 rounded-lg active:scale-95 transition shadow-sm">Restore</button>`
+                            : `<button onclick="openMaintenanceModal(${lab.id}, '${lab.lab_name}')" class="text-xs font-bold text-gray-500 hover:text-white border border-gray-300 hover:bg-gray-500 px-3 py-1.5 rounded-lg active:scale-95 transition shadow-sm">Put Under Maintenance</button>`;
                             
                         html += `
-                        <div class="bg-gray-50 rounded-xl p-4 border border-gray-100 shadow-sm flex flex-col justify-between">
+                        <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex flex-col justify-between">
                             <div class="flex justify-between items-center w-full">
                                 <div>
                                     <p class="text-sm font-bold text-gray-800 flex items-center">
@@ -728,6 +788,7 @@
                     showToast(data.message || "Lab put under maintenance.", "success");
                     fetchLabsList();
                     fetchStats();
+                    fetchNotificationHistory();
                 } else {
                     showToast(data.message || "Failed to update lab status.", "error");
                 }
@@ -753,6 +814,7 @@
                     showToast(data.message || "Lab is now active.", "success");
                     fetchLabsList();
                     fetchStats();
+                    fetchNotificationHistory();
                 } else {
                     showToast(data.message || "Failed to update lab status.", "error");
                 }
@@ -762,12 +824,89 @@
             }
         }
 
+        async function fetchBookingHistory() {
+            const tbody = document.getElementById('booking-history-body');
+            if(!tbody) return;
+            try {
+                const res = await fetch('/api/booking_history');
+                const data = await res.json();
+                if (data.success) {
+                    if (data.bookings.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-xs text-gray-400 text-center py-4">No bookings logged in history.</td></tr>';
+                        return;
+                    }
+                    let html = '';
+                    data.bookings.forEach(b => {
+                        const statusColor = b.status === 'Active' ? 'text-emerald-600 bg-emerald-50' : 'text-gray-500 bg-gray-50';
+                        html += `
+                        <tr class="hover:bg-gray-50">
+                            <td class="p-3 font-semibold text-gray-800">${b.lab_name}</td>
+                            <td class="p-3 text-gray-600">${b.faculty_name}</td>
+                            <td class="p-3 text-gray-600 font-mono">${b.booking_date}</td>
+                            <td class="p-3 text-gray-500">${b.day}</td>
+                            <td class="p-3 text-gray-600 font-mono">${b.period}</td>
+                            <td class="p-3">
+                                <span class="px-2 py-0.5 rounded text-xs font-bold ${statusColor}">${b.status}</span>
+                            </td>
+                        </tr>
+                        `;
+                    });
+                    tbody.innerHTML = html;
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-xs text-red-500 text-center py-4">Failed to load booking history.</td></tr>';
+                }
+            } catch (err) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-xs text-red-500 text-center py-4">Error loading booking history.</td></tr>';
+            }
+        }
+
+        async function fetchNotificationHistory() {
+            const tbody = document.getElementById('notification-history-body');
+            if(!tbody) return;
+            try {
+                const res = await fetch('/api/notification_history');
+                const data = await res.json();
+                if (data.success) {
+                    if (data.notifications.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" class="text-xs text-gray-400 text-center py-4">No alerts logged in history.</td></tr>';
+                        return;
+                    }
+                    let html = '';
+                    data.notifications.forEach(n => {
+                        let typeColor = 'text-gray-600 bg-gray-50';
+                        if (n.notification_type === 'maintenance_start') typeColor = 'text-amber-700 bg-amber-50';
+                        if (n.notification_type === 'maintenance_end') typeColor = 'text-emerald-700 bg-emerald-50';
+                        
+                        html += `
+                        <tr class="hover:bg-gray-50">
+                            <td class="p-3 text-gray-600 font-mono text-xs whitespace-nowrap">${n.created_at}</td>
+                            <td class="p-3">
+                                <span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold ${typeColor}">${n.notification_type.replace('_', ' ')}</span>
+                            </td>
+                            <td class="p-3 text-gray-600">${n.destination || 'N/A'}</td>
+                            <td class="p-3">
+                                <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold text-emerald-800 bg-emerald-100">${n.status || 'Sent'}</span>
+                            </td>
+                            <td class="p-3 text-gray-700 font-semibold">${n.created_by_name || 'System'}</td>
+                        </tr>
+                        `;
+                    });
+                    tbody.innerHTML = html;
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-xs text-red-500 text-center py-4">Failed to load notification history.</td></tr>';
+                }
+            } catch (err) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-xs text-red-500 text-center py-4">Error loading notification history.</td></tr>';
+            }
+        }
+
         checkAdmin().then(() => {
             fetchStats();
-            fetchNotice();
             fetchLimit();
             fetchFacultyList();
             fetchLabsList();
+            fetchBookingHistory();
+            fetchNotificationHistory();
         });
     </script>
 </body>

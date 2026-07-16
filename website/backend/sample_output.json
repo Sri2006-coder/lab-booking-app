@@ -1,0 +1,311 @@
+[
+  {
+    "class": "II-A",
+    "day": "Monday",
+    "periods": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "subject": "DS LAB",
+    "lab": "LAB-1",
+    "confidence": 95
+  },
+  {
+    "class": "II-A",
+    "day": "Tuesday",
+    "periods": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "subject": "OOPS LAB",
+    "lab": "LAB-2",
+    "confidence": 95
+  },
+  {
+    "class": "II-A",
+    "day": "Wednesday",
+    "periods": [
+      3,
+      4
+    ],
+    "subject": "FSD LAB",
+    "lab": "LAB-7",
+    "confidence": 95
+  },
+  {
+    "class": "II-A",
+    "day": "Wednesday",
+    "periods": [
+      7,
+      8
+    ],
+    "subject": "SKILL LAB",
+    "lab": "LAB-3",
+    "confidence": 95
+  },
+  {
+    "class": "II-A",
+    "day": "Thursday",
+    "periods": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "subject": "OS LAB",
+    "lab": "LAB-5",
+    "confidence": 95
+  },
+  {
+    "class": "II-B",
+    "day": "Monday",
+    "periods": [
+      3,
+      4
+    ],
+    "subject": "FSD LAB",
+    "lab": "LAB-7",
+    "confidence": 95
+  },
+  {
+    "class": "II-B",
+    "day": "Monday",
+    "periods": [
+      7,
+      8
+    ],
+    "subject": "SKILL LAB",
+    "lab": "LAB-3",
+    "confidence": 95
+  },
+  {
+    "class": "II-B",
+    "day": "Tuesday",
+    "periods": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "subject": "OS LAB",
+    "lab": "LAB-5",
+    "confidence": 95
+  },
+  {
+    "class": "II-B",
+    "day": "Wednesday",
+    "periods": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "subject": "DS LAB",
+    "lab": "LAB-1",
+    "confidence": 95
+  },
+  {
+    "class": "II-B",
+    "day": "Thursday",
+    "periods": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "subject": "OOPS LAB",
+    "lab": "LAB-2",
+    "confidence": 95
+  },
+  {
+    "class": "III-A",
+    "day": "Monday",
+    "periods": [
+      3,
+      4
+    ],
+    "subject": "AI LAB",
+    "lab": "LAB-8",
+    "confidence": 95
+  },
+  {
+    "class": "III-A",
+    "day": "Monday",
+    "periods": [
+      6,
+      7
+    ],
+    "subject": "SKILL LAB",
+    "lab": "LAB-3",
+    "confidence": 95
+  },
+  {
+    "class": "III-A",
+    "day": "Tuesday",
+    "periods": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "subject": "CN LAB",
+    "lab": "LAB-6",
+    "confidence": 95
+  },
+  {
+    "class": "III-A",
+    "day": "Wednesday",
+    "periods": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "subject": "CN LAB",
+    "lab": "LAB-6",
+    "confidence": 75
+  },
+  {
+    "class": "III-A",
+    "day": "Thursday",
+    "periods": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "subject": "FSD LAB",
+    "lab": "LAB-7",
+    "confidence": 95
+  },
+  {
+    "class": "III-A",
+    "day": "Friday",
+    "periods": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "subject": "FSD LAB",
+    "lab": "LAB-7",
+    "confidence": 95
+  },
+  {
+    "class": "III-B",
+    "day": "Monday",
+    "periods": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "subject": "CN LAB",
+    "lab": "LAB-6",
+    "confidence": 95
+  },
+  {
+    "class": "III-B",
+    "day": "Tuesday",
+    "periods": [
+      3,
+      4
+    ],
+    "subject": "AI LAB",
+    "lab": "LAB-8",
+    "confidence": 95
+  },
+  {
+    "class": "III-B",
+    "day": "Wednesday",
+    "periods": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "subject": "FSD LAB",
+    "lab": "Unknown",
+    "confidence": 65
+  },
+  {
+    "class": "III-B",
+    "day": "Thursday",
+    "periods": [
+      7,
+      8
+    ],
+    "subject": "SKILL LAB",
+    "lab": "LAB-3",
+    "confidence": 95
+  },
+  {
+    "class": "III-B",
+    "day": "Friday",
+    "periods": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "subject": "CN LAB",
+    "lab": "LAB-6",
+    "confidence": 95
+  },
+  {
+    "class": "IV-A",
+    "day": "Monday",
+    "periods": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "subject": "AI LAB",
+    "lab": "LAB-8",
+    "confidence": 95
+  },
+  {
+    "class": "IV-A",
+    "day": "Tuesday",
+    "periods": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "subject": "SKILL LAB",
+    "lab": "LAB-3",
+    "confidence": 95
+  },
+  {
+    "class": "IV-A",
+    "day": "Thursday",
+    "periods": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "subject": "AI LAB",
+    "lab": "LAB-8",
+    "confidence": 78
+  },
+  {
+    "class": "IV-A",
+    "day": "Friday",
+    "periods": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "subject": "SKILL LAB",
+    "lab": "LAB-3",
+    "confidence": 95
+  }
+]

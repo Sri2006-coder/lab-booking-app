@@ -1,0 +1,156 @@
+[
+  {
+    "class": "II-A",
+    "day": "Monday",
+    "periods": [
+      5,
+      6,
+      7
+    ],
+    "subject": "DS LAB",
+    "lab": "LAB-1"
+  },
+  {
+    "class": "II-A",
+    "day": "Tuesday",
+    "periods": [
+      5,
+      6,
+      7
+    ],
+    "subject": "OOPS LAB",
+    "lab": "LAB-2"
+  },
+  {
+    "class": "II-A",
+    "day": "Saturday",
+    "periods": [
+      5,
+      6,
+      7
+    ],
+    "subject": "SKILL LAB",
+    "lab": "LAB-3"
+  },
+  {
+    "class": "II-B",
+    "day": "Wednesday",
+    "periods": [
+      5,
+      6,
+      7
+    ],
+    "subject": "DS LAB",
+    "lab": "LAB-1"
+  },
+  {
+    "class": "II-B",
+    "day": "Thursday",
+    "periods": [
+      5,
+      6,
+      7
+    ],
+    "subject": "OOPS LAB",
+    "lab": "LAB-2"
+  },
+  {
+    "class": "II-B",
+    "day": "Saturday",
+    "periods": [
+      5,
+      6,
+      7
+    ],
+    "subject": "SKILL LAB",
+    "lab": "LAB-3"
+  },
+  {
+    "class": "III-A",
+    "day": "Monday",
+    "periods": [
+      5,
+      6,
+      7
+    ],
+    "subject": "OS LAB",
+    "lab": "LAB-5"
+  },
+  {
+    "class": "III-A",
+    "day": "Tuesday",
+    "periods": [
+      5,
+      6,
+      7
+    ],
+    "subject": "CN LAB",
+    "lab": "LAB-6"
+  },
+  {
+    "class": "III-A",
+    "day": "Wednesday",
+    "periods": [
+      5,
+      6,
+      7
+    ],
+    "subject": "FSD LAB",
+    "lab": "LAB-7"
+  },
+  {
+    "class": "III-B",
+    "day": "Thursday",
+    "periods": [
+      5,
+      6,
+      7
+    ],
+    "subject": "OS LAB",
+    "lab": "LAB-5"
+  },
+  {
+    "class": "III-B",
+    "day": "Friday",
+    "periods": [
+      5,
+      6,
+      7
+    ],
+    "subject": "CN LAB",
+    "lab": "LAB-6"
+  },
+  {
+    "class": "III-B",
+    "day": "Saturday",
+    "periods": [
+      5,
+      6,
+      7
+    ],
+    "subject": "FSD LAB",
+    "lab": "LAB-7"
+  },
+  {
+    "class": "IV-A",
+    "day": "Wednesday",
+    "periods": [
+      5,
+      6,
+      7
+    ],
+    "subject": "AI LAB",
+    "lab": "LAB-8"
+  },
+  {
+    "class": "IV-A",
+    "day": "Thursday",
+    "periods": [
+      5,
+      6,
+      7
+    ],
+    "subject": "SKILL LAB",
+    "lab": "LAB-3"
+  }
+]
