@@ -2,12 +2,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Add Lab - Lab Booking</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="style.css">
     <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            500: '#2563eb',
+                            600: '#1d4ed8',
+                            700: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        };
+
         (function() {
             const originalFetch = window.fetch;
             const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? '' : 'https://lab-booking-app.onrender.com';
@@ -23,37 +42,46 @@
         })();
     </script>
 </head>
-<body class="bg-gray-50 flex flex-col min-h-screen">
+<body class="bg-slate-50 flex flex-col min-h-screen text-slate-900 select-none pb-10">
 
     <!-- Top Navbar -->
-    <nav class="bg-indigo-600 text-white sticky top-0 z-40 shadow-md flex items-center justify-between px-4 py-3">
-        <div class="flex items-center">
-            <button onclick="window.history.back()" class="mr-3 p-1 rounded-full hover:bg-white/20 active:scale-95 transition">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+    <nav class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white sticky top-0 z-40 shadow-lg px-6 py-4 flex justify-between items-center border-b border-indigo-900/30">
+        <div class="flex items-center space-x-3">
+            <button onclick="window.history.back()" class="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition active:scale-95">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
             </button>
-            <h1 class="font-bold text-xl tracking-tight">➕ Add Lab</h1>
+            <h1 class="font-extrabold text-lg tracking-tight">Add Laboratory</h1>
+        </div>
+        <div class="bg-white/10 p-2 rounded-xl text-white">
+            <i data-lucide="plus" class="w-4 h-4"></i>
         </div>
     </nav>
 
-    <main class="flex-1 px-4 py-6 w-full max-w-md mx-auto">
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <h3 class="text-xl font-bold text-gray-800 mb-2">Lab Details</h3>
-            <p class="text-sm text-gray-500 mb-6">Create a new lab or hall in the system.</p>
+    <main class="flex-1 px-4 py-8 w-full max-w-md mx-auto space-y-6">
+        <div class="bg-white rounded-3xl border border-slate-200/60 p-6 shadow-sm">
+            <h3 class="text-lg font-extrabold text-slate-800 mb-2">Space Details</h3>
+            <p class="text-xs text-slate-400 mb-6">Create a new laboratory room or conference hall in the system.</p>
 
-            <div id="status" class="hidden mb-4 p-3 rounded-lg text-sm font-medium text-center"></div>
+            <div id="status" class="hidden mb-5 p-4 rounded-2xl text-xs font-bold text-center slide-down"></div>
 
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Lab Name</label>
-                    <input type="text" id="lab-name" placeholder="E.g. Computer Lab 8" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-gray-50 focus:bg-white text-gray-900">
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lab / Space Name</label>
+                    <input type="text" id="lab-name" placeholder="E.g. Computer Lab 8" class="w-full px-4 py-3.5 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition bg-slate-50/50 focus:bg-white text-sm text-slate-900 font-semibold md3-input">
                 </div>
                 
-                <button onclick="addLab()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-md active:scale-95 transition text-lg mt-2">Add Lab</button>
+                <button onclick="addLab()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-4 rounded-2xl shadow-lg transition active:scale-[0.98] text-sm ripple">
+                    Create Space
+                </button>
             </div>
         </div>
     </main>
 
     <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+
         async function addLab() {
             const name = document.getElementById('lab-name').value;
             const status = document.getElementById('status');
@@ -70,16 +98,17 @@
                 status.classList.remove('hidden', 'bg-red-50', 'text-red-700', 'bg-green-50', 'text-green-700');
                 if (data.success) {
                     status.innerText = "✅ Lab added successfully";
-                    status.classList.add('bg-green-50', 'text-green-700');
+                    status.classList.add('bg-green-50', 'text-emerald-700', 'border', 'border-emerald-100');
                     document.getElementById('lab-name').value = '';
                 } else {
                     status.innerText = "❌ Error: " + data.message;
-                    status.classList.add('bg-red-50', 'text-red-700');
+                    status.classList.add('bg-red-50', 'text-red-700', 'border', 'border-red-100');
                 }
+                status.classList.remove('hidden');
             } catch(e) {
                 status.innerText = "❌ Server Error";
                 status.classList.remove('hidden');
-                status.classList.add('bg-red-50', 'text-red-700');
+                status.classList.add('bg-red-50', 'text-red-700', 'border', 'border-red-100');
             }
         }
     </script>

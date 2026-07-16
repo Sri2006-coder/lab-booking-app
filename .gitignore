@@ -33,3 +33,8 @@ __pycache__/
 firebase_key.json
 *key.json
 *.json.key
+
+# Timetable outputs and logs
+*.pdf
+*.log
+*.txt

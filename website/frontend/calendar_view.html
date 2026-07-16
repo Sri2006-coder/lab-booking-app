@@ -2,12 +2,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Calendar - Lab Booking</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="style.css">
     <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            500: '#2563eb',
+                            600: '#1d4ed8',
+                            700: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        };
+
         (function() {
             const originalFetch = window.fetch;
             const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? '' : 'https://lab-booking-app.onrender.com';
@@ -23,28 +42,84 @@
         })();
     </script>
 </head>
-<body class="bg-gray-50 flex flex-col min-h-screen">
+<body class="bg-slate-50 flex flex-col min-h-screen pb-20 select-none safe-area-bottom">
 
     <!-- Top Navbar -->
-    <nav class="bg-blue-600 text-white sticky top-0 z-40 shadow-md flex items-center justify-between px-4 py-3">
-        <div class="flex items-center">
-            <button onclick="window.location.href='dashboard.html'" class="mr-3 p-1 rounded-full hover:bg-white/20 active:scale-95 transition">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+    <nav class="bg-gradient-to-r from-brand-600 to-indigo-800 text-white sticky top-0 z-40 shadow-md px-4 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <button onclick="window.location.href='dashboard.html'" class="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition active:scale-95">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
             </button>
-            <h1 class="font-bold text-xl tracking-tight">📆 Calendar</h1>
+            <h1 class="font-extrabold text-lg tracking-tight">Calendar Overview</h1>
+        </div>
+        <div class="bg-white/10 p-2 rounded-xl text-white">
+            <i data-lucide="calendar" class="w-4 h-4"></i>
         </div>
     </nav>
 
-    <main class="flex-1 px-4 py-5 w-full max-w-lg mx-auto">
-        <h2 id="calendar-title" class="text-center text-xl font-bold text-gray-800 mb-6 uppercase tracking-wide">Loading...</h2>
+    <!-- Main Content -->
+    <main class="flex-1 px-4 py-6 w-full max-w-lg mx-auto space-y-6">
+        
+        <!-- Month title banner -->
+        <div class="bg-white rounded-3xl border border-slate-200/60 p-4 shadow-sm text-center">
+            <h2 id="calendar-title" class="text-sm font-extrabold text-slate-800 uppercase tracking-widest">Loading month...</h2>
+        </div>
 
-        <!-- Mobile-friendly 7 column grid, but tightly packed -->
-        <div id="calendar-grid" class="grid grid-cols-4 sm:grid-cols-7 gap-2 pb-8">
-            <!-- Days injected here -->
+        <!-- Legend Details Card -->
+        <div class="bg-white rounded-3xl border border-slate-200/60 p-4 shadow-sm flex justify-around text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+            <div class="flex items-center space-x-1.5">
+                <span class="w-2 h-2 rounded-full bg-brand-500"></span>
+                <span>Today</span>
+            </div>
+            <div class="flex items-center space-x-1.5">
+                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                <span>Has Bookings</span>
+            </div>
+            <div class="flex items-center space-x-1.5">
+                <span class="w-2 h-2 rounded-full bg-slate-300"></span>
+                <span>Available</span>
+            </div>
+        </div>
+
+        <!-- Mobile-friendly calendar grid -->
+        <div id="calendar-grid" class="grid grid-cols-4 gap-2 pb-8">
+             <!-- Calendar day cards injected dynamically -->
         </div>
     </main>
 
+    <!-- Bottom Navigation Bar (Mobile only) -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200/80 px-4 py-2 z-40 flex justify-around items-center shadow-2xl safe-area-bottom">
+        <a href="dashboard.html" class="flex flex-col items-center space-y-1 text-slate-400">
+            <div class="nav-pill py-1 px-4 rounded-full flex items-center justify-center">
+                <i data-lucide="home" class="w-5 h-5"></i>
+            </div>
+            <span class="text-[9px] font-bold tracking-wider">Home</span>
+        </a>
+        <a href="calendar_view.html" class="flex flex-col items-center space-y-1 text-brand-600">
+            <div class="nav-pill nav-pill-active py-1 px-4 rounded-full flex items-center justify-center">
+                <i data-lucide="calendar" class="w-5 h-5"></i>
+            </div>
+            <span class="text-[9px] font-bold tracking-wider">Calendar</span>
+        </a>
+        <a href="mybookings.html" class="flex flex-col items-center space-y-1 text-slate-400">
+            <div class="nav-pill py-1 px-4 rounded-full flex items-center justify-center">
+                <i data-lucide="file-text" class="w-5 h-5"></i>
+            </div>
+            <span class="text-[9px] font-bold tracking-wider">Bookings</span>
+        </a>
+        <a href="dashboard.html?tab=profile" class="flex flex-col items-center space-y-1 text-slate-400">
+            <div class="nav-pill py-1 px-4 rounded-full flex items-center justify-center">
+                <i data-lucide="user" class="w-5 h-5"></i>
+            </div>
+            <span class="text-[9px] font-bold tracking-wider">Profile</span>
+        </a>
+    </nav>
+
     <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+
         async function loadCalendar() {
             try {
                 const res = await fetch('/api/calendar');
@@ -62,28 +137,30 @@
                 data.days.forEach(d => {
                     const dayDiv = document.createElement('div');
                     
-                    let baseClass = "bg-white rounded-xl shadow-sm border p-3 flex flex-col items-center justify-center text-center transition active:scale-95 cursor-pointer";
+                    let borderClass = "border-slate-100 hover:border-slate-200 bg-white";
                     let stateClass = "";
-                    let indicator = "";
+                    let indicatorColor = "bg-slate-300";
+                    let label = "Free";
 
                     if(d.status === 'today') {
-                        stateClass = "border-blue-500 bg-blue-50";
-                        indicator = "<div class='w-1.5 h-1.5 bg-blue-500 rounded-full mt-1 absolute top-2 right-2'></div>";
+                        borderClass = "border-brand-500 bg-brand-50/50 ring-1 ring-brand-500";
+                        indicatorColor = "bg-brand-500";
                     } else if(d.status === 'booked') {
-                        stateClass = "border-orange-500 bg-orange-50";
-                    } else {
-                        stateClass = "border-gray-200";
+                        borderClass = "border-amber-100 bg-amber-50/30";
+                        indicatorColor = "bg-amber-500";
+                        label = "Booked";
                     }
 
-                    dayDiv.className = `${baseClass} ${stateClass} relative`;
+                    dayDiv.className = `rounded-2xl border p-3.5 flex flex-col items-center justify-center text-center cursor-pointer transition active:scale-95 shadow-sm ${borderClass}`;
                     
                     dayDiv.innerHTML = `
-                        ${indicator}
-                        <b class="text-lg text-gray-900">${d.day}</b>
-                        <span class="text-[10px] font-bold mt-1 text-gray-500 uppercase tracking-wider">${d.booked ? 'Booked' : 'Free'}</span>
+                        <b class="text-sm font-extrabold text-slate-900">${d.day}</b>
+                        <div class="flex items-center space-x-1 mt-1">
+                            <span class="w-1.5 h-1.5 rounded-full ${indicatorColor}"></span>
+                            <span class="text-[8px] font-extrabold uppercase tracking-wider text-slate-400">${label}</span>
+                        </div>
                     `;
                     
-                    // Make the whole card clickable instead of a tiny interior button
                     dayDiv.onclick = () => { window.location.href = `dashboard.html?date=${d.date}`; };
 
                     grid.appendChild(dayDiv);

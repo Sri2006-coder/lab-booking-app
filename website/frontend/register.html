@@ -4,10 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Register - Lab Booking</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="style.css">
     <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            500: '#2563eb',
+                            600: '#1d4ed8',
+                            700: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        };
+
         (function() {
             const originalFetch = window.fetch;
             const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? '' : 'https://lab-booking-app.onrender.com';
@@ -23,42 +42,73 @@
         })();
     </script>
 </head>
-<body class="bg-gray-50 h-screen flex flex-col justify-center items-center px-4">
-    <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 border border-gray-100 fade-in">
+<body class="bg-slate-50 h-screen flex flex-col justify-center items-center px-4 overflow-hidden relative">
+
+    <!-- Decorative Blurs -->
+    <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-400/10 blur-[100px] pointer-events-none"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-400/10 blur-[100px] pointer-events-none"></div>
+
+    <!-- Register Container Card -->
+    <div class="w-full max-w-md bg-white/80 rounded-3xl shadow-2xl p-8 border border-slate-100 backdrop-blur-lg fade-in relative z-10">
         <div class="text-center mb-8">
-            <div class="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span class="text-3xl">📝</span>
+            <div class="bg-brand-50 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-brand-100">
+                <i data-lucide="user-plus" class="w-8 h-8 text-brand-600"></i>
             </div>
-            <h2 class="text-2xl font-bold text-gray-800 tracking-tight">Create Account</h2>
-            <p class="text-sm text-gray-500 mt-1">Register as new Faculty</p>
+            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Create Account</h2>
+            <p class="text-sm text-slate-500 mt-1.5">Register as new Faculty member</p>
         </div>
         
-        <div id="error-msg" class="hidden mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg text-center font-medium"></div>
+        <!-- Error Alerts -->
+        <div id="error-msg" class="hidden mb-6 p-4 bg-red-50 border border-red-200 text-red-700 text-xs rounded-2xl text-center font-semibold slide-down flex items-center justify-center space-x-2">
+            <!-- Keeps text injected dynamically -->
+        </div>
         
         <form id="register-form" class="space-y-5">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                <input type="text" id="name" placeholder="Prof. Jane Doe" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-gray-50 focus:bg-white text-gray-900">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Full Name</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 pointer-events-none">
+                        <i data-lucide="user" class="w-5 h-5"></i>
+                    </span>
+                    <input type="text" id="name" placeholder="Prof. Jane Doe" required class="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition bg-slate-50/50 focus:bg-white text-sm text-slate-900 font-medium md3-input">
+                </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                <input type="email" id="email" placeholder="email@college.edu" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-gray-50 focus:bg-white text-gray-900">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Email Address</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 pointer-events-none">
+                        <i data-lucide="mail" class="w-5 h-5"></i>
+                    </span>
+                    <input type="email" id="email" placeholder="email@college.edu" required class="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition bg-slate-50/50 focus:bg-white text-sm text-slate-900 font-medium md3-input">
+                </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                <input type="password" id="password" placeholder="••••••••" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-gray-50 focus:bg-white text-gray-900">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Password</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 pointer-events-none">
+                        <i data-lucide="key-round" class="w-5 h-5"></i>
+                    </span>
+                    <input type="password" id="password" placeholder="••••••••" required class="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition bg-slate-50/50 focus:bg-white text-sm text-slate-900 font-medium md3-input">
+                </div>
             </div>
-            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition active:scale-95 text-lg">
+            
+            <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-4 px-4 rounded-2xl shadow-lg shadow-brand-500/20 transition active:scale-[0.98] text-sm ripple">
                 Register
             </button>
         </form>
-        <div class="mt-8 text-center text-xs text-gray-400 font-medium space-x-2">
+        
+        <div class="mt-8 text-center text-xs text-slate-400 font-semibold flex items-center justify-center space-x-3">
             <span>Already have an account?</span>
-            <a href="index.html" class="text-blue-500 hover:text-blue-600 font-bold transition">Log In</a>
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-200"></span>
+            <a href="index.html" class="text-brand-600 hover:text-brand-700 font-bold transition">Log In</a>
         </div>
     </div>
 
     <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+
         document.getElementById('register-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('name').value.trim();

@@ -3,11 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Login - Lab Booking</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Login - Lab Booking System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="style.css">
     <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            500: '#2563eb',
+                            600: '#1d4ed8',
+                            700: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        };
+
+        // Proxy fetch configuration for Render/Local API compatibility
         (function() {
             const originalFetch = window.fetch;
             const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? '' : 'https://lab-booking-app.onrender.com';
@@ -23,39 +43,103 @@
         })();
     </script>
 </head>
-<body class="bg-gray-50 h-screen flex flex-col justify-center items-center px-4">
-    <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 border border-gray-100 fade-in">
-        <div class="text-center mb-8">
-            <div class="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span class="text-3xl">💻</span>
+<body class="bg-slate-50 h-screen flex flex-col justify-center items-center px-4 overflow-hidden relative">
+
+    <!-- Decorative Blurs -->
+    <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-400/10 blur-[100px] pointer-events-none"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-400/10 blur-[100px] pointer-events-none"></div>
+
+    <!-- Splash Screen Overlay -->
+    <div id="splash-screen" class="fixed inset-0 bg-brand-600 z-[999] flex flex-col justify-center items-center text-white transition-opacity duration-500">
+        <div class="splash-pulse flex flex-col items-center">
+            <div class="bg-white/10 w-24 h-24 rounded-3xl flex items-center justify-center mb-6 shadow-xl backdrop-blur-md border border-white/20">
+                <i data-lucide="layout-grid" class="w-12 h-12 text-white"></i>
             </div>
-            <h2 class="text-2xl font-bold text-gray-800 tracking-tight">Welcome Back</h2>
-            <p class="text-sm text-gray-500 mt-1">Sign in to book your labs</p>
+            <h1 class="text-3xl font-extrabold tracking-tight">Lab Booking</h1>
+            <p class="text-blue-100 text-sm mt-2 tracking-widest font-semibold uppercase">Jayshriram Group</p>
+        </div>
+        <div class="absolute bottom-10 flex flex-col items-center">
+            <div class="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            <span class="text-blue-200 text-xs mt-3 font-semibold">Initializing Secure Shell...</span>
+        </div>
+    </div>
+
+    <!-- Main Container Card -->
+    <div id="login-container" class="w-full max-w-md bg-white/80 rounded-3xl shadow-2xl p-8 border border-slate-100 backdrop-blur-lg fade-in hidden relative z-10">
+        <div class="text-center mb-8">
+            <div class="bg-brand-50 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-brand-100">
+                <i data-lucide="lock" class="w-8 h-8 text-brand-600"></i>
+            </div>
+            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Welcome Back</h2>
+            <p class="text-sm text-slate-500 mt-1.5">Sign in to manage and book your laboratory</p>
         </div>
         
-        <div id="error-msg" class="hidden mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg text-center font-medium"></div>
+        <!-- Error Alerts -->
+        <div id="error-msg" class="hidden mb-6 p-4 bg-red-50 border border-red-200 text-red-700 text-xs rounded-2xl text-center font-semibold slide-down flex items-center justify-center space-x-2">
+            <!-- Keeps text injected dynamically -->
+        </div>
         
+        <!-- Form -->
         <form id="login-form" class="space-y-5">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                <input type="email" id="email" placeholder="email@college.edu" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-gray-50 focus:bg-white text-gray-900">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Email Address</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 pointer-events-none">
+                        <i data-lucide="mail" class="w-5 h-5"></i>
+                    </span>
+                    <input type="email" id="email" placeholder="email@college.edu" required class="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition bg-slate-50/50 focus:bg-white text-sm text-slate-900 font-medium md3-input">
+                </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                <input type="password" id="password" placeholder="••••••••" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-gray-50 focus:bg-white text-gray-900">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Password</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 pointer-events-none">
+                        <i data-lucide="key-round" class="w-5 h-5"></i>
+                    </span>
+                    <input type="password" id="password" placeholder="••••••••" required class="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition bg-slate-50/50 focus:bg-white text-sm text-slate-900 font-medium md3-input">
+                </div>
             </div>
-            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition active:scale-95 text-lg">
+            
+            <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-4 px-4 rounded-2xl shadow-lg shadow-brand-500/20 transition active:scale-[0.98] text-sm ripple">
                 Login
             </button>
         </form>
-        <div class="mt-8 text-center text-xs text-gray-400 font-medium space-x-2">
-            <span>Secure Access • Faculty Panel</span>
-            <span class="text-gray-300">|</span>
-            <a href="register.html" class="text-blue-500 hover:text-blue-600 font-bold transition">Register</a>
+        
+        <div class="mt-8 text-center text-xs text-slate-400 font-semibold flex items-center justify-center space-x-3">
+            <span>Faculty Panel</span>
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-200"></span>
+            <a href="register.html" class="text-brand-600 hover:text-brand-700 font-bold transition">Register</a>
         </div>
     </div>
 
     <script>
+        // Auto-redirect if session exists
+        async function checkSession() {
+            try {
+                const res = await fetch("/current_user");
+                const user = await res.json();
+                if (user && user.id) {
+                    window.location.replace(user.role === 'admin' ? 'admin.html' : 'dashboard.html');
+                }
+            } catch(e) {}
+        }
+        checkSession();
+
+        // Control splash screen animations
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            setTimeout(() => {
+                const splash = document.getElementById('splash-screen');
+                const container = document.getElementById('login-container');
+                
+                splash.style.opacity = '0';
+                container.classList.remove('hidden');
+                setTimeout(() => {
+                    splash.style.display = 'none';
+                }, 500);
+            }, 1500);
+        });
+
         // Listen for token from Mobile App (Expo)
         window.addEventListener("message", (event) => {
             const data = event.data;

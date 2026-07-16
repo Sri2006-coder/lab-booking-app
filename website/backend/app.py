@@ -1043,16 +1043,39 @@ def get_calendar():
     import calendar
     _, num_days = calendar.monthrange(year, month)
     
+    # Calculate start and end dates for the query
+    start_date = f"{year}-{month:02d}-01"
+    end_date = f"{year}-{month:02d}-{num_days:02d}"
+    
     conn = get_db()
     cursor = conn.cursor()
+    
+    # OPTIMIZATION:
+    # - Previous implementation: Ran 1 query per day in a loop (28-31 database round-trips total, N+1 queries).
+    # - New implementation: Executes a single optimized query to retrieve all booked dates for the entire month range.
+    # - Estimated reduction: Saves 27 to 30 database round-trips per call.
+    cursor.execute("""
+        SELECT DISTINCT booking_date 
+        FROM bookings 
+        WHERE booking_date >= %s AND booking_date <= %s
+    """, (start_date, end_date))
+    
+    # Store booked dates in a Python set for O(1) in-memory lookups
+    booked_dates = set()
+    for row in cursor.fetchall():
+        r_dict = make_row_dict(row, cursor)
+        if r_dict and r_dict.get('booking_date'):
+            booked_dates.add(r_dict['booking_date'].strip())
+            
+    return_db(conn)
     
     days = []
     current_date_str = now.strftime("%Y-%m-%d")
     
     for d in range(1, num_days + 1):
         date_str = f"{year}-{month:02d}-{d:02d}"
-        cursor.execute("SELECT id FROM bookings WHERE booking_date=%s", (date_str,))
-        is_booked = cursor.fetchone() is not None
+        # Check in memory (O(1) set lookup) instead of executing a new database query per day
+        is_booked = date_str in booked_dates
         
         status = "free"
         if date_str == current_date_str:
@@ -1067,7 +1090,6 @@ def get_calendar():
             "booked": is_booked
         })
     
-    return_db(conn)
     return jsonify({
         "month": month,
         "year": year,

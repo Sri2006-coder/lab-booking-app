@@ -2,12 +2,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>My Bookings - Lab Booking</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="style.css">
     <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            500: '#2563eb',
+                            600: '#1d4ed8',
+                            700: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        };
+
         (function() {
             const originalFetch = window.fetch;
             const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? '' : 'https://lab-booking-app.onrender.com';
@@ -23,33 +42,79 @@
         })();
     </script>
 </head>
-<body class="bg-gray-50 flex flex-col min-h-screen">
+<body class="bg-slate-50 flex flex-col min-h-screen pb-20 select-none safe-area-bottom">
 
     <!-- Top Navbar -->
-    <nav class="bg-blue-600 text-white sticky top-0 z-40 shadow-md flex items-center justify-between px-4 py-3">
-        <div class="flex items-center">
-            <button onclick="window.history.back()" class="mr-3 p-1 rounded-full hover:bg-white/20 active:scale-95 transition">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+    <nav class="bg-gradient-to-r from-brand-600 to-indigo-800 text-white sticky top-0 z-40 shadow-md px-4 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <button onclick="window.history.back()" class="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition active:scale-95">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
             </button>
-            <h1 class="font-bold text-xl tracking-tight">📋 My Bookings</h1>
+            <h1 class="font-extrabold text-lg tracking-tight">My Reservations</h1>
+        </div>
+        <div class="bg-white/10 p-2 rounded-xl text-white">
+            <i data-lucide="file-text" class="w-4 h-4"></i>
         </div>
     </nav>
 
     <!-- Main Content -->
-    <main class="flex-1 px-4 py-5 w-full max-w-lg mx-auto">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider px-1">Recent Activity</h3>
+    <main class="flex-1 px-4 py-6 w-full max-w-lg mx-auto space-y-6">
+        
+        <!-- Toggle buttons upcoming vs completed -->
+        <div class="bg-slate-100 p-1 rounded-2xl grid grid-cols-2 gap-1 text-center font-bold text-xs shadow-inner">
+            <button onclick="changeBookingsSubTab('upcoming')" id="subtab-upcoming" class="py-2.5 rounded-xl text-slate-700 bg-white shadow-sm transition">Upcoming</button>
+            <button onclick="changeBookingsSubTab('completed')" id="subtab-completed" class="py-2.5 rounded-xl text-slate-400 transition">Completed</button>
+        </div>
+
+        <div class="flex justify-between items-center px-1">
+            <h3 class="text-xs font-extrabold text-slate-400 uppercase tracking-widest">Logged Activities</h3>
+            <button onclick="window.location.href='dashboard.html'" class="text-xs text-brand-600 font-extrabold hover:underline flex items-center">
+                <i data-lucide="plus" class="w-3.5 h-3.5 mr-1"></i> New Booking
+            </button>
         </div>
         
-        <!-- Bookings List (Replaces Table) -->
-        <div id="bookings-list" class="space-y-3 pb-8">
-             <div class="text-center py-10 text-gray-400 font-medium">Loading...</div>
+        <!-- Bookings List -->
+        <div id="bookings-list" class="space-y-3.5 pb-8">
+             <div class="text-center py-10 text-slate-400 font-bold animate-pulse text-xs">Querying reservations...</div>
         </div>
     </main>
+
+    <!-- Bottom Navigation Bar (Mobile only) -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200/80 px-4 py-2 z-40 flex justify-around items-center shadow-2xl safe-area-bottom">
+        <a href="dashboard.html" class="flex flex-col items-center space-y-1 text-slate-400">
+            <div class="nav-pill py-1 px-4 rounded-full flex items-center justify-center">
+                <i data-lucide="home" class="w-5 h-5"></i>
+            </div>
+            <span class="text-[9px] font-bold tracking-wider">Home</span>
+        </a>
+        <a href="calendar_view.html" class="flex flex-col items-center space-y-1 text-slate-400">
+            <div class="nav-pill py-1 px-4 rounded-full flex items-center justify-center">
+                <i data-lucide="calendar" class="w-5 h-5"></i>
+            </div>
+            <span class="text-[9px] font-bold tracking-wider">Calendar</span>
+        </a>
+        <a href="mybookings.html" class="flex flex-col items-center space-y-1 text-brand-600">
+            <div class="nav-pill nav-pill-active py-1 px-4 rounded-full flex items-center justify-center">
+                <i data-lucide="file-text" class="w-5 h-5"></i>
+            </div>
+            <span class="text-[9px] font-bold tracking-wider">Bookings</span>
+        </a>
+        <a href="dashboard.html?tab=profile" class="flex flex-col items-center space-y-1 text-slate-400">
+            <div class="nav-pill py-1 px-4 rounded-full flex items-center justify-center">
+                <i data-lucide="user" class="w-5 h-5"></i>
+            </div>
+            <span class="text-[9px] font-bold tracking-wider">Profile</span>
+        </a>
+    </nav>
 
     <script>
         let currentUserId = null;
         let bookings = [];
+        let activeSubTab = 'upcoming';
+
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
 
         async function loadUser() {
             try {
@@ -79,39 +144,104 @@
             return bookings.filter(b => b.faculty_id === currentUserId);
         }
 
+        function changeBookingsSubTab(tabName) {
+            activeSubTab = tabName;
+            
+            const tabUpcoming = document.getElementById('subtab-upcoming');
+            const tabCompleted = document.getElementById('subtab-completed');
+            
+            if(tabName === 'upcoming') {
+                tabUpcoming.className = "py-2.5 rounded-xl text-slate-700 bg-white shadow-sm transition";
+                tabCompleted.className = "py-2.5 rounded-xl text-slate-400 transition";
+            } else {
+                tabUpcoming.className = "py-2.5 rounded-xl text-slate-400 transition";
+                tabCompleted.className = "py-2.5 rounded-xl text-slate-700 bg-white shadow-sm transition";
+            }
+            
+            renderMyBookings();
+        }
+
         async function renderMyBookings() {
             try {
                 const data = getMyBookings();
                 const container = document.getElementById('bookings-list');
                 container.innerHTML = '';
 
-                if (data.length === 0) {
-                    container.innerHTML = '<div class="text-center py-10 bg-white rounded-xl shadow-sm border border-gray-100 text-gray-500">No bookings found 🤷‍♂️</div>';
+                const todayStr = new Date().toISOString().split('T')[0];
+                
+                // Filter data based on chosen active tab
+                let filtered = [];
+                if(activeSubTab === 'upcoming') {
+                    filtered = data.filter(b => b.date >= todayStr);
+                } else {
+                    filtered = data.filter(b => b.date < todayStr);
+                }
+
+                if (filtered.length === 0) {
+                    container.innerHTML = `
+                        <div class="bg-white rounded-3xl border border-slate-200/60 p-8 text-center flex flex-col items-center">
+                            <div class="bg-slate-50 p-4 rounded-2xl text-slate-300 mb-3 border border-slate-100">
+                                <i data-lucide="clipboard-list" class="w-8 h-8"></i>
+                            </div>
+                            <p class="text-sm font-bold text-slate-800">No bookings logged</p>
+                            <p class="text-xs text-slate-400 mt-1 max-w-[200px] leading-relaxed">No laboratory reservations available in this tab.</p>
+                        </div>
+                    `;
                     return;
                 }
 
-                data.forEach((b) => {
+                filtered.forEach((b) => {
                     const card = document.createElement('div');
-                    card.className = 'bg-white rounded-xl shadow-sm border border-gray-200 p-4 relative';
+                    card.className = 'bg-white rounded-3xl border border-slate-200/60 p-4 flex flex-col justify-between shadow-sm space-y-4';
                     
                     const dateObj = new Date(b.date);
-                    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                    const dayName = days[dateObj.getDay()] || '';
-                    const shortDay = dayName ? dayName.substring(0, 3) : '';
+                    const monthName = dateObj.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+                    const dayNum = dateObj.getDate();
+
+                    let actionHtml = '';
+                    if(activeSubTab === 'upcoming') {
+                        actionHtml = `<button onclick="cancelBooking('${b.lab}', ${b.period}, '${b.date}')" class="w-full bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold py-3 rounded-2xl active:scale-95 transition text-xs">Cancel Booking</button>`;
+                    } else {
+                        actionHtml = `<span class="w-full bg-slate-50 text-slate-400 text-center font-bold py-3 rounded-2xl text-xs block border border-slate-200/50">Completed Session</span>`;
+                    }
 
                     card.innerHTML = `
-                        <div class="flex justify-between mb-2">
-                            <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-1 rounded">Period ${b.period}</span>
-                            <span class="text-sm text-gray-500 font-medium">${b.date} (${shortDay})</span>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3.5">
+                                <div class="bg-brand-50 border border-brand-100 text-brand-600 font-extrabold flex flex-col items-center justify-center w-12 h-14 rounded-2xl">
+                                    <span class="text-[9px] tracking-wider uppercase font-bold">${monthName}</span>
+                                    <span class="text-lg font-black leading-none mt-0.5">${dayNum}</span>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-bold text-slate-800">📍 ${b.lab}</h4>
+                                    <p class="text-xs text-slate-400 font-medium mt-0.5">${b.faculty_name || 'Session'} • Period ${b.period}</p>
+                                    <p class="text-[10px] text-slate-400 font-mono mt-0.5">${getTimeForPeriod(b.period)}</p>
+                                </div>
+                            </div>
+                            <span class="px-2.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">Confirmed</span>
                         </div>
-                        <h4 class="text-lg font-bold text-gray-800 mb-4">📍 ${b.lab}</h4>
-                        <button onclick="cancelBooking('${b.lab}', ${b.period}, '${b.date}')" class="w-full bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-semibold py-2.5 rounded-lg active:scale-95 transition">Cancel Booking</button>
+                        ${actionHtml}
                     `;
                     container.appendChild(card);
                 });
+                lucide.createIcons();
             } catch (e) {
-                document.getElementById('bookings-list').innerHTML = '<div class="text-center py-10 text-red-500">Failed to load</div>';
+                document.getElementById('bookings-list').innerHTML = '<div class="text-center py-10 text-red-500 font-bold">Failed to load reservations list</div>';
             }
+        }
+
+        function getTimeForPeriod(p) {
+            const times = {
+                1: "08:45 AM - 09:35 AM",
+                2: "09:35 AM - 10:25 AM",
+                3: "10:45 AM - 11:35 AM",
+                4: "11:35 AM - 12:25 PM",
+                5: "01:15 PM - 02:05 PM",
+                6: "02:05 PM - 02:55 PM",
+                7: "03:10 PM - 04:00 PM",
+                8: "04:00 PM - 04:50 PM"
+            };
+            return times[p] || "Session Time";
         }
 
         async function cancelBooking(lab, period, date) {
@@ -125,10 +255,10 @@
         }
 
         async function init() {
-            document.getElementById('bookings-list').innerHTML = '<div class="text-center py-10 text-gray-400 font-medium">Loading...</div>';
+            document.getElementById('bookings-list').innerHTML = '<div class="text-center py-10 text-slate-400 font-bold animate-pulse text-xs">Querying reservations...</div>';
             await loadUser();
             await loadBookings();
-            renderMyBookings();
+            changeBookingsSubTab(activeSubTab);
         }
 
         init();
