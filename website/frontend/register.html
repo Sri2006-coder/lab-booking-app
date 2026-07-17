@@ -16,7 +16,9 @@
             
             window.fetch = function(input, init) {
                 if (typeof input === 'string' && input.startsWith('/')) {
-                    input = API_BASE + input;
+                    if (window.location.origin !== 'https://lab-booking-app.onrender.com') {
+                        input = API_BASE + input;
+                    }
                 }
                 init = init || {};
                 init.credentials = 'include';

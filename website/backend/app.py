@@ -51,6 +51,7 @@ app.permanent_session_lifetime = timedelta(minutes=10)
 CORS(app, supports_credentials=True, origins=[
     "https://lab-booking-system-e77ad.web.app",
     "https://lab-booking-system-e77ad.firebaseapp.com",
+    "https://lab-booking-app.onrender.com",
     "http://localhost:5000",
     "http://127.0.0.1:5000",
     "http://localhost:3000"
