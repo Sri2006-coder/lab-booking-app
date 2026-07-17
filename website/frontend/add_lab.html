@@ -83,7 +83,7 @@
                 status.classList.remove('hidden', 'bg-red-50', 'text-red-700', 'bg-green-50', 'text-green-700');
                 if (data.success) {
                     status.innerText = "✅ Lab added successfully";
-                    status.classList.add('bg-green-50', 'text-emerald-700', 'border', 'border-emerald-100');
+                    status.classList.add('bg-green-50', 'text-green-700', 'border', 'border-green-100');
                     document.getElementById('lab-name').value = '';
                 } else {
                     status.innerText = "❌ Error: " + data.message;
