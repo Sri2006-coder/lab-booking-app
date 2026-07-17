@@ -28,17 +28,17 @@
 <body class="bg-slate-50 flex flex-col min-h-screen pb-10 text-slate-900 select-none">
 
     <!-- Top Navbar -->
-    <nav class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white sticky top-0 z-40 shadow-lg px-6 py-4 flex justify-between items-center border-b border-indigo-900/30">
+    <nav class="bg-gradient-to-br from-brand-600 to-indigo-800 text-white sticky top-0 z-40 shadow-md px-6 py-4 flex justify-between items-center">
         <div class="flex items-center space-x-3">
-            <div class="bg-brand-600 p-2 rounded-xl text-white shadow-md">
+            <div class="bg-white/10 p-2 rounded-xl text-white shadow-sm border border-white/10">
                 <i data-lucide="settings" class="w-6 h-6 animate-spin" style="animation-duration: 8s;"></i>
             </div>
             <div>
                 <h1 class="font-extrabold text-lg tracking-tight">Admin System Panel</h1>
-                <p class="text-[10px] text-indigo-200 uppercase tracking-widest font-bold font-mono">Administration Hub</p>
+                <p class="text-[10px] text-blue-100 uppercase tracking-widest font-bold">Administration Hub</p>
             </div>
         </div>
-        <button onclick="logout()" class="bg-rose-600 hover:bg-rose-700 px-4 py-2 rounded-xl font-bold text-xs transition active:scale-95 shadow-md shadow-rose-600/10">Logout</button>
+        <button onclick="logout()" class="btn-danger py-2.5 px-4 text-xs shadow-md">Logout</button>
     </nav>
 
     <!-- Main App shell -->
@@ -47,35 +47,35 @@
         <!-- Desktop Sidebar Menu Navigation -->
         <aside class="w-full md:w-64 flex-shrink-0 flex flex-col space-y-2.5">
             <div class="bg-white rounded-3xl border border-slate-200/60 p-3 shadow-sm space-y-1">
-                <h3 class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest px-3.5 py-2.5">Workspace Navigation</h3>
+                <h3 class="text-[10px] font-extrabold text-slate-700 uppercase tracking-widest px-3.5 py-2.5">Workspace Navigation</h3>
                 
-                <button onclick="switchAdminTab('overview')" id="sidebar-overview" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-500 hover:bg-slate-50 transition text-left active:scale-[0.99]">
-                    <i data-lucide="pie-chart" class="w-5 h-5"></i>
+                <button onclick="switchAdminTab('overview')" id="sidebar-overview" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition text-left active:scale-[0.99]">
+                    <i data-lucide="pie-chart" class="w-5 h-5 text-slate-500"></i>
                     <span>Overview Stats</span>
                 </button>
                 
-                <button onclick="switchAdminTab('timetable')" id="sidebar-timetable" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-500 hover:bg-slate-50 transition text-left active:scale-[0.99]">
-                    <i data-lucide="calendar" class="w-5 h-5"></i>
+                <button onclick="switchAdminTab('timetable')" id="sidebar-timetable" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition text-left active:scale-[0.99]">
+                    <i data-lucide="calendar" class="w-5 h-5 text-slate-500"></i>
                     <span>Timetable & OCR</span>
                 </button>
                 
-                <button onclick="switchAdminTab('maintenance')" id="sidebar-maintenance" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-500 hover:bg-slate-50 transition text-left active:scale-[0.99]">
-                    <i data-lucide="wrench" class="w-5 h-5"></i>
+                <button onclick="switchAdminTab('maintenance')" id="sidebar-maintenance" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition text-left active:scale-[0.99]">
+                    <i data-lucide="wrench" class="w-5 h-5 text-slate-500"></i>
                     <span>Lab Maintenance</span>
                 </button>
                 
-                <button onclick="switchAdminTab('faculty')" id="sidebar-faculty" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-500 hover:bg-slate-50 transition text-left active:scale-[0.99]">
-                    <i data-lucide="users" class="w-5 h-5"></i>
+                <button onclick="switchAdminTab('faculty')" id="sidebar-faculty" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition text-left active:scale-[0.99]">
+                    <i data-lucide="users" class="w-5 h-5 text-slate-500"></i>
                     <span>Faculty Management</span>
                 </button>
                 
-                <button onclick="switchAdminTab('logs')" id="sidebar-logs" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-500 hover:bg-slate-50 transition text-left active:scale-[0.99]">
-                    <i data-lucide="file-spreadsheet" class="w-5 h-5"></i>
+                <button onclick="switchAdminTab('logs')" id="sidebar-logs" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition text-left active:scale-[0.99]">
+                    <i data-lucide="file-spreadsheet" class="w-5 h-5 text-slate-500"></i>
                     <span>System Database Logs</span>
                 </button>
             </div>
             
-            <a href="dashboard.html" class="flex items-center justify-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-2xl text-xs transition active:scale-[0.98] shadow-md shadow-brand-500/10">
+            <a href="dashboard.html" class="flex items-center justify-center space-x-2 btn-primary py-3.5 text-xs shadow-md">
                 <i data-lucide="layout-template" class="w-4 h-4"></i>
                 <span>Open Faculty Dashboard</span>
             </a>
@@ -92,8 +92,8 @@
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
                     <div class="bg-white border-l-4 border-l-brand-600 rounded-3xl p-5 border border-slate-200/60 shadow-sm flex items-center justify-between">
                         <div>
-                            <p class="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">Total Bookings History</p>
-                            <h2 id="total-bookings" class="text-3xl font-black text-slate-800 mt-2">0</h2>
+                            <p class="text-[10px] text-slate-700 font-extrabold uppercase tracking-wider">Total Bookings History</p>
+                            <h2 id="total-bookings" class="text-3xl font-black text-slate-900 mt-2">0</h2>
                         </div>
                         <div class="bg-brand-50 text-brand-600 p-3 rounded-2xl border border-brand-100">
                             <i data-lucide="clipboard-check" class="w-6 h-6"></i>
@@ -102,8 +102,8 @@
                     
                     <div class="bg-white border-l-4 border-l-emerald-500 rounded-3xl p-5 border border-slate-200/60 shadow-sm flex items-center justify-between">
                         <div>
-                            <p class="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">Active Laboratories</p>
-                            <h2 id="active-labs" class="text-3xl font-black text-slate-800 mt-2">0</h2>
+                            <p class="text-[10px] text-slate-700 font-extrabold uppercase tracking-wider">Active Laboratories</p>
+                            <h2 id="active-labs" class="text-3xl font-black text-slate-900 mt-2">0</h2>
                         </div>
                         <div class="bg-emerald-50 text-emerald-600 p-3 rounded-2xl border border-emerald-100">
                             <i data-lucide="cpu" class="w-6 h-6"></i>
@@ -112,8 +112,8 @@
 
                     <div class="bg-white border-l-4 border-l-amber-500 rounded-3xl p-5 border border-slate-200/60 shadow-sm flex items-center justify-between">
                         <div>
-                            <p class="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">Faculty Roster accounts</p>
-                            <h2 id="faculty-users" class="text-3xl font-black text-slate-800 mt-2">0</h2>
+                            <p class="text-[10px] text-slate-700 font-extrabold uppercase tracking-wider">Faculty Roster accounts</p>
+                            <h2 id="faculty-users" class="text-3xl font-black text-slate-900 mt-2">0</h2>
                         </div>
                         <div class="bg-amber-50 text-amber-600 p-3 rounded-2xl border border-amber-100">
                             <i data-lucide="users-2" class="w-6 h-6"></i>
@@ -122,20 +122,20 @@
                 </div>
 
                 <!-- Limit Cap controls widget -->
-                <div class="bg-white rounded-3xl border border-slate-200/60 p-6 shadow-sm">
+                <div class="md3-card p-6">
                     <div class="flex items-center space-x-3.5 mb-5">
                         <div class="bg-slate-100 p-3 rounded-2xl text-slate-600">
                             <i data-lucide="shield-alert" class="w-6 h-6"></i>
                         </div>
                         <div>
-                            <h4 class="font-bold text-slate-800">Daily Booking Limit</h4>
-                            <p class="text-xs text-slate-400 mt-0.5">Control how many daily bookings a faculty user can claim. (0 = Unlimited)</p>
+                            <h4 class="font-bold text-slate-900">Daily Booking Limit</h4>
+                            <p class="text-xs text-slate-600 mt-0.5">Control how many daily bookings a faculty user can claim. (0 = Unlimited)</p>
                         </div>
                     </div>
                     
                     <div class="flex flex-col sm:flex-row gap-3">
-                        <input type="number" id="limitInput" min="0" placeholder="E.g. 2" class="flex-1 px-4 py-3.5 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none text-xs font-bold bg-slate-50/50 focus:bg-white md3-input">
-                        <button onclick="updateLimit()" class="bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs py-3.5 px-6 rounded-2xl transition shadow-md shadow-brand-500/10 active:scale-95">Update Limit</button>
+                        <input type="number" id="limitInput" min="0" placeholder="E.g. 2" class="flex-1 px-4 py-3.5 rounded-2xl border border-slate-200 outline-none text-xs font-bold bg-slate-50/50 focus:bg-white md3-input">
+                        <button onclick="updateLimit()" class="btn-primary text-xs py-3.5 px-6 shadow-md shadow-brand-500/10">Update Limit</button>
                     </div>
                     <div id="limit-status" class="text-xs font-bold text-center mt-3 hidden p-2 bg-emerald-50 text-emerald-700 rounded-xl"></div>
                 </div>
@@ -197,28 +197,28 @@
                         </button>
                     </div>
 
-                    <div class="overflow-x-auto border border-slate-100 rounded-2xl shadow-inner max-h-[400px] overflow-y-auto">
-                        <table class="w-full text-left border-collapse text-xs">
+                    <div class="table-wrapper max-h-[400px] overflow-y-auto">
+                        <table class="md3-table text-xs">
                             <thead>
-                                <tr class="bg-slate-50 border-b border-slate-100 text-slate-600 font-extrabold uppercase tracking-wider">
-                                    <th class="p-3">Class</th>
-                                    <th class="p-3">Day</th>
-                                    <th class="p-3">Period(s)</th>
-                                    <th class="p-3">Subject</th>
-                                    <th class="p-3">Physical Lab</th>
-                                    <th class="p-3 text-center">Confidence</th>
-                                    <th class="p-3 text-center">Actions</th>
+                                <tr>
+                                    <th>Class</th>
+                                    <th>Day</th>
+                                    <th>Period(s)</th>
+                                    <th>Subject</th>
+                                    <th>Physical Lab</th>
+                                    <th class="text-center">Confidence</th>
+                                    <th class="text-center">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="preview-table-body" class="divide-y divide-slate-100 font-semibold text-slate-800">
+                            <tbody id="preview-table-body" class="divide-y divide-slate-100 font-semibold text-slate-805">
                                 <!-- OCR slots -->
                             </tbody>
                         </table>
                     </div>
 
                     <div class="flex space-x-3 justify-end pt-3">
-                        <button onclick="saveExtractedTimetable()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-5 rounded-xl active:scale-95 transition text-xs shadow-md shadow-emerald-500/10">Save to Database</button>
-                        <button onclick="cancelPreview()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 px-5 rounded-xl active:scale-95 transition text-xs border border-slate-200">Cancel</button>
+                        <button onclick="saveExtractedTimetable()" class="btn-primary bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-5 text-xs shadow-md shadow-emerald-500/10">Save to Database</button>
+                        <button onclick="cancelPreview()" class="btn-secondary py-2.5 px-5 text-xs">Cancel</button>
                     </div>
                 </div>
             </section>

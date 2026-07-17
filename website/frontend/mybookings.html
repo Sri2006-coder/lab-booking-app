@@ -64,29 +64,29 @@
 
     <!-- Bottom Navigation Bar (Mobile only) -->
     <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200/80 px-4 py-2 z-40 flex justify-around items-center shadow-2xl safe-area-bottom">
-        <a href="dashboard.html" class="flex flex-col items-center space-y-1 text-slate-400">
+        <a href="dashboard.html" class="flex flex-col items-center space-y-1 text-slate-500">
             <div class="nav-pill py-1 px-4 rounded-full flex items-center justify-center">
                 <i data-lucide="home" class="w-5 h-5"></i>
             </div>
-            <span class="text-[9px] font-bold tracking-wider">Home</span>
+            <span class="text-[9px] font-bold tracking-wider text-slate-700">Home</span>
         </a>
-        <a href="calendar_view.html" class="flex flex-col items-center space-y-1 text-slate-400">
+        <a href="calendar_view.html" class="flex flex-col items-center space-y-1 text-slate-500">
             <div class="nav-pill py-1 px-4 rounded-full flex items-center justify-center">
                 <i data-lucide="calendar" class="w-5 h-5"></i>
             </div>
-            <span class="text-[9px] font-bold tracking-wider">Calendar</span>
+            <span class="text-[9px] font-bold tracking-wider text-slate-700">Calendar</span>
         </a>
         <a href="mybookings.html" class="flex flex-col items-center space-y-1 text-brand-600">
             <div class="nav-pill nav-pill-active py-1 px-4 rounded-full flex items-center justify-center">
                 <i data-lucide="file-text" class="w-5 h-5"></i>
             </div>
-            <span class="text-[9px] font-bold tracking-wider">Bookings</span>
+            <span class="text-[9px] font-bold tracking-wider text-brand-700">Bookings</span>
         </a>
-        <a href="dashboard.html?tab=profile" class="flex flex-col items-center space-y-1 text-slate-400">
+        <a href="dashboard.html?tab=profile" class="flex flex-col items-center space-y-1 text-slate-500">
             <div class="nav-pill py-1 px-4 rounded-full flex items-center justify-center">
                 <i data-lucide="user" class="w-5 h-5"></i>
             </div>
-            <span class="text-[9px] font-bold tracking-wider">Profile</span>
+            <span class="text-[9px] font-bold tracking-wider text-slate-700">Profile</span>
         </a>
     </nav>
 
@@ -162,12 +162,12 @@
 
                 if (filtered.length === 0) {
                     container.innerHTML = `
-                        <div class="bg-white rounded-3xl border border-slate-200/60 p-8 text-center flex flex-col items-center">
-                            <div class="bg-slate-50 p-4 rounded-2xl text-slate-300 mb-3 border border-slate-100">
+                        <div class="md3-card p-8 text-center flex flex-col items-center">
+                            <div class="bg-slate-50 p-4 rounded-2xl text-slate-400 mb-3 border border-slate-100">
                                 <i data-lucide="clipboard-list" class="w-8 h-8"></i>
                             </div>
                             <p class="text-sm font-bold text-slate-800">No bookings logged</p>
-                            <p class="text-xs text-slate-400 mt-1 max-w-[200px] leading-relaxed">No laboratory reservations available in this tab.</p>
+                            <p class="text-xs text-slate-500 mt-1 max-w-[200px] leading-relaxed">No laboratory reservations available in this tab.</p>
                         </div>
                     `;
                     return;
@@ -175,7 +175,7 @@
 
                 filtered.forEach((b) => {
                     const card = document.createElement('div');
-                    card.className = 'bg-white rounded-3xl border border-slate-200/60 p-4 flex flex-col justify-between shadow-sm space-y-4';
+                    card.className = 'md3-card p-4 flex flex-col justify-between space-y-4';
                     
                     const dateObj = new Date(b.date);
                     const monthName = dateObj.toLocaleString('en-US', { month: 'short' }).toUpperCase();
@@ -183,9 +183,9 @@
 
                     let actionHtml = '';
                     if(activeSubTab === 'upcoming') {
-                        actionHtml = `<button onclick="cancelBooking('${b.lab}', ${b.period}, '${b.date}')" class="w-full bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold py-3 rounded-2xl active:scale-95 transition text-xs">Cancel Booking</button>`;
+                        actionHtml = `<button onclick="cancelBooking('${b.lab}', ${b.period}, '${b.date}')" class="w-full btn-danger py-3 text-xs">Cancel Booking</button>`;
                     } else {
-                        actionHtml = `<span class="w-full bg-slate-50 text-slate-400 text-center font-bold py-3 rounded-2xl text-xs block border border-slate-200/50">Completed Session</span>`;
+                        actionHtml = `<span class="w-full bg-slate-50 text-slate-600 text-center font-bold py-3 rounded-2xl text-xs block border border-slate-200/50">Completed Session</span>`;
                     }
 
                     card.innerHTML = `
@@ -196,12 +196,12 @@
                                     <span class="text-lg font-black leading-none mt-0.5">${dayNum}</span>
                                 </div>
                                 <div>
-                                    <h4 class="text-sm font-bold text-slate-800">📍 ${b.lab}</h4>
-                                    <p class="text-xs text-slate-400 font-medium mt-0.5">${b.faculty_name || 'Session'} • Period ${b.period}</p>
-                                    <p class="text-[10px] text-slate-400 font-mono mt-0.5">${getTimeForPeriod(b.period)}</p>
+                                    <h4 class="text-sm font-bold text-slate-900">📍 ${b.lab}</h4>
+                                    <p class="text-xs text-slate-700 font-medium mt-0.5">${b.faculty_name || 'Session'} • Period ${b.period}</p>
+                                    <p class="text-[10px] text-slate-600 font-mono mt-0.5">${getTimeForPeriod(b.period)}</p>
                                 </div>
                             </div>
-                            <span class="px-2.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">Confirmed</span>
+                            <span class="chip chip-success text-[9px] font-bold">Confirmed</span>
                         </div>
                         ${actionHtml}
                     `;

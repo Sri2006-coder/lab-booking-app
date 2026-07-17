@@ -44,23 +44,29 @@
     <main class="flex-1 px-4 py-6 w-full max-w-lg mx-auto space-y-6">
         
         <!-- Month title banner -->
-        <div class="bg-white rounded-3xl border border-slate-200/60 p-4 shadow-sm text-center">
-            <h2 id="calendar-title" class="text-sm font-extrabold text-slate-800 uppercase tracking-widest">Loading month...</h2>
+        <div class="bg-white md3-card p-4 flex items-center justify-between">
+            <button onclick="prevMonth()" class="p-2.5 hover:bg-slate-100 rounded-full transition text-slate-700 active:scale-95" title="Previous Month">
+                <i data-lucide="chevron-left" class="w-5 h-5"></i>
+            </button>
+            <h2 id="calendar-title" class="text-sm font-extrabold text-slate-900 uppercase tracking-widest leading-none">Loading month...</h2>
+            <button onclick="nextMonth()" class="p-2.5 hover:bg-slate-100 rounded-full transition text-slate-700 active:scale-95" title="Next Month">
+                <i data-lucide="chevron-right" class="w-5 h-5"></i>
+            </button>
         </div>
 
         <!-- Legend Details Card -->
-        <div class="bg-white rounded-3xl border border-slate-200/60 p-4 shadow-sm flex justify-around text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+        <div class="bg-white md3-card p-4 flex justify-around text-[10px] font-bold text-slate-700 uppercase tracking-wider">
             <div class="flex items-center space-x-1.5">
                 <span class="w-2 h-2 rounded-full bg-brand-500"></span>
                 <span>Today</span>
             </div>
             <div class="flex items-center space-x-1.5">
-                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                <span>Has Bookings</span>
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span>Available</span>
             </div>
             <div class="flex items-center space-x-1.5">
-                <span class="w-2 h-2 rounded-full bg-slate-300"></span>
-                <span>Available</span>
+                <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                <span>Booked</span>
             </div>
         </div>
 
@@ -72,29 +78,29 @@
 
     <!-- Bottom Navigation Bar (Mobile only) -->
     <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200/80 px-4 py-2 z-40 flex justify-around items-center shadow-2xl safe-area-bottom">
-        <a href="dashboard.html" class="flex flex-col items-center space-y-1 text-slate-400">
+        <a href="dashboard.html" class="flex flex-col items-center space-y-1 text-slate-500">
             <div class="nav-pill py-1 px-4 rounded-full flex items-center justify-center">
                 <i data-lucide="home" class="w-5 h-5"></i>
             </div>
-            <span class="text-[9px] font-bold tracking-wider">Home</span>
+            <span class="text-[9px] font-bold tracking-wider text-slate-700">Home</span>
         </a>
         <a href="calendar_view.html" class="flex flex-col items-center space-y-1 text-brand-600">
             <div class="nav-pill nav-pill-active py-1 px-4 rounded-full flex items-center justify-center">
                 <i data-lucide="calendar" class="w-5 h-5"></i>
             </div>
-            <span class="text-[9px] font-bold tracking-wider">Calendar</span>
+            <span class="text-[9px] font-bold tracking-wider text-brand-700">Calendar</span>
         </a>
-        <a href="mybookings.html" class="flex flex-col items-center space-y-1 text-slate-400">
+        <a href="mybookings.html" class="flex flex-col items-center space-y-1 text-slate-500">
             <div class="nav-pill py-1 px-4 rounded-full flex items-center justify-center">
                 <i data-lucide="file-text" class="w-5 h-5"></i>
             </div>
-            <span class="text-[9px] font-bold tracking-wider">Bookings</span>
+            <span class="text-[9px] font-bold tracking-wider text-slate-700">Bookings</span>
         </a>
-        <a href="dashboard.html?tab=profile" class="flex flex-col items-center space-y-1 text-slate-400">
+        <a href="dashboard.html?tab=profile" class="flex flex-col items-center space-y-1 text-slate-500">
             <div class="nav-pill py-1 px-4 rounded-full flex items-center justify-center">
                 <i data-lucide="user" class="w-5 h-5"></i>
             </div>
-            <span class="text-[9px] font-bold tracking-wider">Profile</span>
+            <span class="text-[9px] font-bold tracking-wider text-slate-700">Profile</span>
         </a>
     </nav>
 
@@ -103,9 +109,12 @@
             lucide.createIcons();
         });
 
-        async function loadCalendar() {
+        let currentMonth = new Date().getMonth() + 1;
+        let currentYear = new Date().getFullYear();
+
+        async function loadCalendar(month = currentMonth, year = currentYear) {
             try {
-                const res = await fetch('/api/calendar');
+                const res = await fetch(`/api/calendar?month=${month}&year=${year}`);
                 if (res.status === 401) {
                     window.location.href = 'index.html';
                     return;
@@ -120,27 +129,28 @@
                 data.days.forEach(d => {
                     const dayDiv = document.createElement('div');
                     
-                    let borderClass = "border-slate-100 hover:border-slate-200 bg-white";
-                    let stateClass = "";
-                    let indicatorColor = "bg-slate-300";
-                    let label = "Free";
+                    let borderClass = "border-emerald-200 hover:border-emerald-300 bg-emerald-50/20";
+                    let indicatorColor = "bg-emerald-500";
+                    let label = "Available";
+                    let textClass = "text-slate-900";
 
                     if(d.status === 'today') {
-                        borderClass = "border-brand-500 bg-brand-50/50 ring-1 ring-brand-500";
+                        borderClass = "border-brand-500 bg-brand-50/50 ring-2 ring-brand-500/20";
                         indicatorColor = "bg-brand-500";
+                        label = "Today";
                     } else if(d.status === 'booked') {
-                        borderClass = "border-amber-100 bg-amber-50/30";
-                        indicatorColor = "bg-amber-500";
+                        borderClass = "border-rose-200 bg-rose-50/30";
+                        indicatorColor = "bg-rose-500";
                         label = "Booked";
                     }
 
                     dayDiv.className = `rounded-2xl border p-3.5 flex flex-col items-center justify-center text-center cursor-pointer transition active:scale-95 shadow-sm ${borderClass}`;
                     
                     dayDiv.innerHTML = `
-                        <b class="text-sm font-extrabold text-slate-900">${d.day}</b>
+                        <b class="text-sm font-extrabold ${textClass}">${d.day}</b>
                         <div class="flex items-center space-x-1 mt-1">
                             <span class="w-1.5 h-1.5 rounded-full ${indicatorColor}"></span>
-                            <span class="text-[8px] font-extrabold uppercase tracking-wider text-slate-400">${label}</span>
+                            <span class="text-[8px] font-extrabold uppercase tracking-wider text-slate-700">${label}</span>
                         </div>
                     `;
                     
@@ -149,6 +159,24 @@
                     grid.appendChild(dayDiv);
                 });
             } catch(e) {}
+        }
+
+        function prevMonth() {
+            currentMonth--;
+            if (currentMonth < 1) {
+                currentMonth = 12;
+                currentYear--;
+            }
+            loadCalendar(currentMonth, currentYear);
+        }
+
+        function nextMonth() {
+            currentMonth++;
+            if (currentMonth > 12) {
+                currentMonth = 1;
+                currentYear++;
+            }
+            loadCalendar(currentMonth, currentYear);
         }
 
         loadCalendar();

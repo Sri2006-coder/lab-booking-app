@@ -28,7 +28,7 @@
 <body class="bg-slate-50 flex flex-col min-h-screen text-slate-900 select-none pb-10">
 
     <!-- Top Navbar -->
-    <nav class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white sticky top-0 z-40 shadow-lg px-6 py-4 flex justify-between items-center border-b border-indigo-900/30">
+    <nav class="bg-gradient-to-br from-brand-600 to-indigo-800 text-white sticky top-0 z-40 shadow-md px-6 py-4 flex justify-between items-center">
         <div class="flex items-center space-x-3">
             <button onclick="window.history.back()" class="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition active:scale-95">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i>
@@ -41,19 +41,19 @@
     </nav>
 
     <main class="flex-1 px-4 py-8 w-full max-w-md mx-auto space-y-6">
-        <div class="bg-white rounded-3xl border border-slate-200/60 p-6 shadow-sm">
-            <h3 class="text-lg font-extrabold text-slate-800 mb-2">Space Details</h3>
-            <p class="text-xs text-slate-400 mb-6">Create a new laboratory room or conference hall in the system.</p>
+        <div class="md3-card p-6">
+            <h3 class="text-lg font-extrabold text-slate-900 mb-2">Space Details</h3>
+            <p class="text-xs text-slate-600 mb-6">Create a new laboratory room or conference hall in the system.</p>
 
             <div id="status" class="hidden mb-5 p-4 rounded-2xl text-xs font-bold text-center slide-down"></div>
 
             <div class="space-y-4">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lab / Space Name</label>
-                    <input type="text" id="lab-name" placeholder="E.g. Computer Lab 8" class="w-full px-4 py-3.5 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition bg-slate-50/50 focus:bg-white text-sm text-slate-900 font-semibold md3-input">
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Lab / Space Name</label>
+                    <input type="text" id="lab-name" placeholder="E.g. Computer Lab 8" class="w-full px-4 py-3.5 outline-none transition bg-slate-50/50 focus:bg-white text-sm text-slate-900 font-semibold md3-input">
                 </div>
                 
-                <button onclick="addLab()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-4 rounded-2xl shadow-lg transition active:scale-[0.98] text-sm ripple">
+                <button onclick="addLab()" class="w-full btn-primary py-4 text-sm ripple">
                     Create Space
                 </button>
             </div>
