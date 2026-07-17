@@ -425,12 +425,11 @@
 
             periods.forEach(period => {
                 const box = document.createElement('div');
-                box.className = 'md3-card p-5 space-y-4';
+                box.className = 'md3-card p-5 space-y-5';
                 
                 box.innerHTML = `
-                    <div class="flex justify-between items-center pb-2.5 border-b border-slate-100">
+                    <div class="flex justify-center items-center pb-1.5 border-b border-slate-100">
                         <span class="text-xs font-extrabold text-slate-900">Period ${period}</span>
-                        <span class="text-[10px] text-slate-600 font-extrabold uppercase tracking-wider font-mono">${getTimeForPeriod(period)}</span>
                     </div>
                 `;
 
@@ -451,32 +450,42 @@
                         let indicatorDot = 'bg-emerald-500';
                         
                         if (labObj.status === 'maintenance') {
-                            indicatorDot = 'bg-rose-500';
-                            borderStyle = 'border-rose-200 bg-rose-50/50';
-                            const reason = labObj.maintenance_reason || 'Software upgrade';
+                            indicatorDot = 'bg-amber-500';
+                            borderStyle = 'border-amber-200 bg-amber-50/50';
                             const completionDate = labObj.maintenance_end ? labObj.maintenance_end.split(' ')[0] : 'TBD';
                             statusHtml = `
-                                <div class="w-full text-left">
-                                    <p class="text-[10px] text-rose-700 font-bold mb-1">🔧 Maintenance End: ${completionDate.split('-').reverse().join('/')}</p>
-                                    <button class="w-full text-[10px] font-bold text-slate-500 bg-slate-200 py-2 rounded-xl cursor-not-allowed" disabled>Locked</button>
+                                <div class="w-full text-left space-y-1.5">
+                                    <span class="chip chip-warning text-[9px] font-bold w-full justify-center flex items-center"><i data-lucide="wrench" class="w-3 h-3 mr-1"></i> Maintenance</span>
+                                    <p class="text-[10px] text-slate-800 font-bold text-center">🔧 Expected completion: ${completionDate.split('-').reverse().join('/')}</p>
+                                    <button class="w-full text-[10px] font-bold py-2 rounded-xl cursor-not-allowed flex items-center justify-center space-x-1" style="background-color: #E2E8F0; color: #1E293B;" disabled><i data-lucide="lock" class="w-3 h-3 mr-1"></i> Locked</button>
                                 </div>
                             `;
                         } else if (block) {
-                            indicatorDot = 'bg-red-500';
-                            borderStyle = 'border-red-200 bg-red-50/50';
-                            statusHtml = `<button class="w-full bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-bold py-2 rounded-xl text-[10px] cursor-not-allowed" disabled>🔴 ${block.subject}</button>`;
+                            indicatorDot = 'bg-slate-500';
+                            borderStyle = 'border-slate-200 bg-slate-50/40';
+                            statusHtml = `
+                                <div class="w-full text-left space-y-1.5">
+                                    <span class="chip chip-cancelled text-[9px] font-bold w-full justify-center flex items-center"><i data-lucide="ban" class="w-3 h-3 mr-1"></i> Unavailable</span>
+                                    <button class="w-full text-[10px] font-bold py-2 rounded-xl cursor-not-allowed flex items-center justify-center space-x-1" style="background-color: #E2E8F0; color: #1E293B;" disabled><i data-lucide="calendar" class="w-3 h-3 mr-1"></i> <span>${block.subject}</span></button>
+                                </div>
+                            `;
                         } else if (booking) {
-                            indicatorDot = 'bg-amber-500';
-                            borderStyle = 'border-amber-200 bg-amber-50/50';
+                            indicatorDot = 'bg-rose-500';
+                            borderStyle = 'border-rose-200 bg-rose-50/30';
                             if (booking.faculty_id === currentUserId) {
                                 statusHtml = `
-                                    <div class="w-full text-center space-y-2">
-                                        <p class="text-[10px] text-indigo-700 font-bold">Booked by You</p>
+                                    <div class="w-full text-center space-y-1.5">
+                                        <span class="chip chip-booked text-[9px] font-bold w-full justify-center flex items-center"><i data-lucide="bookmark" class="w-3 h-3 mr-1"></i> Booked (You)</span>
                                         <button type="button" onclick="cancelBooking('${labName}', ${period})" class="cancel-booking-btn w-full btn-danger py-2 rounded-xl text-[10px] transition active:scale-95">Cancel</button>
                                     </div>
                                 `;
                             } else {
-                                statusHtml = `<p class="text-[10px] text-amber-700 text-center font-bold py-2 border border-amber-200 bg-amber-50 rounded-xl">Booked: Prof. ${booking.faculty_name}</p>`;
+                                statusHtml = `
+                                    <div class="w-full text-center space-y-1.5">
+                                        <span class="chip chip-booked text-[9px] font-bold w-full justify-center flex items-center"><i data-lucide="bookmark" class="w-3 h-3 mr-1"></i> Booked</span>
+                                        <p class="text-[10px] text-slate-800 text-center font-bold py-2 border border-slate-300 bg-slate-200/50 rounded-xl cursor-not-allowed flex items-center justify-center"><i data-lucide="user" class="w-3.5 h-3.5 mr-1 text-slate-600"></i> Prof. ${booking.faculty_name}</p>
+                                    </div>
+                                `;
                             }
                         } else {
                             statusHtml = `<button class="w-full btn-primary py-2 rounded-xl text-[10px] transition active:scale-[0.98] book-btn" onclick="bookLab('${labName}', ${period})">Book Now</button>`;
@@ -753,12 +762,12 @@
         
         socket.on('booking_created', (data) => {
             console.log("⚡ Real-time Event: booking_created", data);
-            const exists = bookings.some(b => b.lab === data.lab && b.period === data.period && b.booking_date === data.date);
+            const exists = bookings.some(b => b.lab === data.lab && b.period === data.period && b.date === data.date);
             if (!exists) {
                 bookings.push({
                     lab: data.lab,
                     period: data.period,
-                    booking_date: data.date,
+                    date: data.date,
                     faculty_id: data.faculty_id,
                     faculty_name: data.faculty_name
                 });
@@ -768,7 +777,7 @@
         
         socket.on('booking_cancelled', (data) => {
             console.log("⚡ Real-time Event: booking_cancelled", data);
-            bookings = bookings.filter(b => !(b.lab === data.lab && b.period === data.period && b.booking_date === data.date));
+            bookings = bookings.filter(b => !(b.lab === data.lab && b.period === data.period && b.date === data.date));
             renderDashboard();
         });
         

@@ -40,7 +40,7 @@ async function initNotifications() {
 
     const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
       ? ''
-      : 'https://lab-booking-app.koyeb.app'; // Replace with your actual Koyeb Backend URL
+      : 'https://lab-booking-app.onrender.com';
 
     if (currentToken) {
       console.log("✅ Token:", currentToken);

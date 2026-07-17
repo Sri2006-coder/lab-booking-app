@@ -185,7 +185,7 @@
                     if(activeSubTab === 'upcoming') {
                         actionHtml = `<button onclick="cancelBooking('${b.lab}', ${b.period}, '${b.date}')" class="w-full btn-danger py-3 text-xs">Cancel Booking</button>`;
                     } else {
-                        actionHtml = `<span class="w-full bg-slate-50 text-slate-600 text-center font-bold py-3 rounded-2xl text-xs block border border-slate-200/50">Completed Session</span>`;
+                        actionHtml = `<span class="w-full bg-slate-200 text-slate-800 text-center font-bold py-3 rounded-2xl text-xs block border border-slate-300 cursor-not-allowed flex items-center justify-center"><i data-lucide="check-circle-2" class="w-4 h-4 mr-1 text-emerald-600"></i> Completed Session</span>`;
                     }
 
                     card.innerHTML = `

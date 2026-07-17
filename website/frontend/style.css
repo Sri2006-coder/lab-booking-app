@@ -256,10 +256,10 @@ html, body {
 }
 
 .btn-disabled, :disabled {
-  opacity: 0.55 !important;
+  opacity: 0.9 !important;
   cursor: not-allowed !important;
   background-color: #E2E8F0 !important;
-  color: #64748B !important;
+  color: #1E293B !important;
   border-color: #CBD5E1 !important;
   box-shadow: none !important;
   transform: none !important;
@@ -357,7 +357,7 @@ html, body {
 }
 .chip-cancelled, .chip-inactive {
   background-color: #E2E8F0 !important;
-  color: #475569 !important;
+  color: #1E293B !important;
 }
 .chip-active {
   background-color: #EFF6FF !important;

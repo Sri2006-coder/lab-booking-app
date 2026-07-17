@@ -325,7 +325,7 @@ def get_stats():
     cursor.execute("SELECT COUNT(*) as total FROM faculty")
     total_faculty = get_first_value(cursor.fetchone())
     
-    cursor.execute("SELECT COUNT(DISTINCT lab_id) as total FROM fixed_schedule")
+    cursor.execute("SELECT COUNT(*) as total FROM labs WHERE status != 'maintenance'")
     active_labs = get_first_value(cursor.fetchone())
     
     return_db(conn)
@@ -1120,7 +1120,8 @@ def set_limit():
 def current_user():
     return jsonify({
         "id": session.get("user_id"),
-        "role": session.get("role")
+        "role": session.get("role"),
+        "name": session.get("name")
     })
 
 @app.route('/bookings', methods=['GET'])
@@ -1208,7 +1209,8 @@ def custom_login():
     if user and check_password_hash(user['password'], data['password']):
         session['user_id'] = user['id']
         session['role'] = user['role']
-        return jsonify({"success": True, "role": user['role']})
+        session['name'] = user['name']
+        return jsonify({"success": True, "role": user['role'], "name": user['name']})
     return jsonify({"success": False, "message": "Invalid credentials"})
 
 
