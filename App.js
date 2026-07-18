@@ -105,7 +105,7 @@ export default function App() {
         <View style={{ flex: 1 }}>
           <WebView
             ref={webViewRef}
-            source={{ uri: 'https://lab-booking-system-e77ad.web.app' }}
+            source={{ uri: 'https://lab-booking-app.onrender.com' }}
             style={{ flex: 1 }}
             onLoadStart={() => setIsLoading(true)}
             onLoad={() => {
