@@ -6,7 +6,7 @@ def clean_labs():
     
     cursor.execute("TRUNCATE TABLE labs CASCADE")
     
-    clean_list = ["Lab 1", "Lab 2", "Lab 5", "Lab 6", "Lab 7", "Seminar Hall", "Conference Hall"]
+    clean_list = ["Lab 1", "Lab 2", "Lab 3", "Lab 4", "Lab 5", "Lab 6"]
     for lab in clean_list:
         cursor.execute("INSERT INTO labs (lab_name) VALUES (%s)", (lab,))
         

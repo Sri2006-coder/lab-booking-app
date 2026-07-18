@@ -47,7 +47,7 @@ except Exception as e:
 # Optional Firebase key validation
 if not os.getenv("FIREBASE_KEY") and not os.path.exists(os.path.join(os.path.dirname(__file__), "firebase_key.json")):
     raise RuntimeError("Firebase credentials not provided via FIREBASE_KEY env or firebase_key.json file")
-app.permanent_session_lifetime = timedelta(minutes=10)
+app.permanent_session_lifetime = timedelta(hours=12)
 CORS(app, supports_credentials=True, origins=[
     "https://lab-booking-system-e77ad.web.app",
     "https://lab-booking-system-e77ad.firebaseapp.com",
@@ -1208,6 +1208,7 @@ def custom_login():
     return_db(conn)
 
     if user and check_password_hash(user['password'], data['password']):
+        session.permanent = True
         session['user_id'] = user['id']
         session['role'] = user['role']
         session['name'] = user['name']

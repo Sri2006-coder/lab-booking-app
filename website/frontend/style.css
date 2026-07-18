@@ -173,6 +173,10 @@ html, body {
 .bg-brand-50 { background-color: #EFF6FF !important; }
 .bg-brand-600 { background-color: #2563EB !important; }
 .bg-brand-700 { background-color: #1D4ED8 !important; }
+.from-brand-600 {
+  --tw-gradient-from: #2563EB !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(37, 99, 235, 0)) !important;
+}
 .text-brand-600 { color: #2563EB !important; }
 .text-brand-700 { color: #1D4ED8 !important; }
 .border-brand-100 { border-color: #DBEAFE !important; }
@@ -272,7 +276,7 @@ html, body {
   font-weight: 600 !important;
   font-size: 0.875rem !important;
   border-radius: 12px !important;
-  padding: 0.75rem 1rem !important;
+  padding: 0.75rem 1rem;
   transition: all 0.2s ease-in-out !important;
   outline: none !important;
 }

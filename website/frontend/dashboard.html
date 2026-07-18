@@ -81,21 +81,13 @@
                 <div class="space-y-1">
                     <h3 class="text-[10px] font-extrabold text-slate-700 uppercase tracking-widest px-3 mb-2">Lab Groups</h3>
                     <div class="space-y-1" id="desktop-filters-container">
-                        <div class="lab-filter active flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-700 hover:bg-slate-50 cursor-pointer transition active:scale-[0.99]" data-group="lab567">
+                        <div class="lab-filter active flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-700 hover:bg-slate-50 cursor-pointer transition active:scale-[0.99]" data-group="lab123">
                             <i data-lucide="monitor" class="w-5 h-5 text-slate-500"></i>
-                            <span>Lab 5 - 8</span>
+                            <span>Lab 1 - 3</span>
                         </div>
-                        <div class="lab-filter flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-700 hover:bg-slate-50 cursor-pointer transition active:scale-[0.99]" data-group="lab12">
+                        <div class="lab-filter flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-700 hover:bg-slate-50 cursor-pointer transition active:scale-[0.99]" data-group="lab456">
                             <i data-lucide="monitor" class="w-5 h-5 text-slate-500"></i>
-                            <span>Lab 1 - 4</span>
-                        </div>
-                        <div class="lab-filter flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-700 hover:bg-slate-50 cursor-pointer transition active:scale-[0.99]" data-group="halls">
-                            <i data-lucide="landmark" class="w-5 h-5 text-slate-500"></i>
-                            <span>Halls</span>
-                        </div>
-                        <div class="lab-filter flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-700 hover:bg-slate-50 cursor-pointer transition active:scale-[0.99]" data-group="others">
-                            <i data-lucide="grid" class="w-5 h-5 text-slate-500"></i>
-                            <span>Other Spaces</span>
+                            <span>Lab 4 - 6</span>
                         </div>
                     </div>
                 </div>
@@ -184,10 +176,8 @@
                 <div class="md:hidden space-y-2">
                     <h3 class="text-xs font-extrabold text-slate-700 uppercase tracking-widest">Laboratory Spaces</h3>
                     <div class="flex space-x-2 overflow-x-auto no-scrollbar py-1" id="mobile-filters-container">
-                        <button class="lab-filter active px-4 py-2.5 rounded-full text-xs font-extrabold bg-brand-50 text-brand-600 border border-brand-100 whitespace-nowrap active:scale-95 transition" data-group="lab567">Lab 5 - 8</button>
-                        <button class="lab-filter px-4 py-2.5 rounded-full text-xs font-extrabold bg-white text-slate-700 border border-slate-200 whitespace-nowrap active:scale-95 transition" data-group="lab12">Lab 1 - 4</button>
-                        <button class="lab-filter px-4 py-2.5 rounded-full text-xs font-extrabold bg-white text-slate-700 border border-slate-200 whitespace-nowrap active:scale-95 transition" data-group="halls">Halls / Seminar Rooms</button>
-                        <button class="lab-filter px-4 py-2.5 rounded-full text-xs font-extrabold bg-white text-slate-700 border border-slate-200 whitespace-nowrap active:scale-95 transition" data-group="others">Other Spaces</button>
+                        <button class="lab-filter active px-4 py-2.5 rounded-full text-xs font-extrabold bg-brand-50 text-brand-600 border border-brand-100 whitespace-nowrap active:scale-95 transition" data-group="lab123">Lab 1 - 3</button>
+                        <button class="lab-filter px-4 py-2.5 rounded-full text-xs font-extrabold bg-white text-slate-700 border border-slate-200 whitespace-nowrap active:scale-95 transition" data-group="lab456">Lab 4 - 6</button>
                     </div>
                 </div>
 
@@ -349,27 +339,15 @@
         }
 
         let labs = [];
-        let currentGroup = "lab567";
+        let currentGroup = "lab123";
 
         function getFilteredLabs() {
             if (!Array.isArray(labs)) return [];
-            if (currentGroup === "lab12") {
-                return labs.filter(l => ["Lab 1", "Lab 2", "Lab 3", "Lab 4"].includes(l.lab_name));
+            if (currentGroup === "lab123") {
+                return labs.filter(l => ["Lab 1", "Lab 2", "Lab 3"].includes(l.lab_name));
             }
-            if (currentGroup === "lab567") {
-                return labs.filter(l => ["Lab 5", "Lab 6", "Lab 7", "Lab 8"].includes(l.lab_name));
-            }
-            if (currentGroup === "halls") {
-                return labs.filter(l => l.lab_name && (l.lab_name.toLowerCase().includes("hall") || l.lab_name.toLowerCase().includes("seminar")));
-            }
-            if (currentGroup === "others") {
-                return labs.filter(l => {
-                    const name = l.lab_name;
-                    const isLab1234 = ["Lab 1", "Lab 2", "Lab 3", "Lab 4"].includes(name);
-                    const isLab5678 = ["Lab 5", "Lab 6", "Lab 7", "Lab 8"].includes(name);
-                    const isHall = name && (name.toLowerCase().includes("hall") || name.toLowerCase().includes("seminar"));
-                    return !isLab1234 && !isLab5678 && !isHall;
-                });
+            if (currentGroup === "lab456") {
+                return labs.filter(l => ["Lab 4", "Lab 5", "Lab 6"].includes(l.lab_name));
             }
             return labs;
         }
