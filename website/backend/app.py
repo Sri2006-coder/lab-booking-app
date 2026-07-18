@@ -754,8 +754,14 @@ def save_timetable():
     if 'user_id' not in session or session['role'] != 'admin':
         return jsonify({"success": False, "message": "Unauthorized"}), 401
         
+    conn = None
     try:
-        records = request.json or []
+        data = request.json or []
+        if isinstance(data, dict):
+            records = data.get('records', [])
+        else:
+            records = data
+            
         conn = get_db()
         cursor = conn.cursor()
         
@@ -791,13 +797,14 @@ def save_timetable():
                 count += 1
                 
         conn.commit()
-        return_db(conn)
-        
         socketio.emit('timetable_updated', {}, namespace='/')
         return jsonify({"success": True, "count": count})
     except Exception as e:
         logging.error(f"Error saving timetable database records: {e}")
         return jsonify({"success": False, "message": str(e)})
+    finally:
+        if conn:
+            return_db(conn)
 
 
 @app.route('/labs', methods=['GET'])
