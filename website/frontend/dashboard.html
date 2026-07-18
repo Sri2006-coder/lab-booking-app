@@ -701,6 +701,10 @@
             await loadUser();
             await initializeDashboard();
 
+            if (urlParams.get('tab') === 'profile') {
+                openProfileModal();
+            }
+
             // Check if we need to show permission box
             if (Notification.permission === 'default' && !localStorage.getItem('notif_dismissed')) {
                 document.getElementById('notif-permission-box').classList.remove('hidden');
