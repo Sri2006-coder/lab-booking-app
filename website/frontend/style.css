@@ -280,6 +280,9 @@ html, body {
   transition: all 0.2s ease-in-out !important;
   outline: none !important;
 }
+.md3-input.pl-11 {
+  padding-left: 2.75rem !important;
+}
 .md3-input::placeholder {
   color: #64748B !important;
   opacity: 1 !important;
