@@ -89,6 +89,10 @@
                             <i data-lucide="monitor" class="w-5 h-5 text-slate-500"></i>
                             <span>Lab 4 - 6</span>
                         </div>
+                        <div class="lab-filter flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-700 hover:bg-slate-50 cursor-pointer transition active:scale-[0.99]" data-group="halls">
+                            <i data-lucide="landmark" class="w-5 h-5 text-slate-500"></i>
+                            <span>Halls</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -178,6 +182,7 @@
                     <div class="flex space-x-2 overflow-x-auto no-scrollbar py-1" id="mobile-filters-container">
                         <button class="lab-filter active px-4 py-2.5 rounded-full text-xs font-extrabold bg-brand-50 text-brand-600 border border-brand-100 whitespace-nowrap active:scale-95 transition" data-group="lab123">Lab 1 - 3</button>
                         <button class="lab-filter px-4 py-2.5 rounded-full text-xs font-extrabold bg-white text-slate-700 border border-slate-200 whitespace-nowrap active:scale-95 transition" data-group="lab456">Lab 4 - 6</button>
+                        <button class="lab-filter px-4 py-2.5 rounded-full text-xs font-extrabold bg-white text-slate-700 border border-slate-200 whitespace-nowrap active:scale-95 transition" data-group="halls">Halls</button>
                     </div>
                 </div>
 
@@ -348,6 +353,9 @@
             }
             if (currentGroup === "lab456") {
                 return labs.filter(l => ["Lab 4", "Lab 5", "Lab 6"].includes(l.lab_name));
+            }
+            if (currentGroup === "halls") {
+                return labs.filter(l => l.lab_name && (l.lab_name.toLowerCase().includes("hall") || l.lab_name.toLowerCase().includes("seminar")));
             }
             return labs;
         }

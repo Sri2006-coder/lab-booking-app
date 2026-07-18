@@ -19,7 +19,7 @@ def seed_db():
                    ('John Doe', 'john@lab.com', faculty_hash, 'faculty'))
     
     # Seed Labs
-    labs = [('Lab 1',), ('Lab 2',), ('Lab 3',), ('Lab 4',), ('Lab 5',), ('Lab 6',)]
+    labs = [('Lab 1',), ('Lab 2',), ('Lab 3',), ('Lab 4',), ('Lab 5',), ('Lab 6',), ('Conference Hall',), ('Seminar Hall',)]
     cursor.executemany("INSERT INTO labs (lab_name) VALUES (%s) ON CONFLICT (lab_name) DO NOTHING", labs)
     
     conn.commit()
