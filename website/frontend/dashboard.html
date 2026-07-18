@@ -752,6 +752,74 @@
         // Initialize Socket.io connection for real-time dashboard updates
         const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? '' : 'https://lab-booking-app.onrender.com';
         const socket = io(API_BASE);
+
+        function showRealtimeToast(title, message) {
+            let container = document.getElementById('realtime-toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'realtime-toast-container';
+                container.className = 'fixed top-5 left-1/2 -translate-x-1/2 md:left-auto md:right-5 md:translate-x-0 z-[9999] space-y-3 max-w-sm w-full px-4 md:px-0 pointer-events-none';
+                
+                const style = document.createElement('style');
+                style.innerHTML = `
+                    @keyframes slideInToast {
+                        from { transform: translateY(-20px) scale(0.95); opacity: 0; }
+                        to { transform: translateY(0) scale(1); opacity: 1; }
+                    }
+                    @keyframes fadeOutToast {
+                        from { transform: translateY(0) scale(1); opacity: 1; }
+                        to { transform: translateY(-20px) scale(0.95); opacity: 0; }
+                    }
+                    .toast-slide-in {
+                        animation: slideInToast 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                    }
+                    .toast-fade-out {
+                        animation: fadeOutToast 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                    }
+                `;
+                document.head.appendChild(style);
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = 'bg-white/95 backdrop-blur-md border border-slate-100 shadow-2xl p-4 rounded-2xl flex items-start space-x-3 pointer-events-auto toast-slide-in';
+            
+            toast.innerHTML = `
+                <div class="bg-brand-50 border border-brand-100 p-2 rounded-xl text-brand-600 flex-shrink-0">
+                    <i data-lucide="bell" class="w-4 h-4"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs font-black text-slate-900 leading-none">${title}</p>
+                    <p class="text-[11px] font-bold text-slate-500 mt-1 leading-normal">${message}</p>
+                </div>
+                <button class="text-slate-400 hover:text-slate-600 transition" onclick="this.parentElement.remove()">
+                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                </button>
+            `;
+
+            container.appendChild(toast);
+            
+            if (window.lucide) {
+                lucide.createIcons({
+                    attrs: { class: 'w-4 h-4' },
+                    nameAttr: 'data-lucide',
+                    node: toast
+                });
+            }
+
+            setTimeout(() => {
+                toast.classList.remove('toast-slide-in');
+                toast.classList.add('toast-fade-out');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 6000);
+        }
+        
+        socket.on('notification_created', (data) => {
+            console.log("⚡ Real-time Event: notification_created", data);
+            showRealtimeToast(data.title, data.message);
+        });
         
         socket.on('lab_status_updated', (data) => {
             console.log("⚡ Real-time Event: lab_status_updated", data);
