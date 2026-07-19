@@ -75,7 +75,7 @@ app.config['ULTRAMSG_INSTANCE_ID'] = os.environ.get("ULTRAMSG_INSTANCE_ID")
 app.config['ULTRAMSG_TOKEN'] = os.environ.get("ULTRAMSG_TOKEN")
 app.config['ULTRAMSG_GROUP_ID'] = os.environ.get("ULTRAMSG_GROUP_ID")
 
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 try:
     firebase_json = os.environ.get("FIREBASE_KEY")
