@@ -131,6 +131,8 @@ export default function App() {
             }}
             javaScriptEnabled={true}
             domStorageEnabled={true}
+            sharedCookiesEnabled={true}
+            thirdPartyCookiesEnabled={true}
             onMessage={(event) => {
               try {
                 const data = JSON.parse(event.nativeEvent.data);
