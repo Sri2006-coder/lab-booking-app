@@ -1,10 +1,9 @@
 flask
 flask-cors
 flask-wtf
-gunicorn[eventlet]
+gunicorn
 firebase-admin
 flask-socketio
-eventlet
 psycopg2-binary
 python-dotenv
 pypdf
