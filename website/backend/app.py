@@ -986,7 +986,7 @@ def update_lab_status(lab_id):
         try:
             notif_conn = get_db()
             notif_cursor = notif_conn.cursor()
-            notif_cursor.execute("SELECT f.token FROM fcm_tokens f JOIN faculty u ON f.faculty_id = u.id WHERE u.role IN ('faculty', 'admin')")
+            notif_cursor.execute("SELECT token FROM fcm_tokens WHERE token IS NOT NULL")
             tokens = [r['token'] for r in notif_cursor.fetchall() if r and r.get('token')]
             return_db(notif_conn)
             
@@ -1331,8 +1331,7 @@ def save_token():
         cursor = conn.cursor()
         user_id = session.get('user_id')
         
-        # Save token. If user_id is None, it's a guest/unlogged token (useful for testing)
-        cursor.execute("INSERT INTO fcm_tokens (faculty_id, token) VALUES (%s, %s) ON CONFLICT (token) DO NOTHING", (user_id, token))
+        cursor.execute("INSERT INTO fcm_tokens (faculty_id, token) VALUES (%s, %s) ON CONFLICT (token) DO UPDATE SET faculty_id = EXCLUDED.faculty_id", (user_id, token))
         conn.commit()
         return_db(conn)
         logging.info(f"Token saved to DB. User ID: {user_id}")
