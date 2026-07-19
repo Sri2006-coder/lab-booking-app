@@ -598,14 +598,18 @@
         }
         
         function getSelectedDay(dateStr) {
-            return new Date(dateStr).toLocaleDateString("en-US", { weekday: "long" });
+            if (!dateStr) return '';
+            const parts = dateStr.split('-');
+            const date = new Date(parts[0], parts[1] - 1, parts[2]);
+            return date.toLocaleDateString("en-US", { weekday: "long" });
         }
 
         function isBlocked(lab, period, day) {
+            if (!lab || !day) return null;
             return timetable.find(t =>
-                t.day === day &&
+                t.day.toLowerCase() === day.toLowerCase() &&
                 t.period == period &&
-                t.lab === lab
+                t.lab.toLowerCase().trim() === lab.toLowerCase().trim()
             );
         }
 
