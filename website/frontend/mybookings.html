@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>My Bookings - Lab Booking</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>My Bookings - Slotify</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="/style.css">
@@ -32,13 +33,13 @@
     <!-- Top Navbar -->
     <nav class="bg-gradient-to-r from-brand-600 to-indigo-800 text-white sticky top-0 z-40 shadow-md px-4 py-4 flex items-center justify-between">
         <div class="flex items-center space-x-3">
-            <button onclick="window.history.back()" class="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition active:scale-95">
-                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <button onclick="window.history.back()" class="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition active:scale-95 flex items-center justify-center">
+                <span class="material-symbols-rounded text-white text-sm">arrow_back</span>
             </button>
             <h1 class="font-extrabold text-lg tracking-tight">My Reservations</h1>
         </div>
-        <div class="bg-white/10 p-2 rounded-xl text-white">
-            <i data-lucide="file-text" class="w-4 h-4"></i>
+        <div class="bg-white/10 p-2 rounded-xl text-white flex items-center justify-center">
+            <span class="material-symbols-rounded text-white text-sm">book_online</span>
         </div>
     </nav>
 
@@ -54,7 +55,7 @@
         <div class="flex justify-between items-center px-1">
             <h3 class="text-xs font-extrabold text-slate-400 uppercase tracking-widest">Logged Activities</h3>
             <button onclick="window.location.href='dashboard.html'" class="text-xs text-brand-600 font-extrabold hover:underline flex items-center">
-                <i data-lucide="plus" class="w-3.5 h-3.5 mr-1"></i> New Booking
+                <span class="material-symbols-rounded text-sm mr-1">add</span> New Booking
             </button>
         </div>
         
@@ -68,25 +69,25 @@
     <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200/80 px-4 pt-2 pb-6 z-40 flex justify-around items-center shadow-2xl safe-area-bottom" style="padding-bottom: calc(16px + env(safe-area-inset-bottom, 16px));">
         <a href="dashboard.html" class="flex flex-col items-center space-y-1 text-slate-500">
             <div class="nav-pill py-1 px-4 rounded-full flex items-center justify-center">
-                <i data-lucide="home" class="w-5 h-5"></i>
+                <span class="material-symbols-rounded">home</span>
             </div>
             <span class="text-[9px] font-bold tracking-wider text-slate-700">Home</span>
         </a>
         <a href="calendar_view.html" class="flex flex-col items-center space-y-1 text-slate-500">
             <div class="nav-pill py-1 px-4 rounded-full flex items-center justify-center">
-                <i data-lucide="calendar" class="w-5 h-5"></i>
+                <span class="material-symbols-rounded">calendar_month</span>
             </div>
             <span class="text-[9px] font-bold tracking-wider text-slate-700">Calendar</span>
         </a>
         <a href="mybookings.html" class="flex flex-col items-center space-y-1 text-brand-600">
             <div class="nav-pill nav-pill-active py-1 px-4 rounded-full flex items-center justify-center">
-                <i data-lucide="file-text" class="w-5 h-5"></i>
+                <span class="material-symbols-rounded">book_online</span>
             </div>
             <span class="text-[9px] font-bold tracking-wider text-brand-700">Bookings</span>
         </a>
         <a href="dashboard.html?tab=profile" class="flex flex-col items-center space-y-1 text-slate-500">
             <div class="nav-pill py-1 px-4 rounded-full flex items-center justify-center">
-                <i data-lucide="user" class="w-5 h-5"></i>
+                <span class="material-symbols-rounded">person</span>
             </div>
             <span class="text-[9px] font-bold tracking-wider text-slate-700">Profile</span>
         </a>
@@ -98,7 +99,9 @@
         let activeSubTab = 'upcoming';
 
         window.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
+            if (window.lucide) {
+                lucide.createIcons();
+            }
         });
 
         async function loadUser() {
@@ -165,8 +168,8 @@
                 if (filtered.length === 0) {
                     container.innerHTML = `
                         <div class="md3-card p-8 text-center flex flex-col items-center">
-                            <div class="bg-slate-50 p-4 rounded-2xl text-slate-400 mb-3 border border-slate-100">
-                                <i data-lucide="clipboard-list" class="w-8 h-8"></i>
+                            <div class="bg-slate-50 p-4 rounded-2xl text-slate-400 mb-3 border border-slate-100 flex items-center justify-center">
+                                <span class="material-symbols-rounded text-slate-400" style="font-size: 32px;">clipboard</span>
                             </div>
                             <p class="text-sm font-bold text-slate-800">No bookings logged</p>
                             <p class="text-xs text-slate-500 mt-1 max-w-[200px] leading-relaxed">No laboratory reservations available in this tab.</p>
@@ -187,7 +190,7 @@
                     if(activeSubTab === 'upcoming') {
                         actionHtml = `<button onclick="cancelBooking('${b.lab}', ${b.period}, '${b.date}')" class="w-full btn-danger py-3 text-xs">Cancel Booking</button>`;
                     } else {
-                        actionHtml = `<span class="w-full bg-slate-200 text-slate-800 text-center font-bold py-3 rounded-2xl text-xs block border border-slate-300 cursor-not-allowed flex items-center justify-center"><i data-lucide="check-circle-2" class="w-4 h-4 mr-1 text-green-600"></i> Completed Session</span>`;
+                        actionHtml = `<span class="w-full bg-slate-200 text-slate-800 text-center font-bold py-3 rounded-2xl text-xs block border border-slate-300 cursor-not-allowed flex items-center justify-center"><span class="material-symbols-rounded text-green-600 text-sm mr-1">check_circle</span> Completed Session</span>`;
                     }
 
                     card.innerHTML = `
@@ -209,7 +212,9 @@
                     `;
                     container.appendChild(card);
                 });
-                lucide.createIcons();
+                if (window.lucide) {
+                    lucide.createIcons();
+                }
             } catch (e) {
                 document.getElementById('bookings-list').innerHTML = '<div class="text-center py-10 text-red-500 font-bold">Failed to load reservations list</div>';
             }

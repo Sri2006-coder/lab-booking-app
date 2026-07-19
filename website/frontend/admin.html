@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Admin - Lab Booking System</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Admin Panel - Slotify</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="/style.css">
@@ -32,13 +33,24 @@
     <!-- Top Navbar -->
     <nav class="bg-gradient-to-br from-brand-600 to-indigo-800 text-white sticky top-0 z-40 shadow-md px-6 py-4 flex justify-between items-center">
         <div class="flex items-center space-x-3">
-            <div class="bg-white/10 p-2 rounded-xl text-white shadow-sm border border-white/10">
-                <i data-lucide="settings" class="w-6 h-6 animate-spin" style="animation-duration: 8s;"></i>
-            </div>
-            <div>
-                <h1 class="font-extrabold text-lg tracking-tight">Admin System Panel</h1>
-                <p class="text-[10px] text-blue-100 uppercase tracking-widest font-bold">Administration Hub</p>
-            </div>
+            <!-- Full Slotify Logo (Icon + Text) in white style -->
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 80" class="h-12 w-auto">
+                <g transform="translate(10, 10)">
+                    <rect x="12" y="16" width="36" height="24" rx="3" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round" fill="none" />
+                    <rect x="15.5" y="19.5" width="29" height="17" rx="1.5" fill="#FFFFFF" fill-opacity="0.1" />
+                    <path d="M 8 40 L 52 40 L 49 43.5 L 11 43.5 Z" fill="#FFFFFF" />
+                    <rect x="26" y="40" width="8" height="2" rx="0.5" fill="#2563EB" opacity="0.8" />
+                    <rect x="47" y="13" width="3" height="3" rx="0.5" fill="#00F0FF" opacity="0.95" />
+                    <rect x="52" y="8" width="2" height="2" fill="#00F0FF" opacity="0.8" />
+                    <rect x="44" y="7" width="2" height="2" fill="#FFFFFF" opacity="0.9" />
+                    <rect x="10" y="12" width="3" height="3" rx="0.5" fill="#FFFFFF" opacity="0.95" />
+                    <rect x="5" y="7" width="2" height="2" fill="#FFFFFF" opacity="0.8" />
+                    <rect x="12" y="6" width="2" height="2" fill="#00F0FF" opacity="0.9" />
+                    <rect x="28" y="10" width="3" height="3" rx="0.5" fill="#00F0FF" opacity="0.95" />
+                </g>
+                <text x="80" y="38" font-family="'Poppins', 'Inter', sans-serif" font-size="26" font-weight="800" fill="#FFFFFF" letter-spacing="-0.5">Slotify</text>
+                <text x="80" y="55" font-family="'Inter', sans-serif" font-size="9.5" font-weight="600" fill="#E2E8F0" letter-spacing="0.2">Administration Hub</text>
+            </svg>
         </div>
         <button onclick="logout()" class="btn-danger py-2.5 px-4 text-xs shadow-md">Logout</button>
     </nav>
@@ -52,33 +64,33 @@
                 <h3 class="text-[10px] font-extrabold text-slate-700 uppercase tracking-widest px-3.5 py-2.5">Workspace Navigation</h3>
                 
                 <button onclick="switchAdminTab('overview')" id="sidebar-overview" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition text-left active:scale-[0.99]">
-                    <i data-lucide="pie-chart" class="w-5 h-5 text-slate-500"></i>
+                    <span class="material-symbols-rounded text-slate-500">analytics</span>
                     <span>Overview Stats</span>
                 </button>
                 
                 <button onclick="switchAdminTab('timetable')" id="sidebar-timetable" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition text-left active:scale-[0.99]">
-                    <i data-lucide="calendar" class="w-5 h-5 text-slate-500"></i>
+                    <span class="material-symbols-rounded text-slate-500">calendar_month</span>
                     <span>Timetable & OCR</span>
                 </button>
                 
                 <button onclick="switchAdminTab('maintenance')" id="sidebar-maintenance" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition text-left active:scale-[0.99]">
-                    <i data-lucide="wrench" class="w-5 h-5 text-slate-500"></i>
+                    <span class="material-symbols-rounded text-slate-500">build</span>
                     <span>Lab Maintenance</span>
                 </button>
                 
                 <button onclick="switchAdminTab('faculty')" id="sidebar-faculty" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition text-left active:scale-[0.99]">
-                    <i data-lucide="users" class="w-5 h-5 text-slate-500"></i>
+                    <span class="material-symbols-rounded text-slate-500">group</span>
                     <span>Faculty Management</span>
                 </button>
                 
                 <button onclick="switchAdminTab('logs')" id="sidebar-logs" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition text-left active:scale-[0.99]">
-                    <i data-lucide="file-spreadsheet" class="w-5 h-5 text-slate-500"></i>
+                    <span class="material-symbols-rounded text-slate-500">database</span>
                     <span>System Database Logs</span>
                 </button>
             </div>
             
             <a href="dashboard.html" class="flex items-center justify-center space-x-2 btn-primary py-3.5 text-xs shadow-md">
-                <i data-lucide="layout-template" class="w-4 h-4"></i>
+                <span class="material-symbols-rounded text-white text-sm">dashboard</span>
                 <span>Open Faculty Dashboard</span>
             </a>
         </aside>
@@ -97,8 +109,8 @@
                             <p class="text-[10px] text-slate-700 font-extrabold uppercase tracking-wider">Total Bookings History</p>
                             <h2 id="total-bookings" class="text-3xl font-black text-slate-900 mt-2">0</h2>
                         </div>
-                        <div class="bg-brand-50 text-brand-600 p-3 rounded-2xl border border-brand-100">
-                            <i data-lucide="clipboard-check" class="w-6 h-6"></i>
+                        <div class="bg-brand-50 text-brand-600 p-3 rounded-2xl border border-brand-100 flex items-center justify-center">
+                            <span class="material-symbols-rounded text-2xl text-brand-600">fact_check</span>
                         </div>
                     </div>
                     
@@ -107,8 +119,8 @@
                             <p class="text-[10px] text-slate-700 font-extrabold uppercase tracking-wider">Active Laboratories</p>
                             <h2 id="active-labs" class="text-3xl font-black text-slate-900 mt-2">0</h2>
                         </div>
-                        <div class="bg-green-50 text-green-600 p-3 rounded-2xl border border-green-100">
-                            <i data-lucide="cpu" class="w-6 h-6"></i>
+                        <div class="bg-green-50 text-green-600 p-3 rounded-2xl border border-green-100 flex items-center justify-center">
+                            <span class="material-symbols-rounded text-2xl text-green-600">memory</span>
                         </div>
                     </div>
 
@@ -117,8 +129,8 @@
                             <p class="text-[10px] text-slate-700 font-extrabold uppercase tracking-wider">Faculty Roster accounts</p>
                             <h2 id="faculty-users" class="text-3xl font-black text-slate-900 mt-2">0</h2>
                         </div>
-                        <div class="bg-yellow-50 text-yellow-600 p-3 rounded-2xl border border-yellow-100">
-                            <i data-lucide="users-2" class="w-6 h-6"></i>
+                        <div class="bg-yellow-50 text-yellow-600 p-3 rounded-2xl border border-yellow-100 flex items-center justify-center">
+                            <span class="material-symbols-rounded text-2xl text-yellow-600">group</span>
                         </div>
                     </div>
                 </div>
@@ -126,8 +138,8 @@
                 <!-- Limit Cap controls widget -->
                 <div class="md3-card p-6">
                     <div class="flex items-center space-x-3.5 mb-5">
-                        <div class="bg-slate-100 p-3 rounded-2xl text-slate-600">
-                            <i data-lucide="shield-alert" class="w-6 h-6"></i>
+                        <div class="bg-slate-100 p-3 rounded-2xl text-slate-600 flex items-center justify-center">
+                            <span class="material-symbols-rounded text-2xl text-slate-600">security</span>
                         </div>
                         <div>
                             <h4 class="font-bold text-slate-900">Daily Booking Limit</h4>
@@ -150,7 +162,7 @@
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="bg-white border border-slate-200/60 rounded-3xl p-5 shadow-sm space-y-4">
                         <h4 class="font-bold text-slate-800 flex items-center">
-                            <i data-lucide="info" class="w-5 h-5 text-indigo-600 mr-2"></i> Timetable Workflow
+                            <span class="material-symbols-rounded text-indigo-600 mr-2" style="font-size: 20px;">info</span> Timetable Workflow
                         </h4>
                         <div class="flex items-center space-x-2.5 pb-2.5 border-b border-slate-100">
                             <span class="text-xs font-bold text-slate-500">Formats:</span>
@@ -170,17 +182,17 @@
                     <div class="lg:col-span-2 bg-white rounded-3xl border border-slate-200/60 p-6 shadow-sm flex flex-col justify-between">
                         <div>
                             <h4 class="font-bold text-slate-800 mb-4 flex items-center">
-                                <i data-lucide="upload" class="w-5 h-5 text-brand-600 mr-2"></i> File Selection
+                                <span class="material-symbols-rounded text-brand-600 mr-2" style="font-size: 20px;">upload</span> File Selection
                             </h4>
                             <input type="file" id="csv-file" accept=".csv,.pdf" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-2xl file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer outline-none border border-slate-200 rounded-2xl p-1.5 bg-slate-50/50">
                         </div>
                         
                         <div class="mt-6 flex flex-col sm:flex-row gap-3">
                             <button onclick="uploadCSV()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-2xl transition shadow-md shadow-green-500/10 active:scale-95 text-xs flex items-center justify-center space-x-2">
-                                <i data-lucide="file-digit" class="w-4 h-4"></i> <span>Upload Timetable</span>
+                                <span class="material-symbols-rounded text-sm">upload_file</span> <span>Upload Timetable</span>
                             </button>
                             <button onclick="clearTimetable()" class="flex-1 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-bold py-3.5 rounded-2xl transition active:scale-95 text-xs flex items-center justify-center space-x-2">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i> <span>Delete All Schedule</span>
+                                <span class="material-symbols-rounded text-sm">delete</span> <span>Delete All Schedule</span>
                             </button>
                         </div>
                         <div id="upload-status" class="mt-3 text-xs font-bold text-center text-slate-500"></div>
@@ -191,11 +203,11 @@
                 <div id="timetable-preview-container" class="hidden bg-white rounded-3xl border border-slate-200/60 p-6 shadow-sm space-y-4">
                     <div class="flex items-center justify-between pb-3.5 border-b border-slate-100">
                         <div class="flex items-center space-x-2.5">
-                            <i data-lucide="view" class="w-5 h-5 text-brand-600"></i>
+                            <span class="material-symbols-rounded text-brand-600 mr-2" style="font-size: 20px;">visibility</span>
                             <h4 class="font-bold text-slate-800 font-mono text-sm">Timetable Extraction Preview</h4>
                         </div>
                         <button onclick="addNewPreviewRow()" class="bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-100 text-xs font-bold py-2 px-3.5 rounded-xl transition active:scale-95 flex items-center space-x-1">
-                            <i data-lucide="plus" class="w-3.5 h-3.5"></i> <span>Add Entry</span>
+                            <span class="material-symbols-rounded text-sm">add</span> <span>Add Entry</span>
                         </button>
                     </div>
 
@@ -230,18 +242,18 @@
                 <div class="flex justify-between items-center">
                     <h2 class="text-2xl font-black text-slate-900">Laboratory Operations & Maintenance</h2>
                     <button onclick="fetchLabsList()" class="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold py-2 px-4 rounded-xl transition active:scale-95 text-xs shadow-sm flex items-center space-x-1">
-                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> <span>Sync Labs</span>
+                        <span class="material-symbols-rounded text-sm">sync</span> <span>Sync Labs</span>
                     </button>
                 </div>
 
                 <div class="bg-white border border-slate-200/60 rounded-3xl p-6 shadow-sm space-y-4">
                     <div class="flex justify-between items-center pb-3 border-b border-slate-100">
                         <h4 class="font-bold text-slate-800 flex items-center">
-                            <i data-lucide="wrench" class="w-5 h-5 text-brand-600 mr-2"></i> Laboratories Status
+                            <span class="material-symbols-rounded text-brand-600 mr-2" style="font-size: 20px;">build</span> Laboratories Status
                         </h4>
                         <!-- Add Lab Button Redirect link -->
                         <a href="add_lab.html" class="bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-100 text-xs font-bold py-2.5 px-4 rounded-xl transition active:scale-95 flex items-center">
-                            <i data-lucide="plus" class="w-4 h-4 mr-1"></i> Add Laboratory
+                            <span class="material-symbols-rounded text-sm mr-1">add</span> Add Laboratory
                         </a>
                     </div>
                     <div id="labs-list-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -258,7 +270,7 @@
                     <!-- Faculty Bulk CSV Upload -->
                     <div class="bg-white border border-slate-200/60 rounded-3xl p-5 shadow-sm space-y-4">
                         <h4 class="font-bold text-slate-800 flex items-center">
-                            <i data-lucide="user-plus" class="w-5 h-5 text-brand-600 mr-2"></i> Upload Faculty CSV
+                            <span class="material-symbols-rounded text-brand-600 mr-2" style="font-size: 20px;">person_add</span> Upload Faculty CSV
                         </h4>
                         
                         <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-xs text-slate-500 space-y-2 font-medium">
@@ -271,7 +283,7 @@
                         <input type="file" id="facultyFile" accept=".csv" class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer outline-none border border-slate-200 rounded-xl p-1.5">
                         
                         <button onclick="uploadFaculty()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 rounded-2xl transition shadow-md shadow-brand-500/10 active:scale-95 text-xs flex items-center justify-center space-x-2">
-                            <i data-lucide="upload" class="w-4 h-4"></i> <span>Upload Faculty</span>
+                            <span class="material-symbols-rounded text-sm">upload</span> <span>Upload Faculty</span>
                         </button>
                         <div id="upload-faculty-status" class="text-[10px] font-bold text-center text-slate-500 mt-2"></div>
                     </div>
@@ -280,7 +292,7 @@
                     <div class="lg:col-span-2 bg-white rounded-3xl border border-slate-200/60 p-6 shadow-sm space-y-4">
                         <div class="flex justify-between items-center">
                             <h4 class="font-bold text-slate-800 flex items-center">
-                                <i data-lucide="users" class="w-5 h-5 text-brand-600 mr-2"></i> Registered Faculty
+                                <span class="material-symbols-rounded text-brand-600 mr-2" style="font-size: 20px;">group</span> Registered Faculty
                             </h4>
                             <button onclick="fetchFacultyList()" class="text-xs font-bold text-brand-600 hover:underline">Refresh</button>
                         </div>
@@ -312,7 +324,7 @@
                     <div class="bg-white rounded-3xl border border-slate-200/60 p-6 shadow-sm space-y-4">
                         <div class="flex justify-between items-center">
                             <h4 class="font-bold text-slate-800 flex items-center">
-                                <i data-lucide="history" class="w-5 h-5 text-brand-600 mr-2"></i> Booking History
+                                <span class="material-symbols-rounded text-brand-600 mr-2" style="font-size: 20px;">history</span> Booking History
                             </h4>
                             <button onclick="fetchBookingHistory()" class="text-xs font-bold text-brand-600 hover:underline">Refresh</button>
                         </div>
@@ -339,7 +351,7 @@
                     <div class="bg-white rounded-3xl border border-slate-200/60 p-6 shadow-sm space-y-4">
                         <div class="flex justify-between items-center">
                             <h4 class="font-bold text-slate-800 flex items-center">
-                                <i data-lucide="send" class="w-5 h-5 text-brand-600 mr-2"></i> Notification History
+                                <span class="material-symbols-rounded text-brand-600 mr-2" style="font-size: 20px;">notifications</span> Notification History
                             </h4>
                             <button onclick="fetchNotificationHistory()" class="text-xs font-bold text-brand-600 hover:underline">Refresh</button>
                         </div>
@@ -371,8 +383,8 @@
     <div id="maintenance-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm transition-opacity duration-300">
         <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-100 fade-in m-4">
             <div class="text-center mb-6">
-                <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-3 border border-red-100">
-                    <i data-lucide="wrench" class="w-7 h-7 text-red-600"></i>
+                <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-3 border border-red-100 flex items-center justify-center">
+                    <span class="material-symbols-rounded text-red-600" style="font-size: 28px;">build</span>
                 </div>
                 <h3 class="text-xl font-extrabold text-slate-900">Initiate Maintenance Mode</h3>
                 <p id="m-modal-lab-name" class="text-xs text-slate-500 mt-1 font-semibold">Laboratory name info</p>
@@ -428,7 +440,9 @@
                 activeBtn.className = "w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-black text-brand-600 bg-brand-50 border border-brand-100 transition text-left active:scale-[0.99]";
             }
 
-            lucide.createIcons();
+            if (window.lucide) {
+                lucide.createIcons();
+            }
         }
 
         function showSpinner(show) {
@@ -575,15 +589,17 @@
                     <td class="p-2"><input type="text" value="${rec.lab || ''}" onchange="updateRecordField(${idx}, 'lab', this.value)" class="bg-white border border-slate-200 rounded p-1 w-full text-xs font-semibold outline-none focus:border-brand-500"></td>
                     <td class="p-2 text-center">${confidenceBadge}</td>
                     <td class="p-2 text-center">
-                        <button onclick="removePreviewRow(${idx})" class="p-1 text-red-600 hover:bg-red-50 rounded-lg active:scale-95 transition" title="Delete Row">
-                            <i data-lucide="trash" class="w-4 h-4 mx-auto"></i>
+                        <button onclick="removePreviewRow(${idx})" class="p-1 text-red-600 hover:bg-red-50 rounded-lg active:scale-95 transition flex items-center justify-center mx-auto" title="Delete Row">
+                            <span class="material-symbols-rounded text-sm">delete</span>
                         </button>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
 
-            lucide.createIcons();
+            if (window.lucide) {
+                lucide.createIcons();
+            }
         }
 
         function updateRecordField(idx, field, val) {
@@ -678,7 +694,7 @@
                         <div class="p-4 rounded-3xl border shadow-sm flex flex-col justify-between ${bgClass}">
                             <div class="flex justify-between items-center w-full mb-2">
                                 <div class="flex items-center space-x-2">
-                                    <i data-lucide="monitor" class="w-4 h-4 text-slate-500"></i>
+                                    <span class="material-symbols-rounded text-slate-500 text-sm">computer</span>
                                     <h4 class="text-sm font-bold text-slate-800">${lab.lab_name}</h4>
                                 </div>
                                 <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${badgeClass}">${lab.status || 'Active'}</span>
@@ -695,7 +711,9 @@
                 });
 
                 container.innerHTML = html;
-                lucide.createIcons();
+                if (window.lucide) {
+                    lucide.createIcons();
+                }
 
             } catch(e) {
                 container.innerHTML = '<p class="text-xs text-red-500 text-center py-6 col-span-full">Database connection error</p>';
@@ -735,7 +753,9 @@
             document.getElementById('m-expected-end').value = tomorrow.toISOString().split('T')[0];
             
             document.getElementById('maintenance-modal').classList.remove('hidden');
-            lucide.createIcons();
+            if (window.lucide) {
+                lucide.createIcons();
+            }
         }
 
         function closeMaintenanceModal() {

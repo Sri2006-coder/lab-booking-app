@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Login - Lab Booking System</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Login - Slotify</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="/style.css">
@@ -36,12 +37,30 @@
 
     <!-- Splash Screen Overlay -->
     <div id="splash-screen" class="fixed inset-0 bg-brand-600 z-[999] flex flex-col justify-center items-center text-white transition-opacity duration-500">
-        <div class="splash-pulse flex flex-col items-center">
-            <div class="bg-white/10 w-24 h-24 rounded-3xl flex items-center justify-center mb-6 shadow-xl backdrop-blur-md border border-white/20">
-                <i data-lucide="layout-grid" class="w-12 h-12 text-white"></i>
+        <div class="splash-pulse flex flex-col items-center text-center">
+            <!-- Slotify SVG Logo centered on splash screen -->
+            <div class="w-24 h-24 mb-6 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="w-24 h-24">
+                    <!-- Laptop Screen Outer -->
+                    <rect x="24" y="28" width="52" height="34" rx="4" stroke="#FFFFFF" stroke-width="4" stroke-linejoin="round" fill="none" />
+                    <!-- Laptop Screen Inner Line/Fill -->
+                    <rect x="29" y="33" width="42" height="24" rx="2" fill="#FFFFFF" fill-opacity="0.1" />
+                    <!-- Laptop Base -->
+                    <path d="M 18 62 L 82 62 L 78 67 L 22 67 Z" fill="#FFFFFF" />
+                    <rect x="44" y="62" width="12" height="3" rx="1" fill="#2563EB" opacity="0.8" />
+                    <!-- Digital Pixels Flowing Outward -->
+                    <rect x="74" y="24" width="4" height="4" rx="1" fill="#00F0FF" opacity="0.9" />
+                    <rect x="82" y="16" width="3" height="3" rx="0.5" fill="#00F0FF" opacity="0.7" />
+                    <rect x="70" y="14" width="3" height="3" rx="0.5" fill="#FFFFFF" opacity="0.8" />
+                    <rect x="22" y="22" width="4" height="4" rx="1" fill="#FFFFFF" opacity="0.9" />
+                    <rect x="14" y="14" width="3" height="3" rx="0.5" fill="#FFFFFF" opacity="0.7" />
+                    <rect x="26" y="12" width="3" height="3" rx="0.5" fill="#00F0FF" opacity="0.8" />
+                    <rect x="48" y="20" width="4" height="4" rx="1" fill="#00F0FF" opacity="0.9" />
+                </svg>
             </div>
-            <h1 class="text-3xl font-extrabold tracking-tight">Lab Booking</h1>
-            <p class="text-blue-100 text-sm mt-2 tracking-widest font-semibold uppercase">Jayshriram Group</p>
+            <h1 class="text-4xl font-extrabold tracking-tight">Slotify</h1>
+            <p class="text-blue-100 text-xs mt-2 tracking-widest font-bold uppercase">Smart Lab Booking System</p>
+            <p class="text-blue-200 text-[10px] mt-1.5 tracking-wider font-semibold">Book. Manage. Learn.</p>
         </div>
         <div class="absolute bottom-10 flex flex-col items-center">
             <div class="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -52,11 +71,34 @@
     <!-- Main Container Card -->
     <div id="login-container" class="w-full max-w-md bg-white/80 rounded-3xl shadow-2xl p-8 border border-slate-100 backdrop-blur-lg fade-in hidden relative z-10">
         <div class="text-center mb-8">
-            <div class="bg-brand-50 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-brand-100">
-                <i data-lucide="lock" class="w-8 h-8 text-brand-600"></i>
+            <!-- Full Slotify Logo (Icon + Text) -->
+            <div class="flex justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 80" class="h-16 w-auto">
+                    <defs>
+                        <linearGradient id="slotifyGradIndex" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#2563EB" />
+                            <stop offset="100%" stop-color="#06B6D4" />
+                        </linearGradient>
+                    </defs>
+                    <g transform="translate(10, 10)">
+                        <rect x="12" y="16" width="36" height="24" rx="3" stroke="url(#slotifyGradIndex)" stroke-width="3" stroke-linejoin="round" fill="none" />
+                        <rect x="15.5" y="19.5" width="29" height="17" rx="1.5" fill="url(#slotifyGradIndex)" fill-opacity="0.1" />
+                        <path d="M 8 40 L 52 40 L 49 43.5 L 11 43.5 Z" fill="url(#slotifyGradIndex)" />
+                        <rect x="26" y="40" width="8" height="2" rx="0.5" fill="#FFFFFF" opacity="0.8" />
+                        <rect x="47" y="13" width="3" height="3" rx="0.5" fill="#06B6D4" opacity="0.9" />
+                        <rect x="52" y="8" width="2" height="2" fill="#06B6D4" opacity="0.6" />
+                        <rect x="44" y="7" width="2" height="2" fill="#2563EB" opacity="0.8" />
+                        <rect x="10" y="12" width="3" height="3" rx="0.5" fill="#2563EB" opacity="0.9" />
+                        <rect x="5" y="7" width="2" height="2" fill="#2563EB" opacity="0.6" />
+                        <rect x="12" y="6" width="2" height="2" fill="#06B6D4" opacity="0.7" />
+                        <rect x="28" y="10" width="3" height="3" rx="0.5" fill="url(#slotifyGradIndex)" opacity="0.85" />
+                    </g>
+                    <text x="80" y="38" font-family="'Poppins', 'Inter', sans-serif" font-size="26" font-weight="800" fill="#1E293B" letter-spacing="-0.5">Slotify</text>
+                    <text x="80" y="55" font-family="'Inter', sans-serif" font-size="9.5" font-weight="600" fill="#64748B" letter-spacing="0.2">Smart Lab Booking System</text>
+                </svg>
             </div>
-            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Welcome Back</h2>
-            <p class="text-sm text-slate-500 mt-1.5">Sign in to manage and book your laboratory</p>
+            <h2 class="text-xl font-bold text-slate-900 tracking-tight">Sign In to Your Account</h2>
+            <p class="text-xs text-slate-500 mt-1">Book. Manage. Learn.</p>
         </div>
         
         <!-- Error Alerts -->
@@ -70,7 +112,7 @@
                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Email Address</label>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500 pointer-events-none">
-                        <i data-lucide="mail" class="w-5 h-5"></i>
+                        <span class="material-symbols-rounded text-slate-400">mail</span>
                     </span>
                     <input type="email" id="email" placeholder="email@college.edu" required class="w-full pl-11 pr-4 py-3.5 outline-none transition bg-slate-50/50 focus:bg-white text-sm text-slate-900 font-medium md3-input">
                 </div>
@@ -79,7 +121,7 @@
                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Password</label>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500 pointer-events-none">
-                        <i data-lucide="key-round" class="w-5 h-5"></i>
+                        <span class="material-symbols-rounded text-slate-400">lock</span>
                     </span>
                     <input type="password" id="password" placeholder="••••••••" required class="w-full pl-11 pr-4 py-3.5 outline-none transition bg-slate-50/50 focus:bg-white text-sm text-slate-900 font-medium md3-input">
                 </div>

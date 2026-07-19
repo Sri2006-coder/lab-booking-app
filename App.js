@@ -95,7 +95,7 @@ export default function App() {
           <Text style={styles.errorEmoji}>📶</Text>
           <Text style={styles.errorTitle}>Connection Timeout</Text>
           <Text style={styles.errorText}>
-            Could not connect to the Lab Booking server. Please make sure you are connected to the internet.
+            Could not connect to the Slotify server. Please make sure you are connected to the internet.
           </Text>
           <TouchableOpacity style={styles.retryButton} onPress={handleReload}>
             <Text style={styles.retryButtonText}>Tap to Retry</Text>
@@ -148,7 +148,7 @@ export default function App() {
           {isLoading && (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#2563EB" />
-              <Text style={styles.loadingText}>Connecting to Lab Panel...</Text>
+              <Text style={styles.loadingText}>Connecting to Slotify...</Text>
             </View>
           )}
         </View>

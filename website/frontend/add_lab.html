@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Add Lab - Lab Booking</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Add Lab - Slotify</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="/style.css">
@@ -32,13 +33,13 @@
     <!-- Top Navbar -->
     <nav class="bg-gradient-to-br from-brand-600 to-indigo-800 text-white sticky top-0 z-40 shadow-md px-6 py-4 flex justify-between items-center">
         <div class="flex items-center space-x-3">
-            <button onclick="window.history.back()" class="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition active:scale-95">
-                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <button onclick="window.history.back()" class="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition active:scale-95 flex items-center justify-center">
+                <span class="material-symbols-rounded text-white text-sm">arrow_back</span>
             </button>
             <h1 class="font-extrabold text-lg tracking-tight">Add Laboratory</h1>
         </div>
-        <div class="bg-white/10 p-2 rounded-xl text-white">
-            <i data-lucide="plus" class="w-4 h-4"></i>
+        <div class="bg-white/10 p-2 rounded-xl text-white flex items-center justify-center">
+            <span class="material-symbols-rounded text-white text-sm">add</span>
         </div>
     </nav>
 
@@ -64,7 +65,9 @@
 
     <script>
         window.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
+            if (window.lucide) {
+                lucide.createIcons();
+            }
         });
 
         async function addLab() {
