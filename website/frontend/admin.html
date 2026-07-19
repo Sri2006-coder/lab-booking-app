@@ -349,7 +349,6 @@
                                     <tr class="bg-slate-50 border-b border-slate-100 text-slate-600 font-extrabold uppercase tracking-wider">
                                         <th class="p-3">Created At</th>
                                         <th class="p-3">Type</th>
-                                        <th class="p-3">Destination</th>
                                         <th class="p-3">Status</th>
                                         <th class="p-3">Created By</th>
                                     </tr>
@@ -910,7 +909,7 @@
                 const data = await res.json();
                 if (data.success) {
                     if (data.notifications.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="5" class="text-xs text-slate-400 text-center py-4 font-bold">No notifications logged.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="4" class="text-xs text-slate-400 text-center py-4 font-bold">No notifications logged.</td></tr>';
                         return;
                     }
                     let html = '';
@@ -925,7 +924,6 @@
                             <td class="p-3">
                                 <span class="px-2 py-0.5 rounded-lg text-[10px] uppercase font-bold border ${typeColor}">${n.notification_type.replace('_', ' ')}</span>
                             </td>
-                            <td class="p-3 text-slate-500 font-semibold">${n.destination || 'N/A'}</td>
                             <td class="p-3">
                                 <span class="px-2 py-0.5 rounded-full text-[9px] font-black text-green-800 bg-green-100 border border-green-200">${n.status || 'Sent'}</span>
                             </td>
@@ -935,10 +933,10 @@
                     });
                     tbody.innerHTML = html;
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="5" class="text-xs text-red-500 text-center py-4">Failed to load notification history.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-xs text-red-500 text-center py-4">Failed to load notification history.</td></tr>';
                 }
             } catch (err) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-xs text-red-500 text-center py-4">Error loading notification history.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="text-xs text-red-500 text-center py-4">Error loading notification history.</td></tr>';
             }
         }
 
