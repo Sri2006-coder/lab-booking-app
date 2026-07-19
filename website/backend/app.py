@@ -986,7 +986,7 @@ def update_lab_status(lab_id):
         try:
             notif_conn = get_db()
             notif_cursor = notif_conn.cursor()
-            notif_cursor.execute("SELECT f.token FROM fcm_tokens f JOIN faculty u ON f.faculty_id = u.id WHERE u.role = 'faculty'")
+            notif_cursor.execute("SELECT f.token FROM fcm_tokens f JOIN faculty u ON f.faculty_id = u.id WHERE u.role IN ('faculty', 'admin')")
             tokens = [r['token'] for r in notif_cursor.fetchall() if r and r.get('token')]
             return_db(notif_conn)
             
