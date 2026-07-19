@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Slotify",
-    "slug": "slotify",
+    "slug": "lab-booking-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
