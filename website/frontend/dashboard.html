@@ -475,14 +475,28 @@
                         let borderStyle = 'border-slate-200 bg-slate-50/40';
                         let indicatorDot = 'bg-green-500';
                         
+                        let isUnderMaintenanceOnSelectedDay = false;
+                        let completionDate = 'TBD';
                         if (labObj.status === 'maintenance') {
+                            if (labObj.maintenance_end) {
+                                const dateList = labObj.maintenance_end.split(',').map(d => d.trim());
+                                if (dateList.includes(currentDate)) {
+                                    isUnderMaintenanceOnSelectedDay = true;
+                                    // format each date to DD/MM/YYYY
+                                    completionDate = dateList.map(d => d.split('-').reverse().join('/')).join(', ');
+                                }
+                            } else {
+                                isUnderMaintenanceOnSelectedDay = true;
+                            }
+                        }
+
+                        if (isUnderMaintenanceOnSelectedDay) {
                             indicatorDot = 'bg-yellow-500';
                             borderStyle = 'border-yellow-200 bg-yellow-50/50';
-                            const completionDate = labObj.maintenance_end ? labObj.maintenance_end.split(' ')[0] : 'TBD';
                             statusHtml = `
                                 <div class="w-full text-left space-y-1.5">
                                     <span class="chip chip-warning text-[9px] font-bold w-full justify-center flex items-center"><span class="material-symbols-rounded text-xs mr-1">build</span> Maintenance</span>
-                                    <p class="text-[10px] text-slate-800 font-bold text-center">🔧 Expected completion: ${completionDate.split('-').reverse().join('/')}</p>
+                                    <p class="text-[10px] text-slate-800 font-bold text-center">🔧 Scheduled: ${completionDate}</p>
                                     <button class="w-full text-[10px] font-bold py-2 rounded-xl cursor-not-allowed flex items-center justify-center space-x-1" style="background-color: #E2E8F0; color: #1E293B;" disabled><span class="material-symbols-rounded text-xs mr-1">lock</span> Locked</button>
                                 </div>
                             `;

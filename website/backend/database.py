@@ -134,6 +134,12 @@ def init_db():
     ALTER TABLE labs ADD COLUMN IF NOT EXISTS maintenance_start TIMESTAMP;
     ALTER TABLE labs ADD COLUMN IF NOT EXISTS maintenance_end TIMESTAMP;
     ''')
+    
+    # Migrate maintenance_end column to support text lists of multiple dates
+    try:
+        cursor.execute("ALTER TABLE labs ALTER COLUMN maintenance_end TYPE TEXT USING maintenance_end::text;")
+    except Exception as e:
+        logging.warning(f"Note: Column migration alert: {e}")
 
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS notifications (

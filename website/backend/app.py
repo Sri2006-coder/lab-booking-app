@@ -545,11 +545,23 @@ def book_slot():
             
             # Check if lab is under maintenance
             if row.get('status') == 'maintenance':
-                return_db(conn)
-                return jsonify({
-                    "success": False,
-                    "message": "This laboratory is currently under maintenance. Please choose another laboratory."
-                }), 403
+                cursor.execute("SELECT maintenance_end FROM labs WHERE id = %s", (lab_id,))
+                m_end_row = cursor.fetchone()
+                m_dates = m_end_row['maintenance_end'] if m_end_row else None
+                if m_dates:
+                    date_list = [d.strip() for d in m_dates.split(',')]
+                    if date in date_list:
+                        return_db(conn)
+                        return jsonify({
+                            "success": False,
+                            "message": f"This laboratory is under maintenance on {date}. Please choose another date or laboratory."
+                        }), 403
+                else:
+                    return_db(conn)
+                    return jsonify({
+                        "success": False,
+                        "message": "This laboratory is currently under maintenance indefinitely. Please choose another laboratory."
+                    }), 403
 
             cursor.execute("SELECT id FROM bookings WHERE lab_id = %s AND booking_date = %s AND period = %s", (lab_id, date, period))
             if cursor.fetchone():
@@ -897,12 +909,15 @@ def update_lab_status(lab_id):
         if not reason:
             return jsonify({"success": False, "message": "Maintenance reason is mandatory."}), 400
         if not expected_end:
-            return jsonify({"success": False, "message": "Expected completion date is mandatory."}), 400
+            return jsonify({"success": False, "message": "Maintenance dates are mandatory."}), 400
             
-        try:
-            datetime.strptime(expected_end, "%Y-%m-%d")
-        except ValueError:
-            return jsonify({"success": False, "message": "Expected completion date must be in YYYY-MM-DD format."}), 400
+        # expected_end can be a comma-separated list of dates, e.g. "2026-07-20,2026-07-21"
+        dates = [d.strip() for d in expected_end.split(',')]
+        for d in dates:
+            try:
+                datetime.strptime(d, "%Y-%m-%d")
+            except ValueError:
+                return jsonify({"success": False, "message": f"Date {d} must be in YYYY-MM-DD format."}), 400
 
     conn = get_db()
     cursor = conn.cursor()

@@ -399,8 +399,15 @@
                 </div>
                 
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Expected Completion Date</label>
-                    <input type="date" id="m-expected-end" required class="w-full px-4 py-3.5 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none text-sm text-slate-900 font-semibold md3-input bg-slate-50/50 focus:bg-white">
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Maintenance Dates</label>
+                    <div class="flex gap-2 mb-2">
+                        <input type="date" id="m-date-picker" class="flex-1 px-4 py-3.5 rounded-2xl border border-slate-200 outline-none text-xs font-semibold bg-slate-50/50 focus:bg-white md3-input">
+                        <button type="button" onclick="addMaintenanceDate()" class="bg-brand-600 hover:bg-brand-700 text-white font-bold px-4 py-2.5 rounded-2xl active:scale-[0.98] transition text-xs flex items-center justify-center">Add</button>
+                    </div>
+                    <div id="m-dates-container" class="flex flex-wrap gap-1.5 min-h-[42px] p-2.5 border border-slate-200 bg-slate-50/30 rounded-2xl">
+                        <!-- Tags injected dynamically -->
+                    </div>
+                    <input type="hidden" id="m-expected-end" required>
                 </div>
             </div>
 
@@ -743,19 +750,65 @@
             }
         }
 
+        let selectedMaintenanceDates = [];
+
         function openMaintenanceModal(labId, labName) {
             document.getElementById('m-modal-lab-id').value = labId;
             document.getElementById('m-modal-lab-name').innerText = `Laboratory: ${labName}`;
             document.getElementById('m-reason').value = '';
             
+            selectedMaintenanceDates = [];
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
-            document.getElementById('m-expected-end').value = tomorrow.toISOString().split('T')[0];
+            const tomorrowStr = tomorrow.toISOString().split('T')[0];
+            selectedMaintenanceDates.push(tomorrowStr);
+            renderMaintenanceDates();
             
             document.getElementById('maintenance-modal').classList.remove('hidden');
             if (window.lucide) {
                 lucide.createIcons();
             }
+        }
+
+        function addMaintenanceDate() {
+            const picker = document.getElementById('m-date-picker');
+            const dateVal = picker.value;
+            if (!dateVal) return;
+            if (selectedMaintenanceDates.includes(dateVal)) return;
+            selectedMaintenanceDates.push(dateVal);
+            selectedMaintenanceDates.sort();
+            renderMaintenanceDates();
+            picker.value = '';
+        }
+
+        function removeMaintenanceDate(dateVal) {
+            selectedMaintenanceDates = selectedMaintenanceDates.filter(d => d !== dateVal);
+            renderMaintenanceDates();
+        }
+
+        function renderMaintenanceDates() {
+            const container = document.getElementById('m-dates-container');
+            const hiddenInput = document.getElementById('m-expected-end');
+            container.innerHTML = '';
+            
+            if (selectedMaintenanceDates.length === 0) {
+                container.innerHTML = '<span class="text-[10px] text-slate-400 font-bold self-center">No dates selected. Please add one.</span>';
+                hiddenInput.value = '';
+                return;
+            }
+            
+            selectedMaintenanceDates.forEach(d => {
+                const displayDate = d.split('-').reverse().join('-');
+                const tag = document.createElement('span');
+                tag.className = 'inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100';
+                tag.innerHTML = `
+                    <span>${displayDate}</span>
+                    <button type="button" onclick="removeMaintenanceDate('${d}')" class="text-indigo-500 hover:text-indigo-700 ml-1 font-extrabold focus:outline-none">✕</button>
+                `;
+                container.appendChild(tag);
+            });
+            
+            hiddenInput.value = selectedMaintenanceDates.join(',');
         }
 
         function closeMaintenanceModal() {
