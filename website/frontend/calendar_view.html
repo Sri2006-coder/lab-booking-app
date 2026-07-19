@@ -64,11 +64,11 @@
             </div>
             <div class="flex items-center space-x-1.5">
                 <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                <span>Available</span>
+                <span>Free</span>
             </div>
             <div class="flex items-center space-x-1.5">
                 <span class="w-2 h-2 rounded-full bg-red-500"></span>
-                <span>Booked</span>
+                <span>Busy</span>
             </div>
         </div>
 
@@ -132,28 +132,25 @@
                     const dayDiv = document.createElement('div');
                     
                     let borderClass = "border-green-200 hover:border-green-300 bg-green-50/20";
-                    let indicatorColor = "bg-green-500";
-                    let label = "Available";
+                    let badgeClass = "bg-green-100 text-green-700 border border-green-200/50";
+                    let labelText = "FREE";
                     let textClass = "text-slate-900";
 
                     if(d.status === 'today') {
                         borderClass = "border-brand-500 bg-brand-50/50 ring-2 ring-brand-500/20";
-                        indicatorColor = "bg-brand-500";
-                        label = "Today";
+                        badgeClass = "bg-brand-100 text-brand-700 border border-brand-200/50";
+                        labelText = "TODAY";
                     } else if(d.status === 'booked') {
                         borderClass = "border-red-200 bg-red-50/30";
-                        indicatorColor = "bg-red-500";
-                        label = "Booked";
+                        badgeClass = "bg-red-100 text-red-700 border border-red-200/50";
+                        labelText = "BUSY";
                     }
 
-                    dayDiv.className = `rounded-2xl border p-3.5 flex flex-col items-center justify-center text-center cursor-pointer transition active:scale-95 shadow-sm ${borderClass}`;
+                    dayDiv.className = `rounded-2xl border p-4 flex flex-col items-center justify-center text-center cursor-pointer transition active:scale-95 shadow-sm relative ${borderClass}`;
                     
                     dayDiv.innerHTML = `
-                        <b class="text-sm font-extrabold ${textClass}">${d.day}</b>
-                        <div class="flex items-center space-x-1 mt-1">
-                            <span class="w-1.5 h-1.5 rounded-full ${indicatorColor}"></span>
-                            <span class="text-[8px] font-extrabold uppercase tracking-wider text-slate-700">${label}</span>
-                        </div>
+                        <span class="text-base font-black ${textClass}">${d.day}</span>
+                        <span class="mt-2 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${badgeClass}">${labelText}</span>
                     `;
                     
                     dayDiv.onclick = () => { window.location.href = `dashboard.html?date=${d.date}`; };
