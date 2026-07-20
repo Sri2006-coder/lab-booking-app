@@ -868,7 +868,7 @@
         }
 
         // Initialize Socket.io connection for real-time dashboard updates
-        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? '' : 'https://lab-booking-app.onrender.com';
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? '' : BACKEND_URL;
         const socket = io(API_BASE);
 
         function showRealtimeToast(title, message) {

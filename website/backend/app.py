@@ -26,7 +26,10 @@ import requests
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 
 
+from flask_compress import Compress
+
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), '../frontend'))
+Compress(app)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 # Use environment variable for secret key
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
@@ -1423,6 +1426,10 @@ def send_test_notification():
 # Instead, use an external monitor like UptimeRobot (free) to ping /health
 # every 5 minutes: https://uptimerobot.com
 # ─────────────────────────────────────────────────────────────────────────────
+
+@app.route('/ping', methods=['GET'])
+def ping():
+    return jsonify({"status": "awake", "time": datetime.now().isoformat()}), 200
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
