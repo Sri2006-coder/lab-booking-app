@@ -190,9 +190,21 @@ def send_notification():
         return jsonify({"success": False, "error": str(e)})
 @app.after_request
 def add_header(response):
-    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
+    # Only disable caching for mutation APIs; allow short caching for read-only data
+    if request.path.startswith('/api/') or request.path in ('/', '/health'):
+        if request.method in ('POST', 'PUT', 'DELETE', 'PATCH'):
+            # Mutations: never cache
+            response.headers["Cache-Control"] = "no-store"
+        elif request.path == '/api/timetable':
+            # Timetable: allow 30s browser cache (it's re-fetched on socket events anyway)
+            response.headers["Cache-Control"] = "private, max-age=30"
+        else:
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+    elif request.path == '/labs':
+        # Labs rarely change — allow 60s browser cache
+        response.headers["Cache-Control"] = "private, max-age=60"
     return response
 
 def make_row_dict(row, cursor):
@@ -1405,22 +1417,12 @@ def send_test_notification():
         logging.error(f"Test notification error: {e}")
         return jsonify({"success": False, "message": "Server error."}), 500
 
-# ── Keep-Alive Ping (prevents Render free tier from sleeping) ────────────
-def _keep_alive():
-    """Ping own /health endpoint every 10 minutes to prevent cold starts."""
-    import urllib.request
-    import time
-    url = os.environ.get("RENDER_EXTERNAL_URL", "http://localhost:5000") + "/health"
-    while True:
-        time.sleep(600)  # 10 minutes
-        try:
-            urllib.request.urlopen(url, timeout=10)
-            logging.info("[KEEPALIVE] Ping sent")
-        except Exception:
-            pass
-
-_keepalive_thread = threading.Thread(target=_keep_alive, daemon=True)
-_keepalive_thread.start()
+# ── Note: Cold Start Prevention ──────────────────────────────────────────────
+# Render free tier spins down after 15 minutes of inactivity.
+# A self-ping thread cannot prevent this (sleeping services don't run code).
+# Instead, use an external monitor like UptimeRobot (free) to ping /health
+# every 5 minutes: https://uptimerobot.com
+# ─────────────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

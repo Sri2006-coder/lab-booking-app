@@ -127,14 +127,18 @@ def init_db():
     )
     ''')
 
-    # Apply database migrations for Lab Maintenance feature
-    cursor.execute('''
-    ALTER TABLE labs ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active';
-    ALTER TABLE labs ADD COLUMN IF NOT EXISTS maintenance_reason TEXT;
-    ALTER TABLE labs ADD COLUMN IF NOT EXISTS maintenance_start TIMESTAMP;
-    ALTER TABLE labs ADD COLUMN IF NOT EXISTS maintenance_end TIMESTAMP;
-    ''')
-    
+    # Apply database migrations for Lab Maintenance feature (one statement per execute)
+    for migration_sql in [
+        "ALTER TABLE labs ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active'",
+        "ALTER TABLE labs ADD COLUMN IF NOT EXISTS maintenance_reason TEXT",
+        "ALTER TABLE labs ADD COLUMN IF NOT EXISTS maintenance_start TIMESTAMP",
+        "ALTER TABLE labs ADD COLUMN IF NOT EXISTS maintenance_end TEXT",
+    ]:
+        try:
+            cursor.execute(migration_sql)
+        except Exception as e:
+            logging.warning(f"Migration skipped: {e}")
+
     # Migrate maintenance_end column to support text lists of multiple dates
     try:
         cursor.execute("ALTER TABLE labs ALTER COLUMN maintenance_end TYPE TEXT USING maintenance_end::text;")
@@ -156,15 +160,34 @@ def init_db():
     ''')
     
     # Run migration to add columns if they don't exist
-    cursor.execute('''
-    ALTER TABLE notifications ADD COLUMN IF NOT EXISTS destination TEXT DEFAULT 'All (WhatsApp, FCM, Socket)';
-    ALTER TABLE notifications ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Sent';
-    ''')
-    
+    for notif_migration in [
+        "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS destination TEXT DEFAULT 'All (WhatsApp, FCM, Socket)'",
+        "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Sent'",
+    ]:
+        try:
+            cursor.execute(notif_migration)
+        except Exception as e:
+            logging.warning(f"Notification migration skipped: {e}")
+
+    # ── Performance Indexes ─────────────────────────────────────────────────
+    # These prevent full-table scans on the most frequent query patterns.
+    index_sqls = [
+        "CREATE INDEX IF NOT EXISTS idx_bookings_date ON bookings (booking_date)",
+        "CREATE INDEX IF NOT EXISTS idx_bookings_lab_id ON bookings (lab_id)",
+        "CREATE INDEX IF NOT EXISTS idx_bookings_faculty_id ON bookings (faculty_id)",
+        "CREATE INDEX IF NOT EXISTS idx_bookings_date_lab ON bookings (booking_date, lab_id, period)",
+        "CREATE INDEX IF NOT EXISTS idx_fixed_schedule_day ON fixed_schedule (day)",
+        "CREATE INDEX IF NOT EXISTS idx_fcm_tokens_faculty ON fcm_tokens (faculty_id)",
+    ]
+    for idx_sql in index_sqls:
+        try:
+            cursor.execute(idx_sql)
+        except Exception as e:
+            logging.warning(f"Index creation skipped: {e}")
+
     conn.commit()
     return_db(conn)
 
 if __name__ == '__main__':
     init_db()
-    print("Database initialized successfully.")
 

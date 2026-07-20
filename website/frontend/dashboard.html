@@ -4,21 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Dashboard - Slotify</title>
+    <!-- Preconnect for faster font loading -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@0.525.0/dist/umd/lucide.min.js"></script>
     <link rel="stylesheet" href="/style.css">
+    <script src="/api-config.js"></script>
     <script>
-
         (function() {
             const originalFetch = window.fetch;
-            const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? '' : 'https://lab-booking-app.onrender.com';
+            const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? '' : BACKEND_URL;
             
             window.fetch = function(input, init) {
                 if (typeof input === 'string' && input.startsWith('/')) {
-                    if (window.location.origin !== 'https://lab-booking-app.onrender.com') {
+                    if (window.location.origin !== BACKEND_URL) {
                         input = API_BASE + input;
                     }
                 }
@@ -190,7 +193,7 @@
                     </div>
                     <div class="flex space-x-2">
                         <input type="date" id="date-picker" class="flex-1 bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl p-3 outline-none md3-input focus:bg-white">
-                        <button onclick="dateChanged()" class="btn-primary text-xs px-5 py-3 shadow-md">View Day</button>
+                        <button onclick="dateChanged()" id="view-day-btn" class="btn-primary text-xs px-5 py-3 shadow-md">View Day</button>
                     </div>
                     
                     <!-- Admin specific laboratory creation UI -->
@@ -398,9 +401,16 @@
 
         async function loadLabs() {
             try {
-                labs = await safeFetch("/labs", { cache: "no-store" });
-                if (!Array.isArray(labs)) labs = [];
-                
+                // Cache labs in sessionStorage — they rarely change mid-session
+                const cached = sessionStorage.getItem('labs_cache');
+                if (cached) {
+                    labs = JSON.parse(cached);
+                } else {
+                    labs = await safeFetch("/labs");
+                    if (!Array.isArray(labs)) labs = [];
+                    sessionStorage.setItem('labs_cache', JSON.stringify(labs));
+                }
+
                 // Update header stats counter
                 const statsAvail = document.getElementById('stat-avail-labs');
                 if (statsAvail) {
@@ -442,6 +452,25 @@
             } else {
                 alert(data.message || 'Error deleting lab');
             }
+        }
+
+        function showSkeleton() {
+            const container = document.getElementById('timetable-grid');
+            if (!container) return;
+            const skeletonCard = () => `
+                <div class="md3-card p-5 space-y-5 animate-pulse">
+                    <div class="flex justify-center items-center pb-1.5 border-b border-slate-100">
+                        <div class="h-3 w-16 bg-slate-200 rounded-full"></div>
+                    </div>
+                    <div class="space-y-2.5">
+                        ${[1,2,3].map(() => `
+                            <div class="p-3 rounded-2xl border border-slate-200 bg-slate-50/40 flex flex-col space-y-2">
+                                <div class="h-2.5 w-20 bg-slate-200 rounded-full"></div>
+                                <div class="h-7 w-full bg-slate-200 rounded-xl"></div>
+                            </div>`).join('')}
+                    </div>
+                </div>`;
+            container.innerHTML = [1,2,3,4,5,6,7,8].map(() => skeletonCard()).join('');
         }
 
         function renderDashboard() {
@@ -584,25 +613,48 @@
         }
 
         async function initializeDashboard() {
+            // Run loadLabs and loadTimetable in parallel.
+            // loadTimetable also populates bookings, so no separate loadBookings() call needed.
             await Promise.all([
                 loadLabs(),
-                loadTimetable(),
-                loadBookings()
+                loadTimetable()
             ]);
             renderDashboard();
         }
 
         async function dateChanged() {
             currentDate = document.getElementById('date-picker').value;
+            // Show skeleton and button loading state immediately for instant feedback
+            showSkeleton();
+            const btn = document.getElementById('view-day-btn');
+            if (btn) { btn.disabled = true; btn.textContent = 'Loading...'; }
             await initializeDashboard();
+            if (btn) { btn.disabled = false; btn.textContent = 'View Day'; }
         }
 
         let timetable = [];
 
         async function loadTimetable() {
             try {
-                const data = await safeFetch(`/api/timetable?date=${currentDate}`, { credentials: "include", cache: "no-store" });
+                const data = await safeFetch(`/api/timetable?date=${currentDate}`, { credentials: "include" });
                 timetable = data ? (data.fixed || []) : [];
+
+                // Reuse bookings from the timetable response — avoid a separate /bookings call
+                if (data && Array.isArray(data.bookings)) {
+                    bookings = data.bookings.map(b => ({
+                        lab: b.lab,
+                        period: b.period,
+                        date: currentDate,
+                        faculty_id: b.faculty_id,
+                        faculty_name: b.faculty_name,
+                        id: b.id,
+                        own: b.own
+                    }));
+
+                    // Update today's bookings stat counter
+                    const statsBookings = document.getElementById('stat-today-bookings');
+                    if (statsBookings) statsBookings.innerText = bookings.length;
+                }
             } catch (error) {
                 console.error("Error fetching timetable:", error);
                 timetable = [];
@@ -626,22 +678,27 @@
         }
 
         let bookings = [];
-        
+
         async function loadBookings() {
+            // Bookings are now loaded as part of loadTimetable() from the /api/timetable response.
+            // This function is kept for compatibility with confirmBooking() and cancelBooking() flows.
             try {
-                bookings = await safeFetch("/bookings", { cache: "no-store" });
-                if (!Array.isArray(bookings)) bookings = [];
-                
-                // Update stats counter for today
-                const todayStr = currentDate;
-                const todayBookingsCount = bookings.filter(b => b.date === todayStr).length;
-                const statsBookings = document.getElementById('stat-today-bookings');
-                if (statsBookings) {
-                    statsBookings.innerText = todayBookingsCount;
+                const data = await safeFetch(`/api/timetable?date=${currentDate}`, { credentials: "include" });
+                if (data && Array.isArray(data.bookings)) {
+                    bookings = data.bookings.map(b => ({
+                        lab: b.lab,
+                        period: b.period,
+                        date: currentDate,
+                        faculty_id: b.faculty_id,
+                        faculty_name: b.faculty_name,
+                        id: b.id,
+                        own: b.own
+                    }));
+                    const statsBookings = document.getElementById('stat-today-bookings');
+                    if (statsBookings) statsBookings.innerText = bookings.length;
                 }
             } catch (error) {
-                console.error("Error fetching bookings:", error);
-                bookings = [];
+                console.error("Error refreshing bookings:", error);
             }
         }
 
@@ -755,8 +812,12 @@
         window.onload = async function() {
             lucide.createIcons();
             setupFilters();
-            await loadUser();
-            await initializeDashboard();
+            showSkeleton(); // Show skeleton immediately — never show a blank page
+            // Run loadUser and initializeDashboard in parallel — they are independent
+            await Promise.all([
+                loadUser(),
+                initializeDashboard()
+            ]);
 
             if (urlParams.get('tab') === 'profile') {
                 openProfileModal();

@@ -40,7 +40,7 @@ async function initNotifications() {
 
     const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
       ? ''
-      : 'https://lab-booking-app.onrender.com';
+      : BACKEND_URL;
 
     if (currentToken) {
       console.log("✅ Token:", currentToken);
